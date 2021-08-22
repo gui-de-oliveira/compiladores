@@ -39,6 +39,50 @@ testInput () {
    logTestResult $? $expectedOutput
 }
 
+testInput62 () {
+    expect -c '
+        set timeout 1
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+        send -- "-12\n"
+
+        expect {
+            -ex "1 TK_LIT_INT [-12]" { }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $? "1 TK_LIT_INT [-12]"
+}
+
+testInput65 () {
+    expect -c '
+        set timeout 1
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+        send -- "-12.34\n"
+
+        expect {
+            -ex "1 TK_LIT_FLOAT [-12.34]" { }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $? "1 TK_LIT_FLOAT [-12.34]"
+}
+
 
 testInput77 () {
     expect -c '
@@ -139,16 +183,14 @@ do
 done
 
 # Inputs 61 - 63
-for keyword in "12" "-12" "+12"
-do
-    testInput "$keyword" "1 TK_LIT_INT [${keyword}]"
-done
+testInput "12" "1 TK_LIT_INT [12]"
+testInput62 # the minus symbol is being misinterpreted as a flag on the generic test function
+testInput "+12" "1 TK_LIT_INT [+12]"
 
 # Inputs 64 - 66
-for keyword in "12.34" "-12.34" "+12.34"
-do
-    testInput "$keyword" "1 TK_LIT_FLOAT [${keyword}]"
-done
+testInput "12.34" "1 TK_LIT_FLOAT [12.34]"
+testInput65 # the minus symbol is being misinterpreted as a flag on the generic test function
+testInput "+12.34" "1 TK_LIT_FLOAT [+12.34]"
 
 # Inputs 67 - 68
 testInput "true" "1 TK_LIT_TRUE [true]"
