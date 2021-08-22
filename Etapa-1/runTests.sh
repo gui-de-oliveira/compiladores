@@ -13,8 +13,8 @@ buildCompiler () {
     gcc lex.yy.o main.o -o etapa1 -lfl
 }
 
-testInput () {
-    givenInput=$1
+logTestResult () {
+    result=$1
     expectedOutput=$2
 
     if [ $result -eq $FAIL ]
@@ -28,6 +28,80 @@ testInput () {
     fi
     
     echo ""
+}
+
+testInput () {
+    givenInput=$1
+    expectedOutput=$2
+
+    ./testInput.sh "$givenInput" "$expectedOutput"
+
+   logTestResult $? $expectedOutput
+}
+
+
+testInput77 () {
+    expect -c '
+        set timeout 1
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+        send -- "%>%\n"
+
+        expect {
+            -ex "1 TK_ESPECIAL \[%\]" { }
+            default { exit $FAIL }
+        }
+
+        expect {
+            -ex "1 TK_ESPECIAL \[>\]" { }
+            default { exit $FAIL }
+        }
+
+        expect {
+            -ex "1 TK_ESPECIAL \[%\]" { exit $SUCCESS }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $?
+}
+
+testInput78 () {
+    expect -c '
+        set timeout 1
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+        send -- "%|%\n"
+
+        expect {
+            -ex "1 TK_ESPECIAL \[%\]" { }
+            default { $FAIL }
+        }
+
+        expect {
+            -ex "1 TK_ESPECIAL \[|\]" { }
+            default { $FAIL }
+        }
+
+        expect {
+            -ex "1 TK_ESPECIAL \[%\]" { exit $SUCCESS }
+            default { $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $?
 }
 
 buildCompiler
@@ -107,11 +181,11 @@ done
 # 34
 # 56.78
 
-# Input 77 - todo
-# %>%
+# Input 77
+testInput77 # Expects more than one reply
 
-# Input 78 - todo
-# %|%
+# Input 78
+testInput78 # Expects more than one reply
 
 # Inputs 79 - 80
 for keyword in "|" "$"
