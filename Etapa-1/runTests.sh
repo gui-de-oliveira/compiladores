@@ -51,7 +51,7 @@ testInput62 () {
         send -- "-12\n"
 
         expect {
-            -ex "1 TK_LIT_INT [-12]" { }
+            -ex "1 TK_LIT_INT \[-12\]" { exit $SUCCESS }
             default { exit $FAIL }
         }
 
@@ -73,7 +73,7 @@ testInput65 () {
         send -- "-12.34\n"
 
         expect {
-            -ex "1 TK_LIT_FLOAT [-12.34]" { }
+            -ex "1 TK_LIT_FLOAT \[-12.34\]" { exit $SUCCESS }
             default { exit $FAIL }
         }
 
@@ -248,7 +248,7 @@ testInput78 () {
 
 buildCompiler
 
-# Inputs 00 - 25
+# Inputs 01 - 25
 for keyword in \
     "int" "float" "bool" "char" "string" "if" "then" "else" "while" "do" \
     "input" "output" "return" "const" "static" "foreach" "for" "switch" \
@@ -313,10 +313,9 @@ testInput75
 testInput76
 
 # Input 77
-testInput77 # Expects more than one reply
-
-# Input 78
-testInput78 # Expects more than one reply
+# These tests expects more than one reply
+testInput77
+testInput78
 
 # Inputs 79 - 80
 for keyword in "|" "$"
