@@ -83,6 +83,104 @@ testInput65 () {
     logTestResult $? "1 TK_LIT_FLOAT [-12.34]"
 }
 
+testInput74 () {
+    expect -c '
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+
+        send -- "12\n"
+        expect {
+            -ex "1 TK_LIT_INT \[12\]" { }
+            default { exit $FAIL }
+        }
+
+        send -- " //34  56\n"
+        expect {
+            -ex " " { }
+            default { exit $FAIL }
+        }
+
+        send -- "78\n"
+        expect {
+            -ex "3 TK_LIT_INT \[78\]" { exit $SUCCESS }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $?
+}
+
+testInput75 () {
+    expect -c '
+        set timeout 1
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+
+        send -- \
+        "12 /*
+        34  56
+        */78\n"
+
+        expect {
+            -ex "1 TK_LIT_INT \[12\]" { }
+            default { exit $FAIL }
+        }
+
+        expect {
+            -ex "3 TK_LIT_INT \[78\]" { exit $SUCCESS }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $?
+}
+
+testInput76 () {
+    expect -c '
+        set timeout 1
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+
+        send -- \
+        "id12
+        34
+        56.78\n"
+
+        expect {
+            -ex "1 TK_IDENTIFICADOR \[id12\]" { }
+            default { exit $FAIL }
+        }
+
+        expect {
+            -ex "2 TK_LIT_INT \[34\]" { }
+            default { exit $FAIL }
+        }
+
+        expect {
+            -ex "3 TK_LIT_FLOAT \[56.78\]" { exit $SUCCESS }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    logTestResult $?
+}
 
 testInput77 () {
     expect -c '
@@ -208,20 +306,11 @@ do
     testInput "$keyword" "1 TK_LIT_STRING [${keyword}]"
 done
 
-# Input 74 - todo
-# 12
-#  //34  56
-# 78
-
-# Input 75 - todo
-# 12 /*
-#    34  56
-# */78
-
-# Input 76 - todo
-# id12
-# 34
-# 56.78
+# Input 74 - 76
+# These tests sends and expects multiple lines
+testInput74 
+testInput75 
+testInput76
 
 # Input 77
 testInput77 # Expects more than one reply
