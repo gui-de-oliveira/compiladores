@@ -3,6 +3,9 @@
 passedTests=0
 failedTests=0
 
+SUCCESS=0
+FAIL=1
+
 buildCompiler () {
     flex scanner.l
     gcc -c lex.yy.c
@@ -14,11 +17,10 @@ testInput () {
     givenInput=$1
     expectedOutput=$2
 
-    ./testInput.sh "$givenInput" "$expectedOutput"
-
-    if [ $? -eq 0 ]
+    if [ $result -eq $FAIL ]
     then
-        echo "TEST FAILED! Expected output: $expectedOutput"
+        echo "TEST FAILED!"
+        echo "Expected output: $expectedOutput"
         ((failedTests++))
     else
         echo "SUCCESS!"
