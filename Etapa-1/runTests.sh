@@ -6,16 +6,21 @@ failedTests=0
 SUCCESS=0
 FAIL=1
 
+inputCounter=0
+
 buildCompiler () {
-    flex scanner.l
-    gcc -c lex.yy.c
-    gcc -c main.c
-    gcc lex.yy.o main.o -o etapa1 -lfl
+    make
 }
 
-logTestResult () {
-    result=$1
+runTestScript () {
+    script=$1
     expectedOutput=$2
+
+    ((inputCounter++))
+    echo "Test $inputCounter"
+
+    expect -c "$script"
+    result=$?
 
     if [ $result -eq $FAIL ]
     then
@@ -34,13 +39,42 @@ testInput () {
     givenInput=$1
     expectedOutput=$2
 
-    ./testInput.sh "$givenInput" "$expectedOutput"
+    escapedInput="$givenInput"
+    escapedInput="${escapedInput//"["/"\\["}"
+    escapedInput="${escapedInput//"]"/"\\]"}"
+    escapedInput="${escapedInput//"\""/"\\\""}"
 
-   logTestResult $? $expectedOutput
+    escapedOutput="$expectedOutput"
+    escapedOutput="${escapedOutput//"["/"\\["}"
+    escapedOutput="${escapedOutput//"]"/"\\]"}"
+    escapedOutput="${escapedOutput//"\""/"\\\""}"
+
+    script='
+        set timeout 1
+
+        set givenInput "'${escapedInput}'"
+        set expectedOutput "'${escapedOutput}'"
+
+        set FAIL 1
+        set SUCCESS 0
+
+        spawn -noecho "./etapa1" 
+        send_user "Input: "
+        send -- "$givenInput\n"
+
+        expect {
+            -ex "$expectedOutput" { exit $SUCCESS }
+            default { exit $FAIL }
+        }
+
+        exit $FAIL
+    '
+
+    runTestScript "$script" "$expectedOutput"
 }
 
 testInput62 () {
-    expect -c '
+    script='
         set timeout 1
 
         set FAIL 1
@@ -58,11 +92,11 @@ testInput62 () {
         exit $FAIL
     '
 
-    logTestResult $? "1 TK_LIT_INT [-12]"
+    runTestScript "$script" "1 TK_LIT_INT [-12]"
 }
 
 testInput65 () {
-    expect -c '
+    script='
         set timeout 1
 
         set FAIL 1
@@ -80,11 +114,11 @@ testInput65 () {
         exit $FAIL
     '
 
-    logTestResult $? "1 TK_LIT_FLOAT [-12.34]"
+    runTestScript "$script" "1 TK_LIT_INT [-12.34]"
 }
 
 testInput74 () {
-    expect -c '
+    script='
         set FAIL 1
         set SUCCESS 0
 
@@ -112,11 +146,11 @@ testInput74 () {
         exit $FAIL
     '
 
-    logTestResult $?
+    runTestScript "$script" "[3 messages...]"
 }
 
 testInput75 () {
-    expect -c '
+    script='
         set timeout 1
 
         set FAIL 1
@@ -143,11 +177,11 @@ testInput75 () {
         exit $FAIL
     '
 
-    logTestResult $?
+    runTestScript "$script" "3 messages"
 }
 
 testInput76 () {
-    expect -c '
+    script='
         set timeout 1
 
         set FAIL 1
@@ -179,11 +213,11 @@ testInput76 () {
         exit $FAIL
     '
 
-    logTestResult $?
+    runTestScript "$script" "3 messages"
 }
 
 testInput77 () {
-    expect -c '
+    script='
         set timeout 1
 
         set FAIL 1
@@ -211,11 +245,11 @@ testInput77 () {
         exit $FAIL
     '
 
-    logTestResult $?
+    runTestScript "$script" "3 messages"
 }
 
 testInput78 () {
-    expect -c '
+    script='
         set timeout 1
 
         set FAIL 1
@@ -243,7 +277,7 @@ testInput78 () {
         exit $FAIL
     '
 
-    logTestResult $?
+    runTestScript "$script" "2 messages"
 }
 
 buildCompiler
