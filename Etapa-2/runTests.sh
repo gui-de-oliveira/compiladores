@@ -80,8 +80,14 @@ testValidInput () {
 
 buildCompiler
 
+# Int declarations
 testValidInput "int v1;"
+testValidInput "int v2;"
+testValidInput "int _v2;"
+testValidInput "int _v2   ;"
 testValidInput "static int v1;"
+testValidInput "static int _v2x;"
+testValidInput "static int v1  ;"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
