@@ -53,8 +53,9 @@
 
 %%
 
-initialSymbol: intDeclaration ;
+initialSymbol: intDeclaration | staticIntDeclaration ;
 intDeclaration: TK_PR_INT TK_IDENTIFICADOR ';';
+staticIntDeclaration: TK_PR_STATIC TK_PR_INT TK_IDENTIFICADOR ';';
 
 %%
 

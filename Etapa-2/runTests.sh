@@ -81,6 +81,7 @@ testValidInput () {
 buildCompiler
 
 testValidInput "int v1;"
+testValidInput "static int v1;"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
