@@ -9,6 +9,14 @@ FAIL=1
 
 buildCompiler () {
     make
+    result=$?
+
+    if [ $result -ne 0 ]
+    then
+        echo "Build failed!"
+        exit $result
+    fi
+
     echo ""
 }
 
