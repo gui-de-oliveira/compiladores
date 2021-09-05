@@ -13,39 +13,16 @@ buildCompiler () {
 }
 
 runTestScript () {
-    script=$1
+    givenInput=$1
+    expectedValue=$2
 
     ((testCounter++))
     echo "Test $testCounter"
-
-    expect -c "$script"
-    result=$?
-
-    if [ $result -eq 0 ]
-    then
-        echo "SUCCESS!"
-        ((successfulTestsCounter++))
-    else
-        echo "TEST FAILED!"
-        ((failedTestsCounter++))
-    fi
-    
-    echo ""
-}
-
-testValidInput () {
-    givenInput=$1
-    expectedOutput=$2
 
     escapedInput="$givenInput"
     escapedInput="${escapedInput//"["/"\\["}"
     escapedInput="${escapedInput//"]"/"\\]"}"
     escapedInput="${escapedInput//"\""/"\\\""}"
-
-    escapedOutput="$expectedOutput"
-    escapedOutput="${escapedOutput//"["/"\\["}"
-    escapedOutput="${escapedOutput//"]"/"\\]"}"
-    escapedOutput="${escapedOutput//"\""/"\\\""}"
 
     script='
         set timeout 1
@@ -75,7 +52,27 @@ testValidInput () {
         exit [lindex $result 3]
     '
 
-    runTestScript "$script"
+    expect -c "$script"
+    result=$?
+
+    if [ $result -eq $expectedValue ]
+    then
+        echo "SUCCESS!"
+        ((successfulTestsCounter++))
+    else
+        echo "TEST FAILED!"
+        ((failedTestsCounter++))
+    fi
+    
+    echo ""
+}
+
+testValidInput () { 
+    runTestScript "$1" 0
+}
+
+testInvalidInput () { 
+    runTestScript "$1" 1
 }
 
 buildCompiler
@@ -88,6 +85,9 @@ testValidInput "int _v2   ;"
 testValidInput "static int v1;"
 testValidInput "static int _v2x;"
 testValidInput "static int v1  ;"
+
+testInvalidInput "int ;"
+testInvalidInput "int;"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
