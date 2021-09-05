@@ -1,0 +1,7 @@
+etapa2
+etapa2.tgz
+lex.yy.c
+lex.yy.o
+parser.tab.c
+parser.tab.h
+parser.tab.o
