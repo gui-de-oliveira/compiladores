@@ -53,7 +53,7 @@
 
 %%
 
-initialSymbol: '+' { printf("Sucesso!\n"); };
+initialSymbol: '+' ;
 
 %%
 
