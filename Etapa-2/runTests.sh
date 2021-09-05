@@ -80,7 +80,7 @@ testValidInput () {
 
 buildCompiler
 
-testValidInput "+"
+testValidInput "int v1;"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"

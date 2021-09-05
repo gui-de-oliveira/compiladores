@@ -53,7 +53,8 @@
 
 %%
 
-initialSymbol: '+' ;
+initialSymbol: intDeclaration ;
+intDeclaration: TK_PR_INT TK_IDENTIFICADOR ';';
 
 %%
 
