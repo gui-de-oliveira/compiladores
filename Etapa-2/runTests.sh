@@ -87,24 +87,18 @@ buildCompiler
 
 # Int declarations
 testValidInput "int v1;"
-testValidInput "int v1   ;"
-testInvalidInput "int ;"
 testInvalidInput "int;"
 
 testValidInput "static int v1;"
-testValidInput "static int v1  ;"
+testInvalidInput "static int;"
 
+testValidInput "int v1, v2;"
 testValidInput "int v1, v2, v3;"
-testValidInput "int v1, v2, v3 ;"
-testValidInput "int v1,v2,v3;"
-testInvalidInput "int ,v1 ;"
-testInvalidInput "int v1, ;"
+testInvalidInput "int v1,;"
+testInvalidInput "int ,v1;"
 
 testValidInput "int v1[3];"
 testValidInput "int v1[+3];"
-testValidInput "int v1[3] ;"
-testValidInput "int v1 [3] ;"
-testValidInput "int v1 [ 3 ] ;"
 testInvalidInput "int v1[0];"
 testInvalidInput "int v1[-1];"
 
