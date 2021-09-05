@@ -54,7 +54,9 @@
 
 %%
 
-initialSymbol: intDeclaration | staticIntDeclaration ;
+initialSymbol: intDeclaration | staticIntDeclaration | charDeclaration | staticCharDeclaration ;
+charDeclaration: TK_PR_CHAR singleOrManyIdentifiers ';';
+staticCharDeclaration: TK_PR_STATIC TK_PR_CHAR singleOrManyIdentifiers ';';
 intDeclaration: TK_PR_INT singleOrManyIdentifiers ';';
 staticIntDeclaration: TK_PR_STATIC TK_PR_INT singleOrManyIdentifiers ';';
 singleOrManyIdentifiers: variableOrArray | variableOrArray ',' singleOrManyIdentifiers

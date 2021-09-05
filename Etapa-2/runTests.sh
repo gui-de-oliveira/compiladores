@@ -85,26 +85,29 @@ testInvalidInput () {
 
 buildCompiler
 
-# Int declarations
-testValidInput "int v1;"
-testInvalidInput "int;"
+# declarations
+for type in "int" "char"
+do
+    testValidInput "$type v1;"
+    testInvalidInput "$type;"
 
-testValidInput "static int v1;"
-testInvalidInput "static int;"
+    testValidInput "static $type v1;"
+    testInvalidInput "static $type;"
 
-testValidInput "int v1, v2;"
-testValidInput "int v1, v2, v3;"
-testInvalidInput "int v1,;"
-testInvalidInput "int ,v1;"
+    testValidInput "$type v1, v2;"
+    testValidInput "$type v1, v2, v3;"
+    testInvalidInput "$type v1,;"
+    testInvalidInput "$type ,v1;"
 
-testValidInput "int v1[3];"
-testValidInput "int v1[+3];"
-testInvalidInput "int v1[0];"
-testInvalidInput "int v1[-1];"
+    testValidInput "$type v1[3];"
+    testValidInput "$type v1[+3];"
+    testInvalidInput "$type v1[0];"
+    testInvalidInput "$type v1[-1];"
 
-testValidInput "int v1[1], v2[2], v3[3];"
-testValidInput "static int v1[1], v2, v3[3];"
-testValidInput "int v1, v2[+5], v3;"
+    testValidInput "$type v1[1], v2[2], v3[3];"
+    testValidInput "static $type v1[1], v2, v3[3];"
+    testValidInput "$type v1, v2[+5], v3;"
+done
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
