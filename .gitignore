@@ -1,5 +1,10 @@
+etapa1
+etapa1.tgz
+
 etapa2
 etapa2.tgz
+
+main.o
 lex.yy.c
 lex.yy.o
 parser.tab.c
