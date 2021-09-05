@@ -104,10 +104,15 @@ testInvalidInput "int v1, ;"
 
 testValidInput "int v1[3];"
 testValidInput "int v1[+3];"
-testValidInput "int v1[+3] ;"
-testValidInput "int v1 [+3] ;"
+testValidInput "int v1[3] ;"
+testValidInput "int v1 [3] ;"
+testValidInput "int v1 [ 3 ] ;"
 testInvalidInput "int v1[0];"
 testInvalidInput "int v1[-1];"
+
+testValidInput "int v1[1], v2[2], v3[3];"
+testValidInput "static int v1[1], v2, v3[3];"
+testValidInput "int v1, v2[+5], v3;"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
