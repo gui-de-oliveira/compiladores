@@ -115,3 +115,5 @@ testValidInput "int v1, v2[+5], v3;"
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"
+
+make clean
