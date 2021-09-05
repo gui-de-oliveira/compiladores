@@ -102,6 +102,13 @@ testValidInput "int v1, v2, v3 ;"
 testInvalidInput "int ,v1 ;"
 testInvalidInput "int v1, ;"
 
+testValidInput "int v1[3];"
+testValidInput "int v1[+3];"
+testValidInput "int v1[+3] ;"
+testValidInput "int v1 [+3] ;"
+testInvalidInput "int v1[0];"
+testInvalidInput "int v1[-1];"
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"

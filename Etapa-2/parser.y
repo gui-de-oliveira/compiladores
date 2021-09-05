@@ -48,6 +48,7 @@
 %token TK_LIT_TRUE
 %token TK_LIT_CHAR
 %token TK_LIT_STRING
+%token TK_LIT_ARRAY_SIZE
 %token TK_IDENTIFICADOR
 %token TOKEN_ERRO
 
@@ -56,7 +57,8 @@
 initialSymbol: intDeclaration | staticIntDeclaration ;
 intDeclaration: TK_PR_INT singleOrManyIdentifiers ';';
 staticIntDeclaration: TK_PR_STATIC TK_PR_INT singleOrManyIdentifiers ';';
-singleOrManyIdentifiers: TK_IDENTIFICADOR | TK_IDENTIFICADOR ',' singleOrManyIdentifiers
+singleOrManyIdentifiers: variableOrArray | variableOrArray ',' singleOrManyIdentifiers
+variableOrArray: TK_IDENTIFICADOR | TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']'
 
 %%
 
