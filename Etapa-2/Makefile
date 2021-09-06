@@ -16,3 +16,6 @@ zip:
 
 run:
 	./etapa2
+
+test:
+	time ./runTests.sh
