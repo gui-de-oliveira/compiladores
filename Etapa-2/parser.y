@@ -54,13 +54,18 @@
 
 %%
 
-initialSymbol: intDeclaration | staticIntDeclaration | charDeclaration | staticCharDeclaration ;
-charDeclaration: TK_PR_CHAR singleOrManyIdentifiers ';';
-staticCharDeclaration: TK_PR_STATIC TK_PR_CHAR singleOrManyIdentifiers ';';
-intDeclaration: TK_PR_INT singleOrManyIdentifiers ';';
-staticIntDeclaration: TK_PR_STATIC TK_PR_INT singleOrManyIdentifiers ';';
-singleOrManyIdentifiers: variableOrArray | variableOrArray ',' singleOrManyIdentifiers
-variableOrArray: TK_IDENTIFICADOR | TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']'
+initialSymbol: variableDeclaration ;
+
+variableDeclaration: staticVariableDeclaration ';' | nonStaticVariableDeclaration ';' ;
+staticVariableDeclaration: TK_PR_STATIC variableType;
+nonStaticVariableDeclaration: variableType;
+variableType: TK_PR_CHAR identifiers | TK_PR_INT identifiers;
+identifiers: singleIdentifier | listOfIdentifiers ;
+singleIdentifier: valueOrArray ;
+listOfIdentifiers: valueOrArray ',' identifiers ;
+valueOrArray: value | array ;
+value: TK_IDENTIFICADOR;
+array: TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']';
 
 %%
 
