@@ -85,7 +85,7 @@ testInvalidInput () {
 
 buildCompiler
 
-# declarations
+# global variable declarations
 for type in "int" "char" "float" "bool" "string"
 do
     testValidInput "$type v1;"

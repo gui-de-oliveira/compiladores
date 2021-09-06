@@ -54,9 +54,9 @@
 
 %%
 
-initialSymbol: variableDeclaration ;
+initialSymbol: globalVariableDeclaration ;
 
-variableDeclaration: staticVariableDeclaration ';' | nonStaticVariableDeclaration ';' ;
+globalVariableDeclaration: staticVariableDeclaration ';' | nonStaticVariableDeclaration ';' ;
 staticVariableDeclaration: TK_PR_STATIC variableType;
 nonStaticVariableDeclaration: variableType;
 
