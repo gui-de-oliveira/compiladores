@@ -109,19 +109,21 @@ do
     testValidInput "$type v1, v2[+5], v3;"
 done
 
+# Function header declaration
 for static in "static" " "
 do
-for type in "int" "char" "float" "bool" "string"
+for basicType in "int" "char" "float" "bool" "string"
 do
-    testValidInput "$static $type functionName() { }"
-    testValidInput "$static $type functionName(int a) { }"
-    testValidInput "$static $type functionName(int a, bool b) { }"
-    testValidInput "$static $type functionName(int a, bool b, string c) { }"
-    testValidInput "$static $type functionName(const int a, bool b) { }"
-    testValidInput "$static $type functionName(int a, const bool b) { }"
-    testInvalidInput "$static $type functionName(int a[5]) { }"
-    testInvalidInput "$static $type functionName(int a,) { }"
-    testInvalidInput "$static $type functionName(,int a) { }"
+    testValidInput "$static $basicType functionName() { }"
+    testValidInput "$static $basicType functionName(int a) { }"
+    testValidInput "$static $basicType functionName($basicType a) { }"
+    testValidInput "$static $basicType functionName(int a, bool b) { }"
+    testValidInput "$static $basicType functionName(int a, bool b, string c) { }"
+    testValidInput "$static $basicType functionName(const int a, bool b) { }"
+    testValidInput "$static $basicType functionName(int a, const bool b) { }"
+    testInvalidInput "$static $basicType functionName(int a[5]) { }"
+    testInvalidInput "$static $basicType functionName(int a,) { }"
+    testInvalidInput "$static $basicType functionName(,int a) { }"
 done
 done
 
