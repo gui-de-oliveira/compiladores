@@ -54,76 +54,85 @@
 
 %%
 
-initialSymbol: globalVariableDeclaration | functionDeclaration ;
+initialSymbol: startCapturingGlobalVariableDeclaration | startFunctionDeclaration ;
 
-globalVariableDeclaration: staticVariableDeclaration ';' | nonStaticVariableDeclaration ';' ;
-staticVariableDeclaration: TK_PR_STATIC variableType;
-nonStaticVariableDeclaration: variableType;
+startCapturingGlobalVariableDeclaration: captureOptionalStaticGVB;
+captureOptionalStaticGVB: captureTypeGVB | TK_PR_STATIC captureTypeGVB ;
+captureTypeGVB: TK_PR_CHAR startCapturingIdGVB | TK_PR_INT startCapturingIdGVB | TK_PR_FLOAT startCapturingIdGVB | TK_PR_BOOL startCapturingIdGVB | TK_PR_STRING startCapturingIdGVB
 
-variableType: charType | intType | floatType | boolType | stringType;
-charType: TK_PR_CHAR identifiers;
-intType: TK_PR_INT identifiers;
-floatType: TK_PR_FLOAT identifiers;
-boolType: TK_PR_BOOL identifiers;
-stringType: TK_PR_STRING identifiers;
+startCapturingIdGVB: TK_IDENTIFICADOR captureArrayStartOrNextIdGVB ;
+captureArrayStartOrNextIdGVB: '[' captureArrayGVB | captureNextIdOrEnd ;
+captureArrayGVB: TK_LIT_ARRAY_SIZE ']' captureNextIdOrEnd;
+captureNextIdOrEnd: ',' startCapturingIdGVB | endGVB;
+endGVB: ';' ;
 
-identifiers: singleIdentifier | listOfIdentifiers ;
-singleIdentifier: valueOrArray ;
-listOfIdentifiers: valueOrArray ',' identifiers ;
+startFunctionDeclaration: captureOptionalStaticFD ;
+captureOptionalStaticFD: captureReturnTypeFD | TK_PR_STATIC captureReturnTypeFD
 
-valueOrArray: value | array ;
-value: TK_IDENTIFICADOR;
-array: TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']';
+captureReturnTypeFD:
+    TK_PR_CHAR captureIdentifierFD |
+    TK_PR_INT captureIdentifierFD |
+    TK_PR_FLOAT captureIdentifierFD |
+    TK_PR_BOOL captureIdentifierFD |
+    TK_PR_STRING captureIdentifierFD ;
 
+captureIdentifierFD: TK_IDENTIFICADOR '(' tryCaptureArgFD;
 
+tryCaptureArgFD: ')' startCapturingCommandBlock | startCapturingArgFD;
 
-functionDeclaration: staticFunctionDeclaration | nonStaticFunctionDeclaration ;
-staticFunctionDeclaration: TK_PR_STATIC returnType;
-nonStaticFunctionDeclaration: returnType;
+startCapturingArgFD: tryCaptureArgStaticFD;
+tryCaptureArgStaticFD: TK_PR_STATIC tryCaptureArgConstFD | tryCaptureArgConstFD;
+tryCaptureArgConstFD: TK_PR_CONST captureArgTypeFD | captureArgTypeFD;
+captureArgTypeFD: 
+    TK_PR_CHAR captureArgIdFD |
+     TK_PR_INT captureArgIdFD |
+     TK_PR_FLOAT captureArgIdFD |
+     TK_PR_BOOL captureArgIdFD |
+     TK_PR_STRING captureArgIdFD ;
 
-returnType: charFnType | intFnType | floatFnType | boolFnType | stringFnType;
-charFnType: TK_PR_CHAR functionIdentifier;
-intFnType: TK_PR_INT functionIdentifier;
-floatFnType: TK_PR_FLOAT functionIdentifier;
-boolFnType: TK_PR_BOOL functionIdentifier;
-stringFnType: TK_PR_STRING functionIdentifier;
+captureArgIdFD: TK_IDENTIFICADOR tryCaptureNextArgFD;
+tryCaptureNextArgFD: ',' startCapturingArgFD | ')' startCapturingCommandBlock
 
-functionIdentifier: TK_IDENTIFICADOR argumentsAndBody commandBlock;
+startCapturingCommandBlock: '{' tryCaptureCommandLine;
 
-argumentsAndBody: functionWithNoArguments | functionWithArguments;
-functionWithNoArguments : '(' ')' ;
-functionWithArguments : '(' arguments ')'  ;
+tryCaptureCommandLine: '}' | startCapturingCommandLine;
 
-arguments: singleArgument | listOfArguments ;
-singleArgument: argumentTypes TK_IDENTIFICADOR ;
-listOfArguments: singleArgument ',' arguments ;
+startCapturingCommandLine: startCapturingVariableDeclaration | startCapturingVariableAssignment;
 
-argumentTypes: constTypes | basicTypes;
-constTypes: TK_PR_CONST basicTypes ;
-basicTypes: TK_PR_CHAR | TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_STRING ;
+startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
+tryCaptureArgStaticVD: tryCaptureArgConstVD | TK_PR_STATIC tryCaptureArgConstVD ;
+tryCaptureArgConstVD: captureArgTypeVD | TK_PR_CONST captureArgTypeVD ;
+captureArgTypeVD: 
+    TK_PR_INT startCapturingIdentifierVD |
+    TK_PR_FLOAT startCapturingIdentifierVD |
+    TK_PR_BOOL startCapturingIdentifierVD |
+    TK_PR_CHAR startCapturingIdentifierVD |
+    TK_PR_STRING startCapturingIdentifierVD ;
 
-commandBlock: emptyCommandBlock | notEmptyCommandBlock ;
-emptyCommandBlock: '{' '}' ;
-notEmptyCommandBlock: '{' commandLines '}' ;
+startCapturingIdentifierVD: TK_IDENTIFICADOR tryCapturingInitializationVD ;
+tryCapturingInitializationVD: TK_OC_LE startCaptureInitializationVD | tryCapturingNextIdentifierVD;
+startCaptureInitializationVD: TK_IDENTIFICADOR tryCapturingNextIdentifierVD | captureLiteralInitializationValueVD;
+captureLiteralInitializationValueVD: 
+    TK_LIT_INT tryCapturingNextIdentifierVD |
+    TK_LIT_FLOAT tryCapturingNextIdentifierVD |
+    TK_LIT_FALSE tryCapturingNextIdentifierVD |
+    TK_LIT_TRUE tryCapturingNextIdentifierVD |
+    TK_LIT_CHAR tryCapturingNextIdentifierVD |
+    TK_LIT_STRING tryCapturingNextIdentifierVD ;
 
-commandLines: singleCommandLine | listOfCommandLines;
-singleCommandLine: variableAssignment | localVariableDeclaration;
-listOfCommandLines: singleCommandLine commandLines;
+tryCapturingNextIdentifierVD: ',' startCapturingIdentifierVD | ';' tryCaptureCommandLine
 
-mayStaticMayConst: argumentTypes | TK_PR_STATIC argumentTypes;
+startCapturingVariableAssignment: TK_IDENTIFICADOR '=' captureValueVA;
+captureValueVA: TK_IDENTIFICADOR endCapturingVA | captureLiteralValueVA;
+captureLiteralValueVA: 
+    TK_LIT_INT endCapturingVA |
+    TK_LIT_FLOAT endCapturingVA |
+    TK_LIT_FALSE endCapturingVA |
+    TK_LIT_TRUE endCapturingVA |
+    TK_LIT_CHAR endCapturingVA |
+    TK_LIT_STRING endCapturingVA ;
 
-localVariableDeclaration: mayStaticMayConst localIdentifiers ';' ;
-
-localIdentifiers: singleLocalIdentifier | listOfLocalIdentifiers;
-singleLocalIdentifier: idWithOrWithoutInitialization;
-listOfLocalIdentifiers: singleLocalIdentifier ',' localIdentifiers; 
-
-idWithOrWithoutInitialization: TK_IDENTIFICADOR | TK_IDENTIFICADOR TK_OC_LE initializationValue ;
-initializationValue: TK_IDENTIFICADOR | literal ; 
-
-literal: TK_LIT_INT | TK_LIT_FLOAT | TK_LIT_FALSE | TK_LIT_TRUE | TK_LIT_CHAR | TK_LIT_STRING ;
-
-variableAssignment: TK_IDENTIFICADOR '=' initializationValue ';' ;
+endCapturingVA: ';' tryCaptureCommandLine
 
 %%
 

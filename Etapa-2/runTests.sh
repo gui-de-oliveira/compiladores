@@ -155,10 +155,17 @@ testValidInput "int f() { char id1 <= 'c'; }"
 testValidInput "int f() { string id1 <= \"c\"; }"
 testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
-#TODO: testInvalidInput "int f() { int id1 <= false; }"
+# #TODO: testInvalidInput "int f() { int id1 <= false; }"
 
 testValidInput "int f() { id = true; }"
 testValidInput "int f() { id1 = id2; }"
+# #TODO: "int f() { id1 = <expressão>; }"
+
+# TODO: testValidInput "int f() { id[1] = true; }"
+# TODO: testValidInput "int f() { id[1] = id2; }"
+# #TODO: "int f() { id1[<expressão>] = true; }"
+
+
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
