@@ -110,20 +110,21 @@ do
 done
 
 # Function header declaration
+testValidInput "int functionName(int a) { }"
+testValidInput "int functionName(int a, bool b) { }"
+testValidInput "int functionName(int a, bool b, string c) { }"
+testValidInput "int functionName(const int a, bool b) { }"
+testValidInput "int functionName(int a, const bool b) { }"
+testInvalidInput "int functionName(int a[5]) { }"
+testInvalidInput "int functionName(int a,) { }"
+testInvalidInput "int functionName(,int a) { }"
+
 for static in "static" " "
 do
 for basicType in "int" "char" "float" "bool" "string"
 do
     testValidInput "$static $basicType functionName() { }"
-    testValidInput "$static $basicType functionName(int a) { }"
     testValidInput "$static $basicType functionName($basicType a) { }"
-    testValidInput "$static $basicType functionName(int a, bool b) { }"
-    testValidInput "$static $basicType functionName(int a, bool b, string c) { }"
-    testValidInput "$static $basicType functionName(const int a, bool b) { }"
-    testValidInput "$static $basicType functionName(int a, const bool b) { }"
-    testInvalidInput "$static $basicType functionName(int a[5]) { }"
-    testInvalidInput "$static $basicType functionName(int a,) { }"
-    testInvalidInput "$static $basicType functionName(,int a) { }"
 done
 done
 
