@@ -119,7 +119,9 @@ singleLocalIdentifier: idWithOrWithoutInitialization;
 listOfLocalIdentifiers: singleLocalIdentifier ',' localIdentifiers; 
 
 idWithOrWithoutInitialization: TK_IDENTIFICADOR | TK_IDENTIFICADOR TK_OC_LE initializationValue ;
-initializationValue: TK_IDENTIFICADOR ; 
+initializationValue: TK_IDENTIFICADOR | literal ; 
+
+literal: TK_LIT_INT | TK_LIT_FLOAT | TK_LIT_FALSE | TK_LIT_TRUE | TK_LIT_CHAR | TK_LIT_STRING
 
 %%
 
