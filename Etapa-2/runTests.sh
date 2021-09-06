@@ -117,6 +117,11 @@ do
     testValidInput "$static $type functionName(int a) { }"
     testValidInput "$static $type functionName(int a, bool b) { }"
     testValidInput "$static $type functionName(int a, bool b, string c) { }"
+    testValidInput "$static $type functionName(const int a, bool b) { }"
+    testValidInput "$static $type functionName(int a, const bool b) { }"
+    testInvalidInput "$static $type functionName(int a[5]) { }"
+    testInvalidInput "$static $type functionName(int a,) { }"
+    testInvalidInput "$static $type functionName(,int a) { }"
 done
 done
 
