@@ -18,4 +18,4 @@ run:
 	./etapa2
 
 test:
-	time ./runTests.sh
+	./runTests.sh
