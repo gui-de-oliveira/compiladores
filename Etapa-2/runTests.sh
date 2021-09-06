@@ -142,6 +142,13 @@ done
 
 testValidInput "int f() { int id; }"
 testValidInput "int f() { int id1; int id2; }"
+testValidInput "int f() { int id1; int id2; int id3; }"
+testValidInput "int f() { int id1, id2; }"
+testValidInput "int f() { int id1, id2, id3; }"
+
+testValidInput "int f() { int id1 <= id2; }"
+testValidInput "int f() { int id1 <= id2, id3 <= id4; }"
+testValidInput "int f() { int id1 <= id2, id3 <= id4, id5 <= id6; }"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
