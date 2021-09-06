@@ -114,6 +114,9 @@ do
 for type in "int" "char" "float" "bool" "string"
 do
     testValidInput "$static $type functionName() { }"
+    testValidInput "$static $type functionName(int a) { }"
+    testValidInput "$static $type functionName(int a, bool b) { }"
+    testValidInput "$static $type functionName(int a, bool b, string c) { }"
 done
 done
 

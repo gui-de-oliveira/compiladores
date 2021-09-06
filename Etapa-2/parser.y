@@ -88,7 +88,17 @@ floatFnType: TK_PR_FLOAT functionIdentifier;
 boolFnType: TK_PR_BOOL functionIdentifier;
 stringFnType: TK_PR_STRING functionIdentifier;
 
-functionIdentifier: TK_IDENTIFICADOR '(' ')' '{' '}' ;
+functionIdentifier: TK_IDENTIFICADOR argumentsAndBody ;
+
+argumentsAndBody: functionWithNoArguments | functionWithArguments;
+functionWithNoArguments : '(' ')' '{' '}' ;
+functionWithArguments : '(' arguments ')' '{' '}' ;
+
+arguments: singleArgument | listOfArguments ;
+singleArgument: basicTypes TK_IDENTIFICADOR ;
+listOfArguments: singleArgument ',' arguments ;
+
+basicTypes: TK_PR_CHAR | TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_STRING
 
 %%
 
