@@ -109,6 +109,14 @@ do
     testValidInput "$type v1, v2[+5], v3;"
 done
 
+for static in "static" " "
+do
+for type in "int" "char" "float" "bool" "string"
+do
+    testValidInput "$static $type functionName() { }"
+done
+done
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"

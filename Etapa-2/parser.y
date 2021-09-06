@@ -54,7 +54,7 @@
 
 %%
 
-initialSymbol: globalVariableDeclaration ;
+initialSymbol: globalVariableDeclaration | functionDeclaration ;
 
 globalVariableDeclaration: staticVariableDeclaration ';' | nonStaticVariableDeclaration ';' ;
 staticVariableDeclaration: TK_PR_STATIC variableType;
@@ -74,6 +74,21 @@ listOfIdentifiers: valueOrArray ',' identifiers ;
 valueOrArray: value | array ;
 value: TK_IDENTIFICADOR;
 array: TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']';
+
+
+
+functionDeclaration: staticFunctionDeclaration ';' | nonStaticFunctionDeclaration ';' ;
+staticFunctionDeclaration: TK_PR_STATIC returnType;
+nonStaticFunctionDeclaration: returnType;
+
+returnType: charFnType | intFnType | floatFnType | boolFnType | stringFnType;
+charFnType: TK_PR_CHAR functionIdentifier;
+intFnType: TK_PR_INT functionIdentifier;
+floatFnType: TK_PR_FLOAT functionIdentifier;
+boolFnType: TK_PR_BOOL functionIdentifier;
+stringFnType: TK_PR_STRING functionIdentifier;
+
+functionIdentifier: TK_IDENTIFICADOR '(' ')' '{' '}' ;
 
 %%
 
