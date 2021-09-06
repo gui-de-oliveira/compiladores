@@ -104,11 +104,11 @@ basicTypes: TK_PR_CHAR | TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_STRING ;
 
 commandBlock: emptyCommandBlock | notEmptyCommandBlock ;
 emptyCommandBlock: '{' '}' ;
-notEmptyCommandBlock: '{' commands '}' ;
+notEmptyCommandBlock: '{' commandLines '}' ;
 
-commands: simpleCommand | listOfSimpleCommands;
-simpleCommand: mayStaticMayConst TK_IDENTIFICADOR ';' ;
-listOfSimpleCommands: simpleCommand | commands;
+commandLines: singleCommandLine | listOfCommandLines;
+singleCommandLine: mayStaticMayConst TK_IDENTIFICADOR ';' ;
+listOfCommandLines: singleCommandLine commandLines;
 
 mayStaticMayConst: argumentTypes | TK_PR_STATIC argumentTypes;
 

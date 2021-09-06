@@ -129,9 +129,6 @@ do
 done
 
 # Command block / commands
-
-testValidInput "int f() { int id; }"
-
 for const in "const" " "
 do
     for static in "static" " "
@@ -143,6 +140,8 @@ do
     done
 done
 
+testValidInput "int f() { int id; }"
+testValidInput "int f() { int id1; int id2; }"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
