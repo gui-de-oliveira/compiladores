@@ -42,7 +42,7 @@ runTestScript () {
         send -- "$givenInput\n"
 
         # Await max time for response (fixes bug of false-positives)
-        sleep 0.1
+        sleep 0.01
 
         expect {
             "syntax error" {
