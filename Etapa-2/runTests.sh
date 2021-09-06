@@ -157,6 +157,9 @@ testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
 #TODO: testInvalidInput "int f() { int id1 <= false; }"
 
+testValidInput "int f() { id = true; }"
+testValidInput "int f() { id1 = id2; }"
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"

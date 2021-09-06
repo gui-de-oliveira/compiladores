@@ -107,7 +107,7 @@ emptyCommandBlock: '{' '}' ;
 notEmptyCommandBlock: '{' commandLines '}' ;
 
 commandLines: singleCommandLine | listOfCommandLines;
-singleCommandLine: localVariableDeclaration;
+singleCommandLine: variableAssignment | localVariableDeclaration;
 listOfCommandLines: singleCommandLine commandLines;
 
 mayStaticMayConst: argumentTypes | TK_PR_STATIC argumentTypes;
@@ -121,7 +121,9 @@ listOfLocalIdentifiers: singleLocalIdentifier ',' localIdentifiers;
 idWithOrWithoutInitialization: TK_IDENTIFICADOR | TK_IDENTIFICADOR TK_OC_LE initializationValue ;
 initializationValue: TK_IDENTIFICADOR | literal ; 
 
-literal: TK_LIT_INT | TK_LIT_FLOAT | TK_LIT_FALSE | TK_LIT_TRUE | TK_LIT_CHAR | TK_LIT_STRING
+literal: TK_LIT_INT | TK_LIT_FLOAT | TK_LIT_FALSE | TK_LIT_TRUE | TK_LIT_CHAR | TK_LIT_STRING ;
+
+variableAssignment: TK_IDENTIFICADOR '=' initializationValue ';' ;
 
 %%
 
