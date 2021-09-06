@@ -59,10 +59,18 @@ initialSymbol: variableDeclaration ;
 variableDeclaration: staticVariableDeclaration ';' | nonStaticVariableDeclaration ';' ;
 staticVariableDeclaration: TK_PR_STATIC variableType;
 nonStaticVariableDeclaration: variableType;
-variableType: TK_PR_CHAR identifiers | TK_PR_INT identifiers;
+
+variableType: charType | intType | floatType | boolType | stringType;
+charType: TK_PR_CHAR identifiers;
+intType: TK_PR_INT identifiers;
+floatType: TK_PR_FLOAT identifiers;
+boolType: TK_PR_BOOL identifiers;
+stringType: TK_PR_STRING identifiers;
+
 identifiers: singleIdentifier | listOfIdentifiers ;
 singleIdentifier: valueOrArray ;
 listOfIdentifiers: valueOrArray ',' identifiers ;
+
 valueOrArray: value | array ;
 value: TK_IDENTIFICADOR;
 array: TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']';

@@ -86,7 +86,7 @@ testInvalidInput () {
 buildCompiler
 
 # declarations
-for type in "int" "char"
+for type in "int" "char" "float" "bool" "string"
 do
     testValidInput "$type v1;"
     testInvalidInput "$type;"
