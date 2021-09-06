@@ -77,7 +77,7 @@ array: TK_IDENTIFICADOR '[' TK_LIT_ARRAY_SIZE ']';
 
 
 
-functionDeclaration: staticFunctionDeclaration ';' | nonStaticFunctionDeclaration ';' ;
+functionDeclaration: staticFunctionDeclaration | nonStaticFunctionDeclaration ;
 staticFunctionDeclaration: TK_PR_STATIC returnType;
 nonStaticFunctionDeclaration: returnType;
 
@@ -88,11 +88,11 @@ floatFnType: TK_PR_FLOAT functionIdentifier;
 boolFnType: TK_PR_BOOL functionIdentifier;
 stringFnType: TK_PR_STRING functionIdentifier;
 
-functionIdentifier: TK_IDENTIFICADOR argumentsAndBody ;
+functionIdentifier: TK_IDENTIFICADOR argumentsAndBody commandBlock;
 
 argumentsAndBody: functionWithNoArguments | functionWithArguments;
-functionWithNoArguments : '(' ')' '{' '}' ;
-functionWithArguments : '(' arguments ')' '{' '}' ;
+functionWithNoArguments : '(' ')' ;
+functionWithArguments : '(' arguments ')'  ;
 
 arguments: singleArgument | listOfArguments ;
 singleArgument: argumentTypes TK_IDENTIFICADOR ;
@@ -101,6 +101,16 @@ listOfArguments: singleArgument ',' arguments ;
 argumentTypes: constTypes | basicTypes;
 constTypes: TK_PR_CONST basicTypes ;
 basicTypes: TK_PR_CHAR | TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_STRING ;
+
+commandBlock: emptyCommandBlock | notEmptyCommandBlock ;
+emptyCommandBlock: '{' '}' ;
+notEmptyCommandBlock: '{' commands '}' ;
+
+commands: simpleCommand | listOfSimpleCommands;
+simpleCommand: mayStaticMayConst TK_IDENTIFICADOR ';' ;
+listOfSimpleCommands: simpleCommand | commands;
+
+mayStaticMayConst: argumentTypes | TK_PR_STATIC argumentTypes;
 
 %%
 

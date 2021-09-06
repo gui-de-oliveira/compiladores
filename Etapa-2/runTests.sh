@@ -121,12 +121,28 @@ testInvalidInput "int functionName(,int a) { }"
 
 for static in "static" " "
 do
-for basicType in "int" "char" "float" "bool" "string"
+    for basicType in "int" "char" "float" "bool" "string"
+    do
+        testValidInput "$static $basicType functionName() { }"
+        testValidInput "$static $basicType functionName($basicType a) { }"
+    done
+done
+
+# Command block / commands
+
+testValidInput "int f() { int id; }"
+
+for const in "const" " "
 do
-    testValidInput "$static $basicType functionName() { }"
-    testValidInput "$static $basicType functionName($basicType a) { }"
+    for static in "static" " "
+    do
+        for basicType in "int" "char" "float" "bool" "string"
+        do
+            testValidInput "int f() { $static $const $basicType id; }"
+        done
+    done
 done
-done
+
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
