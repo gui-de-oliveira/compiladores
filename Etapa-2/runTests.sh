@@ -156,7 +156,6 @@ testValidInput "int f() { char id1 <= 'c'; }"
 testValidInput "int f() { string id1 <= \"c\"; }"
 testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
-#TODO: testInvalidInput "int f() { int id1 <= false; }"
 
 # Comando de Atribuição
 
@@ -334,11 +333,6 @@ testValidInput "int f() { 1 + &id; }"
 testValidInput "int f() { 1 + \*id; }"
 testValidInput "int f() { 1 + #id; }"
 testValidInput "int f() { 1 + \*&\*&id; }"
-
-# TODO:
-# testInvalidInput  "int f() { 1 + &1; }"
-# testInvalidInput  "int f() { 1 + \*1; }"
-# testInvalidInput  "int f() { 1 + #1; }"
 
 # • Binários
 #   – + soma
