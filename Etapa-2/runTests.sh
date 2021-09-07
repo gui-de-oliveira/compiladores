@@ -154,6 +154,8 @@ testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
 #TODO: testInvalidInput "int f() { int id1 <= false; }"
 
+testValidInput "int f() { id1 = id2; }"
+
 for literalValue in ${literalValues[@]}; do
     testValidInput "int f() { id = $literalValue; }"
 done
@@ -309,7 +311,6 @@ testValidInput "int f() { 1 + \*&\*&id; }"
 #   – ˆ exponenciação
 #   – todos os comparadores relacionais
 #   – todos os operadores logicos ( && para o e lógico, || para o ou lógico) 
-
 
 argBinaryOperator=("+" "-" "\*" "/" "%" "|" "&" "^" "!=" "==" "<=" ">=" "&&" "||")
 for expressionArg in ${expressionArgs[@]}; do

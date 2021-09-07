@@ -53,175 +53,79 @@
 %token TK_IDENTIFICADOR
 %token TOKEN_ERRO
 
-%right ')' ';'
+%nonassoc '(' ')' ';' 
 
 %%
 
-initialSymbol: 
-    startCapturingGlobalVariableDeclaration |
-    startFunctionDeclaration;
 
-startCapturingGlobalVariableDeclaration: captureOptionalStaticGVB;
-captureOptionalStaticGVB: captureTypeGVB | TK_PR_STATIC captureTypeGVB ;
-captureTypeGVB: TK_PR_CHAR startCapturingIdGVB | TK_PR_INT startCapturingIdGVB | TK_PR_FLOAT startCapturingIdGVB | TK_PR_BOOL startCapturingIdGVB | TK_PR_STRING startCapturingIdGVB
+initialSymbol: ';' | declaration initialSymbol;
 
-startCapturingIdGVB: TK_IDENTIFICADOR captureArrayStartOrNextIdGVB ;
-captureArrayStartOrNextIdGVB: '[' captureArrayGVB | captureNextIdOrEnd ;
-captureArrayGVB: TK_LIT_INT ']' captureNextIdOrEnd;
-captureNextIdOrEnd: ',' startCapturingIdGVB | endGVB;
-endGVB: ';' ;
+declaration: globalVariableDeclarationOrFunctionDeclaration | expression ';';
 
-startFunctionDeclaration: captureOptionalStaticFD ;
-captureOptionalStaticFD: captureReturnTypeFD | TK_PR_STATIC captureReturnTypeFD
+globalVariableDeclarationOrFunctionDeclaration: static type TK_IDENTIFICADOR solve;
+type: TK_PR_INT | TK_PR_FLOAT | TK_PR_BOOL | TK_PR_CHAR | TK_PR_STRING ;
+static: %empty | TK_PR_STATIC;
 
-captureReturnTypeFD:
-    TK_PR_CHAR captureIdentifierFD |
-    TK_PR_INT captureIdentifierFD |
-    TK_PR_FLOAT captureIdentifierFD |
-    TK_PR_BOOL captureIdentifierFD |
-    TK_PR_STRING captureIdentifierFD ;
+solve:
+    globalVariableDeclaration |
+    functionDeclaration ;
 
-captureIdentifierFD: TK_IDENTIFICADOR '(' tryCaptureArgFD;
+globalVariableDeclaration: headerArray ';' | headerArray ',' outroIdentificador ';';
+outroIdentificador: TK_IDENTIFICADOR headerArray | TK_IDENTIFICADOR headerArray ',' outroIdentificador;
+headerArray: %empty | '[' TK_LIT_INT ']'; 
 
-tryCaptureArgFD: ')' startCapturingCommandBlock | startCapturingArgFD;
+functionDeclaration: '(' listOfParameters ')' '{' listOfCommandLines '}' ;
+listOfParameters: %empty | parameter ;
+parameter: const type TK_IDENTIFICADOR | const type TK_IDENTIFICADOR ',' parameter ;
+const: %empty | TK_PR_CONST;
 
-startCapturingArgFD: tryCaptureArgStaticFD;
-tryCaptureArgStaticFD: TK_PR_STATIC tryCaptureArgConstFD | tryCaptureArgConstFD;
-tryCaptureArgConstFD: TK_PR_CONST captureArgTypeFD | captureArgTypeFD;
-captureArgTypeFD: 
-    TK_PR_CHAR captureArgIdFD |
-     TK_PR_INT captureArgIdFD |
-     TK_PR_FLOAT captureArgIdFD |
-     TK_PR_BOOL captureArgIdFD |
-     TK_PR_STRING captureArgIdFD ;
+listOfCommandLines:  %empty | commandLine listOfCommandLines;
 
-captureArgIdFD: TK_IDENTIFICADOR tryCaptureNextArgFD;
-tryCaptureNextArgFD: ',' startCapturingArgFD | ')' startCapturingCommandBlock
-
-startCapturingCommandBlock: '{' tryCaptureCommandLine;
-
-tryCaptureCommandLine: '}' | startCapturingCommandLine;
-
-startCapturingCommandLine: 
-    startCapturingVariableDeclaration |
-    startCapturingVariableAssignment |
-    startCaptureOutput |
-    captureInput |
-    startCapturingFunctionCall |
-    startCapturingShift |
-    TK_PR_BREAK ';' tryCaptureCommandLine |
-    TK_PR_CONTINUE ';' tryCaptureCommandLine |
-    startCapturingExpression
+commandLine: 
+      localDeclaration 
+    | variableAssignOrExpression ';'
+    | TK_PR_INPUT TK_IDENTIFICADOR ';';
+    | TK_PR_OUTPUT anyValue ';'
+    | TK_PR_BREAK ';'
+    | TK_PR_CONTINUE ';'
     ;
 
-startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
-tryCaptureArgStaticVD: tryCaptureArgConstVD | TK_PR_STATIC tryCaptureArgConstVD ;
-tryCaptureArgConstVD: captureArgTypeVD | TK_PR_CONST captureArgTypeVD ;
-captureArgTypeVD: 
-    TK_PR_INT startCapturingIdentifierVD |
-    TK_PR_FLOAT startCapturingIdentifierVD |
-    TK_PR_BOOL startCapturingIdentifierVD |
-    TK_PR_CHAR startCapturingIdentifierVD |
-    TK_PR_STRING startCapturingIdentifierVD ;
+localDeclaration: static const type localIdentifiers ';';
+localIdentifiers: TK_IDENTIFICADOR valueInitialization | TK_IDENTIFICADOR valueInitialization ',' localIdentifiers;
+valueInitialization: %empty | TK_OC_LE initialValue;
+initialValue: TK_IDENTIFICADOR | literalValue;
+literalValue: TK_LIT_INT | TK_LIT_FLOAT | TK_LIT_FALSE | TK_LIT_TRUE | TK_LIT_CHAR | TK_LIT_STRING;
 
-startCapturingIdentifierVD: TK_IDENTIFICADOR tryCapturingInitializationVD ;
-tryCapturingInitializationVD: TK_OC_LE startCaptureInitializationVD | tryCapturingNextIdentifierVD;
-startCaptureInitializationVD: TK_IDENTIFICADOR tryCapturingNextIdentifierVD | captureLiteralInitializationValueVD;
-captureLiteralInitializationValueVD: 
-    TK_LIT_INT tryCapturingNextIdentifierVD |
-    TK_LIT_FLOAT tryCapturingNextIdentifierVD |
-    TK_LIT_FALSE tryCapturingNextIdentifierVD |
-    TK_LIT_TRUE tryCapturingNextIdentifierVD |
-    TK_LIT_CHAR tryCapturingNextIdentifierVD |
-    TK_LIT_STRING tryCapturingNextIdentifierVD ;
+anyValue: TK_IDENTIFICADOR arraySelect | literalValue;
+arraySelect: %empty | '[' TK_LIT_INT ']'; 
 
-tryCapturingNextIdentifierVD: ',' startCapturingIdentifierVD | genericEndCommandLine
+variableAssignOrExpression: 
+        TK_IDENTIFICADOR headerArray handle
+    |   unaryOperator expression
+    |   operadorLiteral tryOperator
+    |   operadorFuncao tryOperator;
 
-startCapturingVariableAssignment: TK_IDENTIFICADOR tryCaptureArrayVA;
-tryCaptureArrayVA: '[' TK_LIT_INT ']' '=' captureGenericValue | '=' captureGenericValue;
+handle:
+        '=' anyValue
+    |   TK_OC_SL TK_LIT_INT
+    |   TK_OC_SR TK_LIT_INT
+    |   tryOperator ;
 
-captureInput: TK_PR_INPUT TK_IDENTIFICADOR ';' tryCaptureCommandLine ;
+expression: listOfUnaryOperators anyOperador tryOperator;
 
-startCaptureOutput: TK_PR_OUTPUT captureGenericValue ;
+operadorFuncao: TK_IDENTIFICADOR '(' listOfFnArgs ')';
+listOfFnArgs: %empty | fnArg;
+fnArg: anyFnArg | anyFnArg ',' fnArg;
 
-startCapturingFunctionCall: TK_IDENTIFICADOR '(' tryCapturingArgFC
-tryCapturingArgFC: endFunctionCallCapture | captureArgIdentifier;
-captureArgIdentifier: captureLiteralArgFC | TK_IDENTIFICADOR tryCapturingNextArgFC ;
-captureLiteralArgFC:  
-    TK_LIT_INT tryCapturingNextArgFC |
-    TK_LIT_FLOAT tryCapturingNextArgFC |
-    TK_LIT_FALSE tryCapturingNextArgFC |
-    TK_LIT_TRUE tryCapturingNextArgFC |
-    TK_LIT_CHAR tryCapturingNextArgFC |
-    TK_LIT_STRING tryCapturingNextArgFC ;
+anyOperador: TK_LIT_INT | TK_LIT_FLOAT | TK_IDENTIFICADOR | TK_IDENTIFICADOR '[' expression ']' | operadorFuncao ;
+operadorLiteral: TK_LIT_INT | TK_LIT_FLOAT;
+anyFnArg: anyOperador | TK_LIT_STRING | TK_LIT_CHAR | TK_LIT_TRUE | TK_LIT_FALSE;
 
-tryCapturingNextArgFC: ',' captureArgIdentifier | endFunctionCallCapture ;
-endFunctionCallCapture: ')' genericEndCommandLine ;
+listOfUnaryOperators: %empty | unaryOperator listOfUnaryOperators;
+unaryOperator: '+' | '-' | '!' | '?' | '&' | '*' | '#' ;
 
-startCapturingShift: TK_IDENTIFICADOR tryCaptureArrayShift;
-tryCaptureArrayShift: '[' TK_LIT_INT ']' captureShiftSymbol | captureShiftSymbol;
-captureShiftSymbol: TK_OC_SR captureShiftValue | TK_OC_SL captureShiftValue;
-captureShiftValue: TK_LIT_INT genericEndCommandLine;
-
-startCapturingExpression: tryCaptureUnaryOperator;
-
-tryCaptureUnaryOperator:
-    '+' tryCaptureUnaryOperator |
-    '-' tryCaptureUnaryOperator |
-    '!' tryCaptureUnaryOperator |
-    '?' tryCaptureUnaryOperator |
-    '&' tryCaptureUnaryOperator |
-    '*' tryCaptureUnaryOperator |
-    '#' tryCaptureUnaryOperator |
-    captureArgOperator;
-
-captureArgOperator: captureLiteralArgOperator | TK_IDENTIFICADOR tryCaptureArray  ;
-
-tryCaptureArray: 
-    '[' TK_LIT_INT ']' tryCaptureOperatorEXP |
-    '(' startCapturingArgsF  tryCaptureOperatorEXP |
-    tryCaptureOperatorEXP ;
-
-startCapturingArgsF: 
-    TK_IDENTIFICADOR tryCatchingNextArgumentF |
-    TK_LIT_FLOAT tryCatchingNextArgumentF |
-    TK_LIT_INT tryCatchingNextArgumentF |
-    stopCapturingArguments ;
-    
-tryCatchingNextArgumentF: ',' startCapturingArgsF | stopCapturingArguments;
-stopCapturingArguments: ')'
-
-captureLiteralArgOperator: 
-    TK_LIT_INT tryCaptureOperatorEXP |
-    TK_LIT_FLOAT tryCaptureOperatorEXP ;
-
-tryCaptureOperatorEXP: 
-    '+' tryCaptureUnaryOperator |
-    '-' tryCaptureUnaryOperator |
-    '*' tryCaptureUnaryOperator |
-    '/' tryCaptureUnaryOperator |
-    '%' tryCaptureUnaryOperator |
-    '|' tryCaptureUnaryOperator |
-    '&' tryCaptureUnaryOperator |
-    '^' tryCaptureUnaryOperator |
-    TK_OC_NE tryCaptureUnaryOperator |
-    TK_OC_EQ tryCaptureUnaryOperator |
-    TK_OC_LE tryCaptureUnaryOperator |
-    TK_OC_GE tryCaptureUnaryOperator |
-    TK_OC_AND tryCaptureUnaryOperator |
-    TK_OC_OR tryCaptureUnaryOperator |
-    genericEndCommandLine ;
-
-captureGenericValue: TK_IDENTIFICADOR genericEndCommandLine | captureGenericLiteralValue ;
-captureGenericLiteralValue: 
-    TK_LIT_INT genericEndCommandLine |
-    TK_LIT_FLOAT genericEndCommandLine |
-    TK_LIT_FALSE genericEndCommandLine |
-    TK_LIT_TRUE genericEndCommandLine |
-    TK_LIT_CHAR genericEndCommandLine |
-    TK_LIT_STRING genericEndCommandLine ;
-
-genericEndCommandLine: ';' tryCaptureCommandLine ;
+tryOperator: %empty | binaryOperator expression;
+binaryOperator: '+' | '-' | '*' | '/' | '%' | '|' | '&' | '^' | TK_OC_NE | TK_OC_EQ | TK_OC_LE | TK_OC_GE | TK_OC_AND | TK_OC_OR ;
 
 %%
 
