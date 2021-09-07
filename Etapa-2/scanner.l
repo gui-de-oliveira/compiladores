@@ -10,6 +10,7 @@
 
 	// Variable definition
 	int line_number = 1;
+	int state_before_comment;
 %}
 
 pattern_line_comment "//".*
@@ -31,6 +32,7 @@ pattern_string \"(\\.|[^"\n])*\"
 /* " <-- This messes up the editor color coding */
 
 %x MULTILINE_COMMENT
+%x POTENTIAL_SUM
 
 %%
 
@@ -38,7 +40,10 @@ pattern_string \"(\\.|[^"\n])*\"
 	/* Discards anything between // and \n */
 };
 
-"/*" BEGIN(MULTILINE_COMMENT);
+"/*" {
+	state_before_comment = YY_START;
+	BEGIN(MULTILINE_COMMENT);
+}
 
 "int" return TK_PR_INT;
 "float" return TK_PR_FLOAT;
@@ -83,10 +88,31 @@ pattern_string \"(\\.|[^"\n])*\"
 ">>" return TK_OC_SL;
 "<<" return TK_OC_SR;
 
-{pattern_identifier} return TK_IDENTIFICADOR;
+{pattern_identifier} {
+	BEGIN(POTENTIAL_SUM);
+	return TK_IDENTIFICADOR;
+}
+{pattern_signed_int} {
+	BEGIN(POTENTIAL_SUM);
+	return TK_LIT_INT;
+}
+{pattern_float} {
+	BEGIN(POTENTIAL_SUM);
+	return TK_LIT_FLOAT;
+}
 
-{pattern_signed_int} return TK_LIT_INT;
-{pattern_float} return TK_LIT_FLOAT;
+<POTENTIAL_SUM>[+\-]/({pattern_signed_int}|{pattern_float}) {
+	/* + or - followed by int, float or variable and preceded by int, float or variable:
+	unary or binary operators, not part of the next int or float */
+	BEGIN(INITIAL);
+	return get_ascii_value();
+}
+<POTENTIAL_SUM>[^+\-] {
+	/* If it didn't find something suitable to sum-up with, then re-scan and continue as normal. */
+	BEGIN(INITIAL);
+	yyless(0);
+}
+
 {pattern_char} return TK_LIT_CHAR;
 {pattern_string} return TK_LIT_STRING;
 
@@ -100,7 +126,7 @@ pattern_string \"(\\.|[^"\n])*\"
 
 <MULTILINE_COMMENT>"*/" {
 	/* End the multi-line comment. Takes precedence to former two due to match length (two chars vs one). */
-	BEGIN(INITIAL);
+	BEGIN(state_before_comment);
 }
 
 [[:blank:]] {
