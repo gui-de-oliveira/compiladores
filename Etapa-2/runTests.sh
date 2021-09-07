@@ -176,6 +176,22 @@ for literalValue in ${literalValues[@]}; do
     testValidInput "int f() { output $literalValue; }"
 done
 
+# Chamada de função
+# Uma chamada de funcão consiste no nome da função, seguida de argumentos entre parenteses separados por vírgula. [...]
+
+testValidInput "int f() { funcName(); }"
+testValidInput "int f() { funcName(id1); }"
+testValidInput "int f() { funcName(id1, id2, id3); }"
+
+for literalValue in ${literalValues[@]}; do
+    testValidInput "int f() { funcName($literalValue); }"
+done
+
+testValidInput "int f() { funcName(1, 'z', 5.0); }"
+
+# Um argumento pode ser uma expressao. 
+#TODO: testValidInput "int f() { funcName(<expressao>); }"
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"

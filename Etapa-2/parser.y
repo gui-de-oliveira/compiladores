@@ -102,7 +102,8 @@ startCapturingCommandLine:
     startCapturingVariableDeclaration |
     startCapturingVariableAssignment |
     startCaptureOutput |
-    captureInput ;
+    captureInput |
+    startCapturingFunctionCall ;
 
 startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
 tryCaptureArgStaticVD: tryCaptureArgConstVD | TK_PR_STATIC tryCaptureArgConstVD ;
@@ -133,6 +134,20 @@ tryCaptureArrayVA: '[' TK_LIT_INT ']' '=' captureGenericValue | '=' captureGener
 captureInput: TK_PR_INPUT TK_IDENTIFICADOR ';' tryCaptureCommandLine ;
 
 startCaptureOutput: TK_PR_OUTPUT captureGenericValue ;
+
+startCapturingFunctionCall: TK_IDENTIFICADOR '(' tryCapturingArgFC
+tryCapturingArgFC: endFunctionCallCapture | captureArgIdentifier;
+captureArgIdentifier: captureLiteralArgFC | TK_IDENTIFICADOR tryCapturingNextArgFC ;
+captureLiteralArgFC:  
+    TK_LIT_INT tryCapturingNextArgFC |
+    TK_LIT_FLOAT tryCapturingNextArgFC |
+    TK_LIT_FALSE tryCapturingNextArgFC |
+    TK_LIT_TRUE tryCapturingNextArgFC |
+    TK_LIT_CHAR tryCapturingNextArgFC |
+    TK_LIT_STRING tryCapturingNextArgFC ;
+
+tryCapturingNextArgFC: ',' captureArgIdentifier | endFunctionCallCapture ;
+endFunctionCallCapture: ')' genericEndCommandLine ;
 
 captureGenericValue: TK_IDENTIFICADOR genericEndCommandLine | captureGenericLiteralValue ;
 captureGenericLiteralValue: 
