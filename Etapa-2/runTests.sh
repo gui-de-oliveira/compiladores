@@ -192,7 +192,7 @@ done
 testValidInput "int f() { funcName(1, 'z', 5.0); }"
 
 # Um argumento pode ser uma expressao. 
-#TODO: testValidInput "int f() { funcName(<expressao>); }"
+testValidInput "int f() { funcName(1 + 1 + 1); }"
 
 # Comandos de Shift
 
