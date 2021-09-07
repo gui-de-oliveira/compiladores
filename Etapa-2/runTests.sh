@@ -246,6 +246,9 @@ testValidInput "int f() { if (1 + 1) { id = 1; } else { id = 2; } }"
 # for (atrib: <expressão>: <atrib>) bloco
 # while (<expressão>) do bloco
 
+testValidInput "int f() { while (1 + 1) do { } }"
+testValidInput "int f() { while (1 + 1) do { id = 1; } }"
+
 # Os dois marcadores atrib do comando for representa
 # o comando de atribuição, unico aceito nestas posições. 
 # Em todas as construções de controle de fluxo, o termo bloco
