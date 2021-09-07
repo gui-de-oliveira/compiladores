@@ -70,6 +70,7 @@ runTestScript () {
     else
         echo "TEST FAILED!"
         ((failedTestsCounter++))
+        exit
     fi
     
     echo ""
@@ -85,9 +86,11 @@ testInvalidInput () {
 
 buildCompiler
 
+basicTypes=("int" "char" "float" "bool" "string")
+literalValues=("1" "'c'" "1.0" "true" "false" "\"string\"")
+
 # global variable declarations
-for type in "int" "char" "float" "bool" "string"
-do
+for type in ${basicTypes[@]}; do
     testValidInput "$type v1;"
     testInvalidInput "$type;"
 
@@ -119,25 +122,19 @@ testInvalidInput "int functionName(int a[5]) { }"
 testInvalidInput "int functionName(int a,) { }"
 testInvalidInput "int functionName(,int a) { }"
 
-for static in "static" " "
-do
-    for basicType in "int" "char" "float" "bool" "string"
-    do
-        testValidInput "$static $basicType functionName() { }"
-        testValidInput "$static $basicType functionName($basicType a) { }"
-    done
+for basicType in ${basicTypes[@]}; do
+    testValidInput "$basicType functionName() { }"
+    testValidInput "$basicType functionName($basicType a) { }"
+    testValidInput "static $basicType functionName() { }"
+    testValidInput "static $basicType functionName($basicType a) { }"
 done
 
 # Command block / commands
-for const in "const" " "
-do
-    for static in "static" " "
-    do
-        for basicType in "int" "char" "float" "bool" "string"
-        do
-            testValidInput "int f() { $static $const $basicType id; }"
-        done
-    done
+for basicType in ${basicTypes[@]}; do
+    testValidInput "int f() { $basicType id; }"
+    testValidInput "int f() { static $basicType id; }"
+    testValidInput "int f() { const $basicType id; }"
+    testValidInput "int f() { static const $basicType id; }"
 done
 
 testValidInput "int f() { int id; }"
@@ -157,20 +154,14 @@ testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
 #TODO: testInvalidInput "int f() { int id1 <= false; }"
 
-testValidInput "int f() { id = true; }"
-testValidInput "int f() { id1 = 1; }"
-testValidInput "int f() { id1 = 1.0; }"
-testValidInput "int f() { id1 = 'c'; }"
-testValidInput "int f() { id1 = \"string\"; }"
-testValidInput "int f() { id1 = id2; }"
+for literalValue in ${literalValues[@]}; do
+    testValidInput "int f() { id = $literalValue; }"
+done
 #TODO: "int f() { id1 = <expressão>; }"
 
-testValidInput "int f() { id[1] = true; }"
-testValidInput "int f() { id[1] = 1; }"
-testValidInput "int f() { id1[1] = 1.0; }"
-testValidInput "int f() { id1[1] = 'c'; }"
-testValidInput "int f() { id1[1] = \"string\"; }"
-testValidInput "int f() { id1[1] = id2; }"
+for literalValue in ${literalValues[@]}; do
+    testValidInput "int f() { id[1] = $literalValue; }"
+done
 #TODO: "int f() { id1[<expressão>] = true; }"
 
 testValidInput "int f() { int id1 <= id2; int id1 <= id2; }"
