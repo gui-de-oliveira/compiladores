@@ -169,6 +169,13 @@ testValidInput "int f() { id = true; id = true; }"
 testValidInput "int f() { id = true; int id1 <= id2; }"
 testValidInput "int f() { int id1 <= id2; id = true; }"
 
+testValidInput "int f() { input id1; }"
+testValidInput "int f() { output id1; }"
+
+for literalValue in ${literalValues[@]}; do
+    testValidInput "int f() { output $literalValue; }"
+done
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"

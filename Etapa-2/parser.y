@@ -53,7 +53,9 @@
 
 %%
 
-initialSymbol: startCapturingGlobalVariableDeclaration | startFunctionDeclaration;
+initialSymbol: 
+    startCapturingGlobalVariableDeclaration |
+    startFunctionDeclaration;
 
 startCapturingGlobalVariableDeclaration: captureOptionalStaticGVB;
 captureOptionalStaticGVB: captureTypeGVB | TK_PR_STATIC captureTypeGVB ;
@@ -96,7 +98,11 @@ startCapturingCommandBlock: '{' tryCaptureCommandLine;
 
 tryCaptureCommandLine: '}' | startCapturingCommandLine;
 
-startCapturingCommandLine: startCapturingVariableDeclaration | startCapturingVariableAssignment;
+startCapturingCommandLine: 
+    startCapturingVariableDeclaration |
+    startCapturingVariableAssignment |
+    startCaptureOutput |
+    captureInput ;
 
 startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
 tryCaptureArgStaticVD: tryCaptureArgConstVD | TK_PR_STATIC tryCaptureArgConstVD ;
@@ -119,20 +125,25 @@ captureLiteralInitializationValueVD:
     TK_LIT_CHAR tryCapturingNextIdentifierVD |
     TK_LIT_STRING tryCapturingNextIdentifierVD ;
 
-tryCapturingNextIdentifierVD: ',' startCapturingIdentifierVD | ';' tryCaptureCommandLine
+tryCapturingNextIdentifierVD: ',' startCapturingIdentifierVD | genericEndCommandLine
 
 startCapturingVariableAssignment: TK_IDENTIFICADOR tryCaptureArrayVA;
-tryCaptureArrayVA: '[' TK_LIT_INT ']' '=' captureValueVA | '=' captureValueVA;
-captureValueVA: TK_IDENTIFICADOR endCapturingVA | captureLiteralValueVA;
-captureLiteralValueVA: 
-    TK_LIT_INT endCapturingVA |
-    TK_LIT_FLOAT endCapturingVA |
-    TK_LIT_FALSE endCapturingVA |
-    TK_LIT_TRUE endCapturingVA |
-    TK_LIT_CHAR endCapturingVA |
-    TK_LIT_STRING endCapturingVA ;
+tryCaptureArrayVA: '[' TK_LIT_INT ']' '=' captureGenericValue | '=' captureGenericValue;
 
-endCapturingVA: ';' tryCaptureCommandLine
+captureInput: TK_PR_INPUT TK_IDENTIFICADOR ';' tryCaptureCommandLine ;
+
+startCaptureOutput: TK_PR_OUTPUT captureGenericValue ;
+
+captureGenericValue: TK_IDENTIFICADOR genericEndCommandLine | captureGenericLiteralValue ;
+captureGenericLiteralValue: 
+    TK_LIT_INT genericEndCommandLine |
+    TK_LIT_FLOAT genericEndCommandLine |
+    TK_LIT_FALSE genericEndCommandLine |
+    TK_LIT_TRUE genericEndCommandLine |
+    TK_LIT_CHAR genericEndCommandLine |
+    TK_LIT_STRING genericEndCommandLine ;
+
+genericEndCommandLine: ';' tryCaptureCommandLine ;
 
 %%
 
