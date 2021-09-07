@@ -1,6 +1,8 @@
 %{
     #include <stdio.h>
 
+	int get_line_number();
+
     int yylex(void);
     void yyerror (char const *s);
 %}
@@ -224,5 +226,5 @@ genericEndCommandLine: ';' tryCaptureCommandLine ;
 %%
 
 void yyerror(char const *s) {
-    printf("%s\n", s);
+    printf("%s na linha %d\n", s, get_line_number());
 }

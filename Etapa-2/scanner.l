@@ -110,11 +110,6 @@ pattern_string \"(\\.|[^"\n])*\"
 %%
 
 int get_ascii_value() {
-    //  // Pierre's sanity check
-	//  if(yyleng != 1) {
-	//      printf("get_ascii_value() called for invalid token: %s\n", yytext);
-	//      return 0;
-	//  };
 	return yytext[0];
 }
 
