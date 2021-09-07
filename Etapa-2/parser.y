@@ -48,13 +48,12 @@
 %token TK_LIT_TRUE
 %token TK_LIT_CHAR
 %token TK_LIT_STRING
-%token TK_LIT_ARRAY_SIZE
 %token TK_IDENTIFICADOR
 %token TOKEN_ERRO
 
 %%
 
-initialSymbol: startCapturingGlobalVariableDeclaration | startFunctionDeclaration ;
+initialSymbol: startCapturingGlobalVariableDeclaration | startFunctionDeclaration;
 
 startCapturingGlobalVariableDeclaration: captureOptionalStaticGVB;
 captureOptionalStaticGVB: captureTypeGVB | TK_PR_STATIC captureTypeGVB ;
@@ -62,7 +61,7 @@ captureTypeGVB: TK_PR_CHAR startCapturingIdGVB | TK_PR_INT startCapturingIdGVB |
 
 startCapturingIdGVB: TK_IDENTIFICADOR captureArrayStartOrNextIdGVB ;
 captureArrayStartOrNextIdGVB: '[' captureArrayGVB | captureNextIdOrEnd ;
-captureArrayGVB: TK_LIT_ARRAY_SIZE ']' captureNextIdOrEnd;
+captureArrayGVB: TK_LIT_INT ']' captureNextIdOrEnd;
 captureNextIdOrEnd: ',' startCapturingIdGVB | endGVB;
 endGVB: ';' ;
 
@@ -122,7 +121,8 @@ captureLiteralInitializationValueVD:
 
 tryCapturingNextIdentifierVD: ',' startCapturingIdentifierVD | ';' tryCaptureCommandLine
 
-startCapturingVariableAssignment: TK_IDENTIFICADOR '=' captureValueVA;
+startCapturingVariableAssignment: TK_IDENTIFICADOR tryCaptureArrayVA;
+tryCaptureArrayVA: '[' TK_LIT_INT ']' '=' captureValueVA | '=' captureValueVA;
 captureValueVA: TK_IDENTIFICADOR endCapturingVA | captureLiteralValueVA;
 captureLiteralValueVA: 
     TK_LIT_INT endCapturingVA |

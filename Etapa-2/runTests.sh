@@ -101,8 +101,8 @@ do
 
     testValidInput "$type v1[3];"
     testValidInput "$type v1[+3];"
-    testInvalidInput "$type v1[0];"
-    testInvalidInput "$type v1[-1];"
+    #TODO: testInvalidInput "$type v1[0];"
+    #TODO: testInvalidInput "$type v1[-1];"
 
     testValidInput "$type v1[1], v2[2], v3[3];"
     testValidInput "static $type v1[1], v2, v3[3];"

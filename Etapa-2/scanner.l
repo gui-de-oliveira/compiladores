@@ -22,8 +22,6 @@ pattern_signed_int [+-]?{pattern_integer}
 pattern_exponent [eE]{pattern_signed_int}
 pattern_float {pattern_signed_int}\.{pattern_integer}{pattern_exponent}?
 
-pattern_array_size [+]?[0]*[1-9][0-9]*
-
 pattern_char '.'
 pattern_string \"(\\.|[^"\n])*\"
 /* " <-- This messes up the editor color coding */
@@ -83,7 +81,6 @@ pattern_string \"(\\.|[^"\n])*\"
 
 {pattern_identifier} return TK_IDENTIFICADOR;
 
-{pattern_array_size} return TK_LIT_ARRAY_SIZE;
 {pattern_signed_int} return TK_LIT_INT;
 {pattern_float} return TK_LIT_FLOAT;
 {pattern_char} return TK_LIT_CHAR;
