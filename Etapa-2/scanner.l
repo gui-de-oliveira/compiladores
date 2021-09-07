@@ -1,4 +1,8 @@
 %{
+	// Turma L
+	// Guilherme de Oliveira (00278301)
+	// Jean Pierre Comerlatto Darricarrere (00182408)
+
 	#include "parser.tab.h" 
 
 	// Function prototype

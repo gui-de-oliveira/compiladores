@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Turma L
+# Guilherme de Oliveira (00278301)
+# Jean Pierre Comerlatto Darricarrere (00182408)
+
 testCounter=0
 successfulTestsCounter=0
 failedTestsCounter=0

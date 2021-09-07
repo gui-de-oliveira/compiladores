@@ -1,4 +1,8 @@
 %{
+    // Turma L
+    // Guilherme de Oliveira (00278301)
+    // Jean Pierre Comerlatto Darricarrere (00182408)
+
     #include <stdio.h>
 
 	int get_line_number();
