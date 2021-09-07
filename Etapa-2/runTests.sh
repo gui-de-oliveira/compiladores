@@ -154,22 +154,32 @@ testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
 #TODO: testInvalidInput "int f() { int id1 <= false; }"
 
-testValidInput "int f() { id1 = id2; }"
+# Comando de Atribuição
 
-for literalValue in ${literalValues[@]}; do
-    testValidInput "int f() { id = $literalValue; }"
-done
-#TODO: "int f() { id1 = <expressão>; }"
+# Existe apenas uma forma de atribuição para identificadores.
+# Identificadores podem receber valores assim
+# (primeiro caso de um identificador simples; segundo caso de um identificador que e um vetor):
+# identificador = expressão
+# identificador[expressão] = expressão
 
-for literalValue in ${literalValues[@]}; do
-    testValidInput "int f() { id[1] = $literalValue; }"
+expressionExamples=("id" "1" "1.0" "f()" "1+id" "id1==id2")
+
+for expressionExample in ${expressionExamples[@]}; do
+    testValidInput "int f() { id = $expressionExample; }"
 done
-#TODO: "int f() { id1[<expressão>] = true; }"
+
+for expressionExample in ${expressionExamples[@]}; do
+    testValidInput "int f() { id[1] = $expressionExample; }"
+done
+
+for expressionExample in ${expressionExamples[@]}; do
+    testValidInput "int f() { id[$expressionExample] = 1; }"
+done
 
 testValidInput "int f() { int id1 <= id2; int id1 <= id2; }"
-testValidInput "int f() { id = true; id = true; }"
-testValidInput "int f() { id = true; int id1 <= id2; }"
-testValidInput "int f() { int id1 <= id2; id = true; }"
+testValidInput "int f() { id = 1; id = 3; }"
+testValidInput "int f() { id = 2; int id1 <= 4; }"
+testValidInput "int f() { int id1 <= id2; id = 7; }"
 
 testValidInput "int f() { input id1; }"
 testValidInput "int f() { output id1; }"
@@ -259,7 +269,11 @@ testValidInput "int f() { while (1 + 1) do { id = 1; } }"
 # Em todas as construções de controle de fluxo, o termo bloco
 # indica um bloco de comandos. Este não tem ponto-e-vírgula nestas situações. 
 
-# ^----- needs <expressão> ....
+#TODO :
+# testValidInput "int f() { while (1 + 1) do { id = 1; }; }"
+# testValidInput "int f() { while (1 + 1) do { 
+#         id = 1; 
+#     } }"
 
 # Expr. Aritméticas, Lógicas
 
@@ -277,8 +291,16 @@ expressionArgs=("1" "1.0" "id" "id[1]" "func()" "func(1)" "func(id)" "func(1,5)"
 # A associatividade é a esquerda.
 
 # Expressões lógicas podem ser formadas através dos operadores relacionais aplicados a expressões aritméticas,
+testValidInput "int f() { x = 1 + 1 == 2;}"
+
 # ou de operadores lógicos aplicados a expressões lógicas, recursivamente.
+testValidInput "int f() { x = 1 == 1 && 2 == 2;}"
+
 # Outras expressões podem ser formadas considerando variaveis lógicas do tipo bool.
+testValidInput "int f() { x = isOpen;}"
+testValidInput "int f() { x = isOpen != isClosed;}"
+testValidInput "int f() { x = isOpen == !isClosed;}"
+
 # A descrição sintática deve aceitar qualquer operadores e subexpressao de um desses
 # tipos como válidos, deixando para a análise semantica das proximas etapas do projeto
 # a tarefa de verificar a validade dos operandos e operadores.

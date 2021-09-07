@@ -112,7 +112,7 @@ variableAssignOrExpression:
     |   operadorLiteral tryOperator;
 
 handle:
-        '=' anyValue
+        '=' expression
     |   TK_OC_SL TK_LIT_INT
     |   TK_OC_SR TK_LIT_INT
     |   '(' listOfFnArgs ')' tryOperator
@@ -120,7 +120,7 @@ handle:
     |   tryOperator ;
 
 arrayHandle:
-    '=' anyValue
+    '=' expression
     |   TK_OC_SL TK_LIT_INT
     |   TK_OC_SR TK_LIT_INT
     |   tryOperator ;
