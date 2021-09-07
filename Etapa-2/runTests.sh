@@ -192,6 +192,32 @@ testValidInput "int f() { funcName(1, 'z', 5.0); }"
 # Um argumento pode ser uma expressao. 
 #TODO: testValidInput "int f() { funcName(<expressao>); }"
 
+# Comandos de Shift
+
+# Sendo numero um literal inteiro positivo, temos os exemplos válidos abaixo.
+# Os exemplos são dados com <<, mas as entradas são sintaticamente válidas tambem para >>.
+# O numero deve ser representado por um literal inteiro.
+# identificador << número
+# identificador[expressão] << número
+
+testValidInput "int f() { id << 1; }"
+testValidInput "int f() { id >> 1; }"
+testValidInput "int f() { id[1] << 1; }"
+testValidInput "int f() { id[1] >> 1; }"
+
+testValidInput "int f() { id << +1; }"
+testValidInput "int f() { id >> +1; }"
+testValidInput "int f() { id[1] << +1; }"
+testValidInput "int f() { id[1] >> +1; }"
+
+# TODO: Block negative values
+# testInvalidInput "int f() { id << -1; }"
+# testInvalidInput "int f() { id >> -1; }"
+# testInvalidInput "int f() { id[1] << -1; }"
+# testInvalidInput "int f() { id[1] >> -1; }"
+
+# TODO: testValidInput "int f() { id[<expressão>] << +1; }"
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"

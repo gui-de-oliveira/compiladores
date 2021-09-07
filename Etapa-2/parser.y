@@ -103,7 +103,8 @@ startCapturingCommandLine:
     startCapturingVariableAssignment |
     startCaptureOutput |
     captureInput |
-    startCapturingFunctionCall ;
+    startCapturingFunctionCall |
+    startCapturingShift ;
 
 startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
 tryCaptureArgStaticVD: tryCaptureArgConstVD | TK_PR_STATIC tryCaptureArgConstVD ;
@@ -148,6 +149,11 @@ captureLiteralArgFC:
 
 tryCapturingNextArgFC: ',' captureArgIdentifier | endFunctionCallCapture ;
 endFunctionCallCapture: ')' genericEndCommandLine ;
+
+startCapturingShift: TK_IDENTIFICADOR tryCaptureArrayShift;
+tryCaptureArrayShift: '[' TK_LIT_INT ']' captureShiftSymbol | captureShiftSymbol;
+captureShiftSymbol: TK_OC_SR captureShiftValue | TK_OC_SL captureShiftValue;
+captureShiftValue: TK_LIT_INT genericEndCommandLine;
 
 captureGenericValue: TK_IDENTIFICADOR genericEndCommandLine | captureGenericLiteralValue ;
 captureGenericLiteralValue: 
