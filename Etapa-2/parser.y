@@ -129,7 +129,10 @@ arrayHandle:
     |   TK_OC_SR TK_LIT_INT
     |   tryOperator ;
 
-expression: listOfUnaryOperators anyOperador tryOperator;
+expression: 
+    '(' expression ')' tryOperator |
+    insideExpression;
+insideExpression: listOfUnaryOperators anyOperador tryOperator;
 
 operadorFuncao: TK_IDENTIFICADOR '(' listOfFnArgs ')';
 listOfFnArgs: %empty | fnArg;

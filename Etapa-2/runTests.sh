@@ -293,6 +293,11 @@ expressionArgs=("1" "1.0" "id" "id[1]" "func()" "func(1)" "func(id)" "func(1,5)"
 # uso de parenteses para forçar uma associatividade ou precedencia diferente daquela tradicional.
 # A associatividade é a esquerda.
 
+testValidInput "int f() { id = (1 + 1) + 1; }"
+testValidInput "int f() { id = ((1 + 1) + 1); }"
+testValidInput "int f() { id = (1 + (1) + 1); }"
+testValidInput "int f() { id = (1 + (1 + 1)); }"
+
 # Expressões lógicas podem ser formadas através dos operadores relacionais aplicados a expressões aritméticas,
 testValidInput "int f() { x = 1 + 1 == 2;}"
 
