@@ -282,6 +282,22 @@ argFunctions=("func()" "func(1)" "func(id)" "func(1, 5)" "func(1+1)")
 #   – ? avalia uma expressao para true ou false
 #   – # acesso a um identificador como uma tabela hash
 
+unaryOperators=("+" "-" "!" "?")
+for unaryOperator in ${unaryOperators[@]}; do
+    testValidInput "int f() { 1 + ${unaryOperator}id; }"
+    testValidInput "int f() { 1 + ${unaryOperator}1; }"
+done
+
+testValidInput "int f() { 1 + &id; }"
+testValidInput "int f() { 1 + \*id; }"
+testValidInput "int f() { 1 + #id; }"
+testValidInput "int f() { 1 + \*&\*&id; }"
+
+# TODO:
+# testInvalidInput  "int f() { 1 + &1; }"
+# testInvalidInput  "int f() { 1 + \*1; }"
+# testInvalidInput  "int f() { 1 + #1; }"
+
 # • Binários
 #   – + soma
 #   – - subtração
