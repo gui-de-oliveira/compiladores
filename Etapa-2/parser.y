@@ -97,6 +97,7 @@ commandLine:
     | TK_PR_IF '(' expression ')' '{' listOfCommandLines '}' TK_PR_ELSE '{' listOfCommandLines '}'
     | TK_PR_FOR '(' atribution ':' expression ':' atribution ')' '{' listOfCommandLines '}'
     | TK_PR_WHILE '(' expression ')' TK_PR_DO '{' listOfCommandLines '}'
+    | '{' listOfCommandLines '}' ';'
     ;
 
 atribution: TK_IDENTIFICADOR arraySelect '=' expression

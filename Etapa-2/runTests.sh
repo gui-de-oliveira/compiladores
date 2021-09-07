@@ -157,6 +157,18 @@ testValidInput "int f() { string id1 <= \"c\"; }"
 testValidInput "int f() { bool id1 <= false; }"
 testValidInput "int f() { bool id1 <= true; }"
 
+# 3.3 Bloco de Comandos
+
+# Um bloco de comandos e definido entre chaves, e consiste em uma sequencia,
+# possivelmente vazia, de comandos simples cada um terminado por ponto-e-vírgula.
+# Um bloco de comandos e considerado como um comando único simples, recursivamente,
+# e pode ser utilizado em qualquer construção que aceite um comando simples.
+
+testValidInput "int f() { { }; }"
+testValidInput "int f() { { id = 1; }; }"
+testValidInput "int f() { { { }; }; }"
+testValidInput "int f() { { { { id = 1; }; }; }; }"
+
 # Comando de Atribuição
 
 # Existe apenas uma forma de atribuição para identificadores.
