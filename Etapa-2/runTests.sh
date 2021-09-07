@@ -374,6 +374,11 @@ done
 # • Ternários
 #   – ? seguido de :, conforme a sintaxe expressão ? expressão : expressão
 
+testValidInput "int f() { id = id ? 1 : 2 ; }"
+testValidInput "int f() { id = 1 + 1 ? id : 2.0 ; }"
+testValidInput "int f() { id = 1 + 1 ? 1 + 1 : 2.0 ; }"
+testValidInput "int f() { id =  1 + 1 ? (1 + 1 ? 1 + 1 : 1+1) : 2 ; }"
+
 # As regras de associatividade e precedência de operadores matemáticos são
 # aquelas tradicionais de linguagem de programação e da matemática.
 # Recomenda-se que tais regras sejam já incorporadas na solução desta etapa,

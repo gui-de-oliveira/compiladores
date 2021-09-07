@@ -147,7 +147,7 @@ anyFnArg: expression | TK_LIT_STRING | TK_LIT_CHAR | TK_LIT_TRUE | TK_LIT_FALSE 
 listOfUnaryOperators: %empty | unaryOperator listOfUnaryOperators;
 unaryOperator: '+' | '-' | '!' | '?' | '&' | '*' | '#' ;
 
-tryOperator: %empty | binaryOperator expression;
+tryOperator: %empty | binaryOperator expression | '?' expression ':' expression;
 binaryOperator: '+' | '-' | '*' | '/' | '%' | '|' | '&' | '^' | TK_OC_NE | TK_OC_EQ | TK_OC_LE | TK_OC_GE | TK_OC_AND | TK_OC_OR ;
 
 %%
