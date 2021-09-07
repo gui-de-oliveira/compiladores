@@ -51,6 +51,8 @@
 %token TK_IDENTIFICADOR
 %token TOKEN_ERRO
 
+%right ')' ';'
+
 %%
 
 initialSymbol: 
