@@ -173,6 +173,10 @@ testValidInput "int f() { id1[1] = \"string\"; }"
 testValidInput "int f() { id1[1] = id2; }"
 #TODO: "int f() { id1[<expressão>] = true; }"
 
+testValidInput "int f() { int id1 <= id2; int id1 <= id2; }"
+testValidInput "int f() { id = true; id = true; }"
+testValidInput "int f() { id = true; int id1 <= id2; }"
+testValidInput "int f() { int id1 <= id2; id = true; }"
 
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
