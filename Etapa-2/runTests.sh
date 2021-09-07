@@ -246,6 +246,60 @@ testValidInput "int f() { continue; }"
 
 # ^----- needs <expressão> ....
 
+# Expr. Aritméticas, Lógicas
+
+# As expressões podem ser de dois tipos: aritméticas e lógicas.
+# As expressoes aritméticas podem ter como operandos: 
+#    (a) identificadores, opcionalmente seguidos de expressao inteira entre colchetes, para acesso a vetores;
+#    (b) literais numéricos como inteiro e ponto-flutuante;
+#    (c) chamada de função. As expressões aritméticas podem ser formadas recursivamente com operadores aritmeticos,
+#        assim como permitem o uso de parenteses para forçar uma associatividade ou precedencia diferente daquela 
+#        tradicional. A associatividade é a esquerda.
+
+# Expressões lógicas podem ser formadas através dos operadores relacionais aplicados a expressões aritméticas,
+# ou de operadores lógicos aplicados a expressões lógicas, recursivamente.
+# Outras expressões podem ser formadas considerando variaveis lógicas do tipo bool.
+# A descrição sintática deve aceitar qualquer operadores e subexpressao de um desses
+# tipos como válidos, deixando para a análise semantica das proximas etapas do projeto
+# a tarefa de verificar a validade dos operandos e operadores.
+
+# Os operadores são os seguintes:
+
+# • Unarios (todos prefixados)
+#   – + sinal positivo explícito
+#   – - inverte o sinal
+#   – ! negação lógica
+#   – & acesso ao endereço da variável
+#   – * acesso ao valor do ponteiro
+#   – ? avalia uma expressao para true ou false
+#   – # acesso a um identificador como uma tabela hash
+
+# • Binários
+#   – + soma
+#   – - subtração
+#   – * multiplicação
+#   – / divisão
+#   – % resto da divisão inteira
+#   – | bitwise OR
+#   – & bitwise AND
+#   – ˆ exponenciação
+#   – todos os comparadores relacionais
+#   – todos os operadores logicos ( && para o e lógico, || para o ou lógico) 
+
+# • Ternários
+#   – ? seguido de :, conforme a sintaxe expressão ? expressão : expressão
+
+# As regras de associatividade e precedência de operadores matemáticos são
+# aquelas tradicionais de linguagem de programação e da matemática.
+# Recomenda-se que tais regras sejam já incorporadas na solução desta etapa,
+# ou através de construções gramaticais ou através de comandos do bison 
+# específicos para isso (%left, %right). A solução via construções gramaticais
+# e recomendada. Enfim, nos casos não cobertos por esta regra geral, temos as
+# seguintes regras de associatividade:
+
+# • Associativos à direita
+#   – &, * (acesso ao valor do ponteiro), #
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"
