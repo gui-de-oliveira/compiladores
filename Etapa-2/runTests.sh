@@ -42,7 +42,7 @@ runTestScript () {
         send -- "$givenInput\n"
 
         # Await max time for response (fixes bug of false-positives)
-        sleep 0.0001
+        sleep 0.001
 
         expect {
             "syntax error" {
@@ -252,13 +252,11 @@ testValidInput "int f() { continue; }"
 # As expressoes aritméticas podem ter como operandos: 
 
 #    (a) identificadores, opcionalmente seguidos de expressao inteira entre colchetes, para acesso a vetores;
-argIdentifiers=("id" "id[1]" "id[1+1]")
-
 #    (b) literais numéricos como inteiro e ponto-flutuante;
-argLiterals=("1" "1.0")
-
 #    (c) chamada de função.
-argFunctions=("func()" "func(1)" "func(id)" "func(1, 5)" "func(1+1)")
+
+expressionArgs=("1" "1.0" "id" "id[1]" "func()" "func(1)" "func(id)" "func(1,5)")
+#TODO: "id[1+1]" ""func(1+1)""
 
 # As expressões aritméticas podem ser formadas recursivamente com operadores aritmeticos, assim como permitem o
 # uso de parenteses para forçar uma associatividade ou precedencia diferente daquela tradicional.
@@ -285,7 +283,9 @@ argFunctions=("func()" "func(1)" "func(id)" "func(1, 5)" "func(1+1)")
 unaryOperators=("+" "-" "!" "?")
 for unaryOperator in ${unaryOperators[@]}; do
     testValidInput "int f() { 1 + ${unaryOperator}id; }"
+    testValidInput "int f() { 1 + ${unaryOperator}func(); }"
     testValidInput "int f() { 1 + ${unaryOperator}1; }"
+    testValidInput "int f() { 1 + ${unaryOperator}1.0; }"
 done
 
 testValidInput "int f() { 1 + &id; }"
@@ -310,12 +310,13 @@ testValidInput "int f() { 1 + \*&\*&id; }"
 #   – todos os comparadores relacionais
 #   – todos os operadores logicos ( && para o e lógico, || para o ou lógico) 
 
+
 argBinaryOperator=("+" "-" "\*" "/" "%" "|" "&" "^" "!=" "==" "<=" ">=" "&&" "||")
+for expressionArg in ${expressionArgs[@]}; do
 for binaryOperator in ${argBinaryOperator[@]}; do
-    testValidInput "int f() { 1 $binaryOperator 1; }"
-    testValidInput "int f() { 1.0 $binaryOperator 1.0; }"
-    testValidInput "int f() { id $binaryOperator id; }"
-    testValidInput "int f() { id $binaryOperator id $binaryOperator id; }"
+    testValidInput "int f() { $expressionArg $binaryOperator $expressionArg; }"
+    testValidInput "int f() { $expressionArg $binaryOperator $expressionArg $binaryOperator $expressionArg; }"
+done
 done
 
 # • Ternários

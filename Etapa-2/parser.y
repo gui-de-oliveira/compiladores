@@ -171,7 +171,21 @@ tryCaptureUnaryOperator:
     '#' tryCaptureUnaryOperator |
     captureArgOperator;
 
-captureArgOperator: captureLiteralArgOperator | TK_IDENTIFICADOR tryCaptureOperatorEXP ;
+captureArgOperator: captureLiteralArgOperator | TK_IDENTIFICADOR tryCaptureArray  ;
+
+tryCaptureArray: 
+    '[' TK_LIT_INT ']' tryCaptureOperatorEXP |
+    '(' startCapturingArgsF  tryCaptureOperatorEXP |
+    tryCaptureOperatorEXP ;
+
+startCapturingArgsF: 
+    TK_IDENTIFICADOR tryCatchingNextArgumentF |
+    TK_LIT_FLOAT tryCatchingNextArgumentF |
+    TK_LIT_INT tryCatchingNextArgumentF |
+    stopCapturingArguments ;
+    
+tryCatchingNextArgumentF: ',' startCapturingArgsF | stopCapturingArguments;
+stopCapturingArguments: ')'
 
 captureLiteralArgOperator: 
     TK_LIT_INT tryCaptureOperatorEXP |
