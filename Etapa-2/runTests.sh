@@ -257,8 +257,7 @@ testValidInput "int f() { continue; }"
 #    (b) literais numéricos como inteiro e ponto-flutuante;
 #    (c) chamada de função.
 
-expressionArgs=("1" "1.0" "id" "id[1]" "func()" "func(1)" "func(id)" "func(1,5)")
-#TODO: "id[1+1]" ""func(1+1)""
+expressionArgs=("1" "1.0" "id" "id[1]" "func()" "func(1)" "func(id)" "func(1,5)" "id[id1+id2]" "func(id1+id2)")
 
 # As expressões aritméticas podem ser formadas recursivamente com operadores aritmeticos, assim como permitem o
 # uso de parenteses para forçar uma associatividade ou precedencia diferente daquela tradicional.
@@ -281,6 +280,8 @@ expressionArgs=("1" "1.0" "id" "id[1]" "func()" "func(1)" "func(id)" "func(1,5)"
 #   – * acesso ao valor do ponteiro
 #   – ? avalia uma expressao para true ou false
 #   – # acesso a um identificador como uma tabela hash
+
+#TODO: testValidInput "int f() {1+1;}"
 
 unaryOperators=("+" "-" "!" "?")
 for unaryOperator in ${unaryOperators[@]}; do

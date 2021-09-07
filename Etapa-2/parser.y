@@ -97,16 +97,23 @@ initialValue: TK_IDENTIFICADOR | literalValue;
 literalValue: TK_LIT_INT | TK_LIT_FLOAT | TK_LIT_FALSE | TK_LIT_TRUE | TK_LIT_CHAR | TK_LIT_STRING;
 
 anyValue: TK_IDENTIFICADOR arraySelect | literalValue;
-arraySelect: %empty | '[' TK_LIT_INT ']'; 
+arraySelect: %empty | '[' expression ']'; 
 
 variableAssignOrExpression: 
-        TK_IDENTIFICADOR headerArray handle
+        TK_IDENTIFICADOR handle
     |   unaryOperator expression
-    |   operadorLiteral tryOperator
-    |   operadorFuncao tryOperator;
+    |   operadorLiteral tryOperator;
 
 handle:
         '=' anyValue
+    |   TK_OC_SL TK_LIT_INT
+    |   TK_OC_SR TK_LIT_INT
+    |   '(' listOfFnArgs ')' tryOperator
+    |   '[' expression ']' arrayHandle
+    |   tryOperator ;
+
+arrayHandle:
+    '=' anyValue
     |   TK_OC_SL TK_LIT_INT
     |   TK_OC_SR TK_LIT_INT
     |   tryOperator ;
@@ -119,7 +126,8 @@ fnArg: anyFnArg | anyFnArg ',' fnArg;
 
 anyOperador: TK_LIT_INT | TK_LIT_FLOAT | TK_IDENTIFICADOR | TK_IDENTIFICADOR '[' expression ']' | operadorFuncao ;
 operadorLiteral: TK_LIT_INT | TK_LIT_FLOAT;
-anyFnArg: anyOperador | TK_LIT_STRING | TK_LIT_CHAR | TK_LIT_TRUE | TK_LIT_FALSE;
+
+anyFnArg: expression | TK_LIT_STRING | TK_LIT_CHAR | TK_LIT_TRUE | TK_LIT_FALSE ;
 
 listOfUnaryOperators: %empty | unaryOperator listOfUnaryOperators;
 unaryOperator: '+' | '-' | '!' | '?' | '&' | '*' | '#' ;
