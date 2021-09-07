@@ -212,18 +212,18 @@ testValidInput "int f() { id >> +1; }"
 testValidInput "int f() { id[1] << +1; }"
 testValidInput "int f() { id[1] >> +1; }"
 
+testValidInput "int f() { id[1 + 1] << +1; }"
+
 # TODO: Block negative values
 # testInvalidInput "int f() { id << -1; }"
 # testInvalidInput "int f() { id >> -1; }"
 # testInvalidInput "int f() { id[1] << -1; }"
 # testInvalidInput "int f() { id[1] >> -1; }"
 
-# TODO: testValidInput "int f() { id[<expressão>] << +1; }"
-
 # Comando de Retorno, Break, Continue
 
 # Retorno é a palavra reservada return seguida de uma expressão.
-# TODO: testValidInput "int f() { return <expressão>; }"
+testValidInput "int f() { return 5 + 5; }"
 
 # Os comandos break e continue sao simples.
 testValidInput "int f() { break; }"
