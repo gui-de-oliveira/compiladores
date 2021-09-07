@@ -89,6 +89,8 @@ commandLine:
     | TK_PR_BREAK ';'
     | TK_PR_CONTINUE ';'
     | TK_PR_RETURN expression ';'
+    | TK_PR_IF '(' expression ')' '{' listOfCommandLines '}'
+    | TK_PR_IF '(' expression ')' '{' listOfCommandLines '}' TK_PR_ELSE '{' listOfCommandLines '}'
     ;
 
 localDeclaration: static const type localIdentifiers ';';

@@ -237,6 +237,11 @@ testValidInput "int f() { continue; }"
 # if (<expressão>) bloco
 # if (<expressão>) bloco else bloco
 
+testValidInput "int f() { if (1 + 1) { } }"
+testValidInput "int f() { if (1 + 1) { id = 1; } }"
+testValidInput "int f() { if (5 + 5 + 5) { id = 1; } }"
+testValidInput "int f() { if (1 + 1) { id = 1; } else { id = 2; } }"
+
 # As construções iterativas são as seguintes no formato:
 # for (atrib: <expressão>: <atrib>) bloco
 # while (<expressão>) do bloco
