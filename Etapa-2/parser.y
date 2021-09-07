@@ -104,7 +104,10 @@ startCapturingCommandLine:
     startCaptureOutput |
     captureInput |
     startCapturingFunctionCall |
-    startCapturingShift ;
+    startCapturingShift |
+    TK_PR_BREAK ';' tryCaptureCommandLine |
+    TK_PR_CONTINUE ';' tryCaptureCommandLine
+    ;
 
 startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
 tryCaptureArgStaticVD: tryCaptureArgConstVD | TK_PR_STATIC tryCaptureArgConstVD ;

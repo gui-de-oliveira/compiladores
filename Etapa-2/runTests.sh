@@ -218,6 +218,15 @@ testValidInput "int f() { id[1] >> +1; }"
 
 # TODO: testValidInput "int f() { id[<expressão>] << +1; }"
 
+# Comando de Retorno, Break, Continue
+
+# Retorno é a palavra reservada return seguida de uma expressão.
+# TODO: testValidInput "int f() { return <expressão>; }"
+
+# Os comandos break e continue sao simples.
+testValidInput "int f() { break; }"
+testValidInput "int f() { continue; }"
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"
