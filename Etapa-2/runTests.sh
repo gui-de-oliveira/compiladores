@@ -227,6 +227,25 @@ testValidInput "int f() { id[1] >> +1; }"
 testValidInput "int f() { break; }"
 testValidInput "int f() { continue; }"
 
+# Comandos de Controle de Fluxo
+
+# A linguagem possui construções condicionais, iterativas e de
+# seleção para controle estruturado de fluxo. As condicionais
+# incluem o if com o else opcional, assim:
+# if (<expressão>) bloco
+# if (<expressão>) bloco else bloco
+
+# As construções iterativas são as seguintes no formato:
+# for (atrib: <expressão>: <atrib>) bloco
+# while (<expressão>) do bloco
+
+# Os dois marcadores atrib do comando for representa
+# o comando de atribuição, unico aceito nestas posições. 
+# Em todas as construções de controle de fluxo, o termo bloco
+# indica um bloco de comandos. Este não tem ponto-e-vírgula nestas situações. 
+
+# ^----- needs <expressão> ....
+
 echo "RESULTS:"
 echo "Passed tests: $successfulTestsCounter"
 echo "Failed tests: $failedTestsCounter"
