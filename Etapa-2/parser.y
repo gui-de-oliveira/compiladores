@@ -131,8 +131,8 @@ arrayHandle:
     |   tryOperator ;
 
 expression: 
-    '(' expression ')' tryOperator |
-    insideExpression;
+    listOfUnaryOperators '(' expression ')' tryOperator | insideExpression;
+
 insideExpression: listOfUnaryOperators anyOperador tryOperator;
 
 operadorFuncao: TK_IDENTIFICADOR '(' listOfFnArgs ')';

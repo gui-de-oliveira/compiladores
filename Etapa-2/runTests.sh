@@ -310,6 +310,10 @@ testValidInput "int f() { id = ((1 + 1) + 1); }"
 testValidInput "int f() { id = (1 + (1) + 1); }"
 testValidInput "int f() { id = (1 + (1 + 1)); }"
 
+testValidInput "int f() { id = &(1 + 1); }"
+testValidInput "int f() { id = !(1 == 1) || 2; }"
+testValidInput "int f() { id = !(!1 == !1) || 2; }"
+
 # Expressões lógicas podem ser formadas através dos operadores relacionais aplicados a expressões aritméticas,
 testValidInput "int f() { x = 1 + 1 == 2;}"
 
