@@ -106,7 +106,8 @@ startCapturingCommandLine:
     startCapturingFunctionCall |
     startCapturingShift |
     TK_PR_BREAK ';' tryCaptureCommandLine |
-    TK_PR_CONTINUE ';' tryCaptureCommandLine
+    TK_PR_CONTINUE ';' tryCaptureCommandLine |
+    startCapturingExpression
     ;
 
 startCapturingVariableDeclaration: tryCaptureArgStaticVD ;
@@ -157,6 +158,28 @@ startCapturingShift: TK_IDENTIFICADOR tryCaptureArrayShift;
 tryCaptureArrayShift: '[' TK_LIT_INT ']' captureShiftSymbol | captureShiftSymbol;
 captureShiftSymbol: TK_OC_SR captureShiftValue | TK_OC_SL captureShiftValue;
 captureShiftValue: TK_LIT_INT genericEndCommandLine;
+
+startCapturingExpression: captureArgOperator;
+captureArgOperator: captureLiteralArgOperator | TK_IDENTIFICADOR tryCaptureOperatorEXP ;
+captureLiteralArgOperator: 
+    TK_LIT_INT tryCaptureOperatorEXP |
+    TK_LIT_FLOAT tryCaptureOperatorEXP ;
+tryCaptureOperatorEXP: 
+    '+' captureArgOperator |
+    '-' captureArgOperator |
+    '*' captureArgOperator |
+    '/' captureArgOperator |
+    '%' captureArgOperator |
+    '|' captureArgOperator |
+    '&' captureArgOperator |
+    '^' captureArgOperator |
+    TK_OC_NE captureArgOperator |
+    TK_OC_EQ captureArgOperator |
+    TK_OC_LE captureArgOperator |
+    TK_OC_GE captureArgOperator |
+    TK_OC_AND captureArgOperator |
+    TK_OC_OR captureArgOperator |
+    genericEndCommandLine ;
 
 captureGenericValue: TK_IDENTIFICADOR genericEndCommandLine | captureGenericLiteralValue ;
 captureGenericLiteralValue: 

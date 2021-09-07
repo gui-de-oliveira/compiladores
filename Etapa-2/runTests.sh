@@ -250,11 +250,19 @@ testValidInput "int f() { continue; }"
 
 # As expressões podem ser de dois tipos: aritméticas e lógicas.
 # As expressoes aritméticas podem ter como operandos: 
+
 #    (a) identificadores, opcionalmente seguidos de expressao inteira entre colchetes, para acesso a vetores;
+argIdentifiers=("id" "id[1]" "id[1+1]")
+
 #    (b) literais numéricos como inteiro e ponto-flutuante;
-#    (c) chamada de função. As expressões aritméticas podem ser formadas recursivamente com operadores aritmeticos,
-#        assim como permitem o uso de parenteses para forçar uma associatividade ou precedencia diferente daquela 
-#        tradicional. A associatividade é a esquerda.
+argLiterals=("1" "1.0")
+
+#    (c) chamada de função.
+argFunctions=("func()" "func(1)" "func(id)" "func(1, 5)" "func(1+1)")
+
+# As expressões aritméticas podem ser formadas recursivamente com operadores aritmeticos, assim como permitem o
+# uso de parenteses para forçar uma associatividade ou precedencia diferente daquela tradicional.
+# A associatividade é a esquerda.
 
 # Expressões lógicas podem ser formadas através dos operadores relacionais aplicados a expressões aritméticas,
 # ou de operadores lógicos aplicados a expressões lógicas, recursivamente.
@@ -285,6 +293,14 @@ testValidInput "int f() { continue; }"
 #   – ˆ exponenciação
 #   – todos os comparadores relacionais
 #   – todos os operadores logicos ( && para o e lógico, || para o ou lógico) 
+
+argBinaryOperator=("+" "-" "\*" "/" "%" "|" "&" "^" "!=" "==" "<=" ">=" "&&" "||")
+for binaryOperator in ${argBinaryOperator[@]}; do
+    testValidInput "int f() { 1 $binaryOperator 1; }"
+    testValidInput "int f() { 1.0 $binaryOperator 1.0; }"
+    testValidInput "int f() { id $binaryOperator id; }"
+    testValidInput "int f() { id $binaryOperator id $binaryOperator id; }"
+done
 
 # • Ternários
 #   – ? seguido de :, conforme a sintaxe expressão ? expressão : expressão
