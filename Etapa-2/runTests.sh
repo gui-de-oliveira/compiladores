@@ -246,6 +246,11 @@ testValidInput "int f() { if (1 + 1) { id = 1; } else { id = 2; } }"
 # for (atrib: <expressão>: <atrib>) bloco
 # while (<expressão>) do bloco
 
+testValidInput "int f() { for (x = 10 : x <= 10 : x = x + 1) { } }"
+testValidInput "int f() { for (x = 10 : x <= 10 : x = x + 1) { id = 1; } }"
+testInvalidInput "int f() { for (10 + 10 : x <= 10 : x = x + 1) { id = 1; } }"
+testInvalidInput "int f() { for (x = 10 : x <= 10 : 10 + 10) { id = 1; } }"
+
 testValidInput "int f() { while (1 + 1) do { } }"
 testValidInput "int f() { while (1 + 1) do { id = 1; } }"
 
