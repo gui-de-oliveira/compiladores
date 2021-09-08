@@ -36,11 +36,11 @@ pattern_string \"(\\.|[^"\n])*\"
 
 %%
 
-{pattern_line_comment} {
+<INITIAL,POTENTIAL_SUM>{pattern_line_comment} {
 	/* Discards anything between // and \n */
 };
 
-"/*" {
+<INITIAL,POTENTIAL_SUM>"/*" {
 	state_before_comment = YY_START;
 	BEGIN(MULTILINE_COMMENT);
 }
@@ -77,7 +77,9 @@ pattern_string \"(\\.|[^"\n])*\"
 "end" return TK_PR_END;
 "default" return TK_PR_DEFAULT;
 
-{pattern_special_char} return get_ascii_value();
+{pattern_special_char} {
+	return get_ascii_value();
+}
 
 "<=" return TK_OC_LE;
 ">=" return TK_OC_GE;
@@ -101,14 +103,20 @@ pattern_string \"(\\.|[^"\n])*\"
 	return TK_LIT_FLOAT;
 }
 
-<POTENTIAL_SUM>[+\-]/({pattern_signed_int}|{pattern_float}) {
-	/* + or - followed by int, float or variable and preceded by int, float or variable:
-	unary or binary operators, not part of the next int or float */
+<POTENTIAL_SUM>[+\-]/([ \t\n]*({pattern_signed_int}|{pattern_float})) {
+	/**
+	* * + or - followed by int, float or variable and preceded by int, float or variable:
+	* * unary or binary operators, not part of the next int or float
+	* * ignores spaces, tabs and new-lines in-between
+	**/
 	BEGIN(INITIAL);
 	return get_ascii_value();
 }
-<POTENTIAL_SUM>[^+\-] {
-	/* If it didn't find something suitable to sum-up with, then re-scan and continue as normal. */
+<POTENTIAL_SUM>[^ \t\n] {
+	/**
+	* * If it didn't find something suitable to sum-up with, then re-scan and continue as normal.
+	* * If it's a space, tab or new-line, then it will be processed by the line-counter and space-eater, as normal.
+	**/
 	BEGIN(INITIAL);
 	yyless(0);
 }
@@ -116,7 +124,7 @@ pattern_string \"(\\.|[^"\n])*\"
 {pattern_char} return TK_LIT_CHAR;
 {pattern_string} return TK_LIT_STRING;
 
-<INITIAL,MULTILINE_COMMENT>\n {
+<INITIAL,MULTILINE_COMMENT,POTENTIAL_SUM>\n {
 	++line_number;
 	/* Increment line counter regardless of state, takes precedence over next rule due to order. */
 }
@@ -129,7 +137,7 @@ pattern_string \"(\\.|[^"\n])*\"
 	BEGIN(state_before_comment);
 }
 
-[[:blank:]] {
+<INITIAL,POTENTIAL_SUM>[[:blank:]] {
 	/* Discard tabs and whitespaces. Equivalent with [ \t] */
 }
 . {
