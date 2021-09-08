@@ -14,10 +14,10 @@ main:
 	gcc -o etapa2 lex.yy.o parser.tab.o main.o -lfl
 
 clean:
-	rm etapa2 etapa2.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o
+	rm etapa2 etapa2.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
 
 zip:
-	tar cvzf etapa2.tgz parser.y scanner.l Makefile
+	tar cvzf etapa2.tgz parser.y scanner.l Makefile runTests.sh
 
 run:
 	./etapa2
