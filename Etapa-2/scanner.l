@@ -105,7 +105,7 @@ pattern_string \"(\\.|[^"\n])*\"
 
 <POTENTIAL_SUM>[+\-]/([ \t\n]*({pattern_signed_int}|{pattern_float})) {
 	/**
-	* * + or - followed by int, float or variable and preceded by int, float or variable:
+	* * + or - followed by int or float and preceded by int, float or variable:
 	* * unary or binary operators, not part of the next int or float
 	* * ignores spaces, tabs and new-lines in-between
 	**/
