@@ -145,6 +145,10 @@ pattern_string \"(\\.|[^"\n])*\"
 	return TOKEN_ERRO;
 }
 
+<<EOF>> {
+	return TK_EOF;
+}
+
 %%
 
 int get_ascii_value() {

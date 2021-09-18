@@ -56,13 +56,14 @@
 %token TK_LIT_STRING
 %token TK_IDENTIFICADOR
 %token TOKEN_ERRO
+%token TK_EOF 0 "Sucesso"
 
 %nonassoc '(' ')' ';' 
 
 %%
 
 
-initialSymbol: ';' | declaration initialSymbol;
+initialSymbol: TK_EOF | declaration initialSymbol;
 
 declaration: globalVariableDeclarationOrFunctionDeclaration | expression ';';
 
