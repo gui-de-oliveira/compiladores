@@ -89,7 +89,7 @@ listOfCommandLines:  %empty | commandLine listOfCommandLines;
 commandLine: 
       localDeclaration 
     | variableAssignOrExpression ';'
-    | TK_PR_INPUT TK_IDENTIFICADOR ';';
+    | TK_PR_INPUT TK_IDENTIFICADOR ';'
     | TK_PR_OUTPUT anyValue ';'
     | TK_PR_BREAK ';'
     | TK_PR_CONTINUE ';'
