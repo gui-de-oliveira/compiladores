@@ -17,7 +17,7 @@ clean:
 	rm etapa2 etapa2.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
 
 zip:
-	tar cvzf etapa2.tgz parser.y scanner.l Makefile runTests.sh
+	tar cvzf etapa2.tgz parser.y scanner.l Makefile runTests.sh main.c
 
 run:
 	./etapa2
