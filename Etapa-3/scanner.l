@@ -3,12 +3,8 @@
 	// Guilherme de Oliveira (00278301)
 	// Jean Pierre Comerlatto Darricarrere (00182408)
 
-	#include "parser.tab.h"
 	#include "lexical_structures.h"
-
-	%union {
-		valor_lexico_t valor_lexico;
-	}
+	#include "parser.tab.h"
 
 	// Function prototype
 	int get_ascii_value();

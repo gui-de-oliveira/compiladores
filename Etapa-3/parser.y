@@ -286,6 +286,14 @@ program:
 
 %%
 
+void exporta(void *arvore) {
+    ;
+}
+
+void libera(void *arvore) {
+    ;
+}
+
 void yyerror(char const *s) {
     printf("%s na linha %d\n", s, yylineno);
 }
