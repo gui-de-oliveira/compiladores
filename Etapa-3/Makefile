@@ -23,7 +23,7 @@ run:
 	./etapa3
 
 test:
-	./runTests.sh
+	./runSyntacticTests.sh
 
 debug:
 	bison -d parser.y --debug -v
