@@ -140,6 +140,7 @@ simpleCommand:
     command_block ';'
     | localDef ';'
     | varSet ';'
+    | varShift ';'
     | conditional ';'
     | IO ';'
     | functionCall ';'
@@ -183,6 +184,16 @@ optionalArrayAccess:
 varSet:
     TK_IDENTIFICADOR optionalArrayAccess '=' expression
     ;
+    
+
+varShift:
+    TK_IDENTIFICADOR optionalArrayAccess shiftOperator expression
+    ;
+
+shiftOperator:
+    TK_OC_SR
+    | TK_OC_SL
+    ;
 
 
 functionCall:
@@ -204,10 +215,50 @@ conditional:
     | TK_PR_WHILE '(' expression ')' TK_PR_DO command_block
     ;
 
-
-
 expression:
-    TK_IDENTIFICADOR {/* TO DO */}
+    optionalOperator expressionOperand
+    | optionalOperator '(' expression ')'
+    ;
+
+optionalOperator:
+    %empty
+    | optionalOperator unaryOperator
+    | expression binaryOperator
+    | expression '?' expression ':'
+    ;
+
+expressionOperand: 
+    TK_IDENTIFICADOR
+    | TK_IDENTIFICADOR '[' expression ']'
+    | literal
+    | functionCall
+    ;
+
+unaryOperator:
+    '&'
+    | '!'
+    | '+'
+    | '-'
+    | '?'
+    | '*'
+    | '#'
+    ;
+
+binaryOperator:
+    TK_OC_LE
+    | TK_OC_GE
+    | TK_OC_EQ
+    | TK_OC_NE
+    | TK_OC_AND
+    | TK_OC_OR
+    | '+'
+    | '-'
+    | '*'
+    | '/'
+    | '%'
+    | '|'
+    | '&'
+    | '^'
     ;
 
 optionalExpressionList:
