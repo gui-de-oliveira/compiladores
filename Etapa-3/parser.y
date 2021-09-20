@@ -251,6 +251,8 @@ binaryOperator:
     | TK_OC_NE
     | TK_OC_AND
     | TK_OC_OR
+    | '<'
+    | '>'
     | '+'
     | '-'
     | '*'

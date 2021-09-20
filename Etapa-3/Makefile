@@ -14,7 +14,7 @@ main:
 	gcc -o etapa3 lex.yy.o parser.tab.o main.o -lfl
 
 clean:
-	rm etapa3 etapa3.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
+	rm -f etapa3 etapa3.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
 
 zip:
 	tar cvzf etapa3.tgz parser.y scanner.l Makefile runTests.sh

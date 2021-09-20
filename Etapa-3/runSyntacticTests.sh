@@ -332,7 +332,7 @@ testValidInput "int f() { id = 1 + *&*&id; }"
 #   – todos os comparadores relacionais
 #   – todos os operadores logicos ( && para o e lógico, || para o ou lógico) 
 
-binaryOperator=("+" "-" "/" "%" "|" "&" "^" "!=" "==" "<=" ">=" "&&" "||")
+binaryOperator=("+" "-" "/" "%" "|" "&" "^" "!=" "==" "<=" ">=" "&&" "||" "<" ">")
 for expressionArg in ${expressionArgs[@]}; do
 for binaryOperator in ${binaryOperator[@]}; do
     testValidInput "int f() { id = $expressionArg $binaryOperator $expressionArg; }"
@@ -364,6 +364,36 @@ testValidInput "int f() { id =  1 + 1 ? (1 + 1 ? 1 + 1 : 1+1) : 2 ; }"
 # • Associativos à direita
 #   – &, * (acesso ao valor do ponteiro), #
 
+cd Tests\ E2
+
+for fileName in *; do
+    echo "Running test $fileName:"
+
+    ../etapa3 < $fileName
+    result=$?
+
+    firstLine=$(head -1 "$fileName")
+
+    if [ "$firstLine" = "//CORRECT" ] && [ $result -ne 0 ]
+    then
+        if [ "$firstLine" = "//INCORRECT" ] && [ $result -eq 0 ]
+        then
+            echo "TEST FAILED FOR $fileName!"
+            nl "$fileName"
+
+            cd ..
+            exit
+        fi
+    fi
+
+    echo "SUCCESS!"
+    echo ""
+done
+
+cd ..
+
 echo "ALL TESTS WORKING!"
 
+echo ""
+echo "Clean..."
 make clean
