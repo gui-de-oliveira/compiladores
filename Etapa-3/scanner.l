@@ -11,6 +11,8 @@
 	void removeQuotes(char* string);
 	void removeLastCharacterFromString(char* string);
 	void setValorLexico(token_type_t token_type);
+	void setValorLexicoForStringValue(token_type_t token_type, char* string);
+	int setValorLexicoForCompositeOperator(int tokenType, char* yytext);
 
 	// Variable definition
 	int line_number = 1;
@@ -95,16 +97,17 @@ pattern_string \"(\\.|[^"\n])*\"
 	return get_ascii_value();
 }
 
-"<=" return TK_OC_LE;
-">=" return TK_OC_GE;
-"==" return TK_OC_EQ;
-"!=" return TK_OC_NE;
-"&&" return TK_OC_AND;
-"||" return TK_OC_OR;
-">>" return TK_OC_SL;
-"<<" return TK_OC_SR;
+"<=" return setValorLexicoForCompositeOperator(TK_OC_LE, yytext);
+">=" return setValorLexicoForCompositeOperator(TK_OC_GE, yytext);
+"==" return setValorLexicoForCompositeOperator(TK_OC_EQ, yytext);
+"!=" return setValorLexicoForCompositeOperator(TK_OC_NE, yytext);
+"&&" return setValorLexicoForCompositeOperator(TK_OC_AND, yytext);
+"||" return setValorLexicoForCompositeOperator(TK_OC_OR, yytext);
+">>" return setValorLexicoForCompositeOperator(TK_OC_SL, yytext);
+"<<" return setValorLexicoForCompositeOperator(TK_OC_SR, yytext);
 
 {pattern_identifier} {
+	setValorLexicoForStringValue(IDENTIFIER, yytext);
 	return TK_IDENTIFICADOR;
 }
 {pattern_integer} {
@@ -177,6 +180,16 @@ void setValorLexico(token_type_t token_type) {
 	};
 
 	yylval.valor_lexico = &valor_lexico;
+}
+
+void setValorLexicoForStringValue(token_type_t token_type, char* string) {
+	setValorLexico(token_type);
+	yylval.valor_lexico->token_value.string = strdup(string);
+}
+
+int setValorLexicoForCompositeOperator(int tokenType, char* yytext) {
+	setValorLexicoForStringValue(COMPOSITE_OPERATOR, yytext);
+	return tokenType;
 }
 
 void removeLastCharacterFromString(char* string) {
