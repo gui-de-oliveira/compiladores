@@ -8,6 +8,9 @@
 
 	// Function prototype
 	int get_ascii_value();
+	void removeQuotes(char* string);
+	void removeLastCharacterFromString(char* string);
+	void setValorLexico(token_type_t token_type);
 
 	// Variable definition
 	int line_number = 1;
@@ -73,8 +76,17 @@ pattern_string \"(\\.|[^"\n])*\"
 "public" return TK_PR_PUBLIC;
 "protected" return TK_PR_PROTECTED;
 
-"false" return TK_LIT_FALSE;
-"true" return TK_LIT_TRUE;
+"false" { 
+	setValorLexico(LITERAL_BOOL);
+	yylval.valor_lexico->token_value.boolean = false;
+	return TK_LIT_FALSE;
+}
+
+"true" { 
+	setValorLexico(LITERAL_BOOL);
+	yylval.valor_lexico->token_value.boolean = true;
+	return TK_LIT_TRUE;
+}
 
 "end" return TK_PR_END;
 "default" return TK_PR_DEFAULT;
@@ -96,14 +108,40 @@ pattern_string \"(\\.|[^"\n])*\"
 	return TK_IDENTIFICADOR;
 }
 {pattern_integer} {
+	// ! for some reason, calling atoi(yytext) after setting yyval bugs stuff up
+	int value = atoi(yytext);
+
+	setValorLexico(LITERAL_INT);
+	yylval.valor_lexico->token_value.integer = value;
+
 	return TK_LIT_INT;
 }
 {pattern_float} {
+	// ! for some reason, calling atof(yytext) after setting yyval bugs stuff up
+	float value = atof(yytext);
+
+	setValorLexico(LITERAL_FLOAT);
+	yylval.valor_lexico->token_value.floating_point = value;
+
 	return TK_LIT_FLOAT;
 }
 
-{pattern_char} return TK_LIT_CHAR;
-{pattern_string} return TK_LIT_STRING;
+{pattern_char} {
+	setValorLexico(LITERAL_CHAR);
+	yylval.valor_lexico->token_value.character = yytext[1]; // 'x' => '[x]' 
+
+	return TK_LIT_CHAR;
+}
+
+{pattern_string} {
+	char* string = strdup(yytext);
+	string++;
+	removeLastCharacterFromString(string);
+
+	setValorLexico(LITERAL_STRING);
+	yylval.valor_lexico->token_value.string = string;
+	return TK_LIT_STRING;
+}
 
 <INITIAL,MULTILINE_COMMENT>\n {
 	++line_number;
@@ -130,4 +168,18 @@ pattern_string \"(\\.|[^"\n])*\"
 
 int get_ascii_value() {
 	return yytext[0];
+}
+
+void setValorLexico(token_type_t token_type) {
+	valor_lexico_t valor_lexico = { 
+		.line_number = line_number,
+		.token_type = token_type,
+	};
+
+	yylval.valor_lexico = &valor_lexico;
+}
+
+void removeLastCharacterFromString(char* string) {
+	// adds end-of-file to next-to-last character
+	string[ strlen(string) - 1 ] = '\0';
 }
