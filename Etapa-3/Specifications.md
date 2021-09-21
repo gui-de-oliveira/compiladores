@@ -63,7 +63,7 @@ O tipo do valor_lexico (e por consequência o valor que será retido) deve ser u
 
 Não há necessidade de lidar com palavras-reservadas.
 
-- [ ] [Implementação do tipo valor_lexico_t](https://github.com/GuiOliveira98/compiladores/issues/9)
+- [x] [Implementação do tipo valor_lexico_t](https://github.com/GuiOliveira98/compiladores/issues/9)
 
 O valor do token deve ser uma cadeia de caracteres (duplicada com strdup a partir de yytext) para os tokens de caracteres especiais, operadores compostos, identificadores.
 
