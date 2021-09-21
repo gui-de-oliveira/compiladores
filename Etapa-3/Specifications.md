@@ -117,4 +117,4 @@ struct LiteralValue {
 
 [Qual a diferença de union e struct?](https://stackoverflow.com/questions/346536/difference-between-a-structure-and-a-union)
 
-- [ ] [Captura de todos os valores de token](https://github.com/GuiOliveira98/compiladores/issues/10)
+- [x] [Captura de todos os valores de token](https://github.com/GuiOliveira98/compiladores/issues/10)
