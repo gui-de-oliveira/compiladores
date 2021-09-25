@@ -23,7 +23,7 @@ run:
 	./etapa3
 
 test:
-	./runSyntacticTests.sh
+	node aslTests.js
 
 debug:
 	bison -d parser.y --debug -v
