@@ -177,17 +177,26 @@ A impressão deve acontecer na saída padrão (stdout, tipicamente com uso de pr
 Um nó deve ser identificado pelo seu endereço de memória (impresso com o padrão $p da libc).
 
 Um exemplo de saída CSV válida é o seguinte, onde o nó 0x8235900 tem somente um filho Ox82358e8, que por sua vez tem dois filhos (Ox 8235890 e 0x82358d0):
-Ox8235900, 0x82358e8 Ox82358e8, 0x8235890 Ox82358e8, Ox8235800
+
+```
+Ox8235900, 0x82358e8
+Ox82358e8, 0x8235890
+Ox82358e8, Ox8235800
+```
 
 Todos os nós devem ser nomeados, usando uma linha por nó, da seguinte forma:
 o identificador do nó (endereço de memória impresso com o padrão $p da lib) seguido de espaço e abre colchetes, label- e o nome entre aspas duplas, terminando-se por fecha colchetes e ponto-e-vírgula.
 Veja o exemplo:
 
 ```
+Ox8235900, 0x82358e8
+Ox82358e8, 0x8235890
+Ox82358e8, Ox8235800
+
 Ox8235900 (label="minha_funcao");
 0x82358e8 [label="-");
-0x8235890 [label-"minha_var"];
-0x82358d0 [label-"um literal string"];
+0x8235890 [label="minha_var"];
+0x82358d0 [label="um literal string"];
 ```
 
 O nome que deve ser utilizado no campo label deve seguir o seguinte regramento:
