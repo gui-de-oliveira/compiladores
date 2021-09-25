@@ -172,8 +172,10 @@ Devem fazer parte da AST:
 ### 2.4 Exportar a árvore em formato específico
 
 Implementar a função exporta (veja no anexo main.c abaixo). Esta função deverá percorrer a árvore gerada, a partir da raiz e de maneira recursiva, imprimindo todos os nós (vértices) e todas as relações entre os nós (arestas).
+
 A impressão deve acontecer na saída padrão (stdout, tipicamente com uso de printf).
 Um nó deve ser identificado pelo seu endereço de memória (impresso com o padrão $p da libc).
+
 Um exemplo de saída CSV válida é o seguinte, onde o nó 0x8235900 tem somente um filho Ox82358e8, que por sua vez tem dois filhos (Ox 8235890 e 0x82358d0):
 Ox8235900, 0x82358e8 Ox82358e8, 0x8235890 Ox82358e8, Ox8235800
 
@@ -190,7 +192,7 @@ Ox8235900 (label="minha_funcao");
 
 O nome que deve ser utilizado no campo label deve seguir o seguinte regramento:
 
-- [ ] Para funções, devese utilizar seu identificador (o nome da função).
+- [ ] Para funções, deve-se utilizar seu identificador (o nome da função).
 
 - [ ] Para declaração de variável com inicialização, o nome deve ser C-(o operador composto menor igual).
 
@@ -213,6 +215,8 @@ O nome que deve ser utilizado no campo label deve seguir o seguinte regramento:
 - [ ] No caso do operador ternário, deve ser utilizado o nome ?:.
 
 - [ ] Enfim, para os identificadores e literais, deve-se utilizar o próprio lexema sem aspas (simples ou duplas) quando for o caso.
+
+- [ ] [Exportar a árvore para arquivo](https://github.com/GuiOliveira98/compiladores/issues/13)
 
 &nbsp;
 
