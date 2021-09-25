@@ -119,28 +119,55 @@ struct LiteralValue {
 
 - [x] [Captura de todos os valores de token](https://github.com/GuiOliveira98/compiladores/issues/10)
 
-========== \/ TO FORMAT \/ =====================
+&nbsp;
 
 ### 2.2 Estrutura de dados em árvore
 
-Implementar uma estrutura de dados para representar uma árvore em memória, com funções habituais tais como criação de nó, remoção, alteração e impressão recursiva da árvore através de um percurso em profundidade. Qualquer outra função que o grupo achar pertinente pode também ser implementada. Salienta-se o fato de que cada nó pode ter um número arbitrário de filhos, que também serão nós da árvore.
+Implementar uma estrutura de dados para representar uma árvore em memória, com funções habituais tais como criação de nó, remoção, alteração e impressão recursiva da árvore através de um percurso em profundidade. Qualquer outra função que o grupo achar pertinente pode também ser implementada.
+
+Salienta-se o fato de que cada nó pode ter um número arbitrário de filhos, que também serão nós da árvore.
+
+- [] [Implementar estrutura de dados em árvore](https://github.com/GuiOliveira98/compiladores/issues/11)
+
+&nbsp;
 
 ### 2.3 Ações bison para construção da AST
 
-Colocar ações semânticas no final das regras de produção descritas no arquivo para o bison, as quais criam ou propagam os nós da árvore, montando-a na medida que a análise sintática é realizada. Como a análise sintática é ascendente, a árvore será criada de baixo para cima, no momento das reduções do parser. A maior parte das ações será composta de chamadas para o procedimento de criação de um nó da árvore, e associação desta com seus filhos na árvore de derivação que já foram criados. Ao final do processo de análise sintática, um ponteiro para a estrutura de dados que guarda a raiz da árvore deve ser salvo na variável global arvore. A raiz da árvore é o nó que representa a primeira função do arquivo de entrada. Devem fazer parte da AST:
+Colocar ações semânticas no final das regras de produção descritas no arquivo para o bison, as quais criam ou propagam os nós da árvore, montando-a na medida que a análise sintática é realizada.
 
-1. Listas de funções, onde cada função tem dois fi
-   lhos, um que é o seu primeiro comando e outro que é a próxima função;
-1. Listas de comandos, onde cada comando tem pelo
-   menos um filho, que é o próximo comando;
-1. Listas de expressões, onde cada expressão tem
-   pelo menos um filho, que é a próxima expressão, naqueles comandos onde isso se faz necessário, tais como na chamada de função;
-1. Todos os comandos simples da linguagem, salvo
-   o bloco de comando e a declaração de variáveis sem inicialização. O comando de inicialização de variável e de atribuição deve ter pelo menos dois filhos, um que é o identificador (ou identificador com indexação de vetor - veja abaixo) e outro que é o valor da inicialização. Os comandos de entrada e saída tem pelo menos um filho. O comando chamada de função tem pelo menos um filho, que é a primeira expressão na lista de seus argumentos. Os comandos de shift tem pelo menos dois filhos, um identificador (ou identificador com indexação de vetor – veja abaixo) e um literal inteiro. O comando return tem um filho, que é uma expressão. Os comandos de break e continue não tem filhos. O comando if com else opcional deve ter pelo menos três filhos, um para a expressão, outro para o primeiro comando quando verdade, e o último - opcional - para o primeiro comando quando falso. O comando for deve ter pelo menos quatro filhos, um para a atribuição de inicialização, um para a expressão, outro para a atribuição de incremento/decremento e um para o primeiro comando do laço. O comando while deve ter pelo menos dois filhos, um para expressão e outro para
-   o primeiro comando do laço.
-1. Todas as expressões ariméticas e lógicas devem
-   obedecer as regras de associatividade e precedência já estabelecidas na E2, incluindo identificadores e literais. Os operadores unários devem ter pelo menos um filho, os operadores binários devem ter pelo menos dois filhos e o operador ternário deve ter pelo menos três filhos. O indexador de vetor [] deve ter pelo menos dois filhos (identificador e a expressão de indexação).
+```c
+type: TK_PR_INT '+' TK_PR_INT { $$ = $1 + $3; }
+```
+
+Como a análise sintática é ascendente, a árvore será criada de baixo para cima, no momento das reduções do parser.
+
+A maior parte das ações será composta de chamadas para o procedimento de criação de um nó da árvore, e associação desta com seus filhos na árvore de derivação que já foram criados.
+
+```c
+type: TK_PR_INT '+' TK_PR_INT { $$ = CreateNode($1, '+', $3); }
+```
+
+Ao final do processo de análise sintática, um ponteiro para a estrutura de dados que guarda a raiz da árvore deve ser salvo na variável global arvore.
+
+A raiz da árvore é o nó que representa a primeira função do arquivo de entrada.
+
+Devem fazer parte da AST:
+
+1. Listas de funções, onde cada função tem dois filhos, um que é o seu primeiro comando e outro que é a próxima função;
+
+1. Listas de comandos, onde cada comando tem pelo menos um filho, que é o próximo comando;
+
+1. Listas de expressões, onde cada expressão tem pelo menos um filho, que é a próxima expressão, naqueles comandos onde isso se faz necessário, tais como na chamada de função;
+
+1. Todos os comandos simples da linguagem, salvo o bloco de comando e a declaração de variáveis sem inicialização.
+   O comando de inicialização de variável e de atribuição deve ter pelo menos dois filhos, um que é o identificador (ou identificador com indexação de vetor - veja abaixo) e outro que é o valor da inicialização. Os comandos de entrada e saída tem pelo menos um filho. O comando chamada de função tem pelo menos um filho, que é a primeira expressão na lista de seus argumentos. Os comandos de shift tem pelo menos dois filhos, um identificador (ou identificador com indexação de vetor – veja abaixo) e um literal inteiro. O comando return tem um filho, que é uma expressão. Os comandos de break e continue não tem filhos. O comando if com else opcional deve ter pelo menos três filhos, um para a expressão, outro para o primeiro comando quando verdade, e o último - opcional - para o primeiro comando quando falso. O comando for deve ter pelo menos quatro filhos, um para a atribuição de inicialização, um para a expressão, outro para a atribuição de incremento/decremento e um para o primeiro comando do laço. O comando while deve ter pelo menos dois filhos, um para expressão e outro para o primeiro comando do laço.
+
+1. Todas as expressões ariméticas e lógicas devem obedecer as regras de associatividade e precedência já estabelecidas na E2, incluindo identificadores e literais. Os operadores unários devem ter pelo menos um filho, os operadores binários devem ter pelo menos dois filhos e o operador ternário deve ter pelo menos três filhos. O indexador de vetor [] deve ter pelo menos dois filhos (identificador e a expressão de indexação).
    Explicita-se o "pelo menos" pois os nós da árvore podem aparecer em listas, sendo necessário mais um filho que indica qual o próximo elemento da lista, conforme detalhado acima.
+
+- [ ] [Implementação das ações Bison para construção da AST](https://github.com/GuiOliveira98/compiladores/issues/12)
+
+========== \/ TO FORMAT \/ =====================
 
 ### 2.4 Exportar a árvore em formato específico
 
