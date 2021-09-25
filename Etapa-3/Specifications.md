@@ -167,23 +167,66 @@ Devem fazer parte da AST:
 
 - [ ] [Implementação das ações Bison para construção da AST](https://github.com/GuiOliveira98/compiladores/issues/12)
 
-========== \/ TO FORMAT \/ =====================
+&nbsp;
 
 ### 2.4 Exportar a árvore em formato específico
 
-Implementar a função exporta (veja no anexo main.c abaixo). Esta função deverá percorrer a árvore gerada, a partir da raiz e de maneira recursiva, imprimindo todos os nós (vértices) e todas as relações entre os nós (arestas). A impressão deve acontecer na saída padrão (stdout, tipicamente com uso de printf). Um nó deve ser identificado pelo seu endereço de memória (impresso com o padrão $p da libc). Um exemplo de saída CSV válida é o seguinte, onde o nó 0x8235900 tem somente um filho Ox82358e8, que por sua vez tem dois filhos (Ox 8235890 e 0x82358d0):
+Implementar a função exporta (veja no anexo main.c abaixo). Esta função deverá percorrer a árvore gerada, a partir da raiz e de maneira recursiva, imprimindo todos os nós (vértices) e todas as relações entre os nós (arestas).
+A impressão deve acontecer na saída padrão (stdout, tipicamente com uso de printf).
+Um nó deve ser identificado pelo seu endereço de memória (impresso com o padrão $p da libc).
+Um exemplo de saída CSV válida é o seguinte, onde o nó 0x8235900 tem somente um filho Ox82358e8, que por sua vez tem dois filhos (Ox 8235890 e 0x82358d0):
 Ox8235900, 0x82358e8 Ox82358e8, 0x8235890 Ox82358e8, Ox8235800
-Todos os nós devem ser nomeados, usando uma linha por nó, da seguinte forma: o identificador do no (endereço de memória impresso com o padrão $p da lib) seguido de espaço e abre colchetes, label- eo nome entre aspas duplas, terminando-se por fecha colchetes e ponto-e-vírgula. Veja o exemplo:
-Ox8235900 (label="minha_funcao"); 0x82358e8 [label="-"); 0x8235890 [label-"minha_var"]; 0x82358d0 [label-"um literal string"];
-O nome que deve ser utilizado no campo label deve seguir o seguinte regramento. Para funções, devese utilizar seu identificador (o nome da função). Para declaração de variável com inicialização, o nome deve ser C-(o operador composto menor igual). Para o comando de atribuição, o nome deve ser = (o operador igual). Para o indexador de vetor, o nome deve ser [] (abre e fecha colchetes). Para a chamada de função, o nome deve ser call seguinte do nome da função chamada, separado por espaço. Para os comandos de shift, o nome deve ser o operador composto, menor menor ou maior maior, sem espaço (por exemplo >>). Para os comandos de retorno, break e continue, devem ser utilizados os lexemas correspondentes. Para os comandos de controle de fluxo, deve-se utilizar o nome if para o comando if com else opcional, o nome for para o comando for, e while para o comando while. Para as expressões aritméticas, devem ser utilizados os próprios operadores unários ou binários como nomes. Para as expressões lógicas, deve-se utilizar && para o e lógico el para o ou lógico. No caso do operador ternário, deve ser utilizado o nome ?:. Enfim, para os identificadores e literas, deve-se utilizar o próprio lexema sem aspas (simples ou duplas) quando for o caso.
+
+Todos os nós devem ser nomeados, usando uma linha por nó, da seguinte forma:
+o identificador do nó (endereço de memória impresso com o padrão $p da lib) seguido de espaço e abre colchetes, label- e o nome entre aspas duplas, terminando-se por fecha colchetes e ponto-e-vírgula.
+Veja o exemplo:
+
+```
+Ox8235900 (label="minha_funcao");
+0x82358e8 [label="-");
+0x8235890 [label-"minha_var"];
+0x82358d0 [label-"um literal string"];
+```
+
+O nome que deve ser utilizado no campo label deve seguir o seguinte regramento:
+
+- [ ] Para funções, devese utilizar seu identificador (o nome da função).
+
+- [ ] Para declaração de variável com inicialização, o nome deve ser C-(o operador composto menor igual).
+
+- [ ] Para o comando de atribuição, o nome deve ser = (o operador igual).
+
+- [ ] Para o indexador de vetor, o nome deve ser [] (abre e fecha colchetes).
+
+- [ ] Para a chamada de função, o nome deve ser call seguinte do nome da função chamada, separado por espaço.
+
+- [ ] Para os comandos de shift, o nome deve ser o operador composto, menor menor ou maior maior, sem espaço (por exemplo >>).
+
+- [ ] Para os comandos de retorno, break e continue, devem ser utilizados os lexemas correspondentes.
+
+- [ ] Para os comandos de controle de fluxo, deve-se utilizar o nome if para o comando if com else opcional, o nome for para o comando for, e while para o comando while.
+
+- [ ] Para as expressões aritméticas, devem ser utilizados os próprios operadores unários ou binários como nomes.
+
+- [ ] Para as expressões lógicas, deve-se utilizar && para o e lógico || para o ou lógico.
+
+- [ ] No caso do operador ternário, deve ser utilizado o nome ?:.
+
+- [ ] Enfim, para os identificadores e literais, deve-se utilizar o próprio lexema sem aspas (simples ou duplas) quando for o caso.
+
+&nbsp;
 
 ### 2.5 Remoção de conflitos/ajustes gramaticais
 
 Todos os conflitos Reduce-Reduce e Shift-Reduce devem ser removidos, caso estes se tornem presentes com eventuais modificações feitas na gramática.
 
+&nbsp;
+
 ### 2.6 Gerenciar corretamente a memória
 
 Implementar a função libera (veja no anexo main.c abaixo), que deve liberar a memória de maneira recursiva (de baixo para cima). O programa valgrind será utilizado para averiguar a ausência de vazamentos de memória
+
+&nbsp;
 
 ## A Arquivo main.c
 
@@ -214,18 +257,64 @@ int main(int argc, char **argv){
 
 Utilize o comando extern void arvore nos outros arquivos que fazem parte da implementação (como no parser.y) para ter acesso a variável global arvore declarada no arquivo main.c.
 
+&nbsp;
+
 ## B Avaliação objetiva
 
-No processo de avaliação automática, será considerada como raiz o primeiro no que não tenha um pai. A ordem dos filhos de um nó da árvore não importa na avaliação objetiva. O programa será executado da seguinte forma no processo de avaliação automática: ./etapa 3 < entrada > saida O conteúdo de saida contém a árvore da solução. Uma vez reconstituído em memória, a estrutura da árvore da solução será comparada com aquela de re. ferência. Cada teste unitário será avaliado como correto caso a árvore criada seja estruturalmente idêntica aquela de referência, com a mesma quantidade de nós, arestas e nomes de nós.
-A memória alocada dinamicamente deve ser bem gerenciada. Neste sentido, um teste automático consistirá em lançar a ferramenta valgrind para verificar se toda a memória alocada dinamicamente foi integralmente liberada antes do término do programa. Ao lançar o compilador com uma determinada entrada, assim:
+No processo de avaliação automática, será considerada como raiz o primeiro nó que não tenha um pai.
+
+A ordem dos filhos de um nó da árvore não importa na avaliação objetiva.
+
+O programa será executado da seguinte forma no processo de avaliação automática:
+
+```
+./etapa 3 < entrada > saida
+```
+
+O conteúdo de saida contém a árvore da solução.
+
+Uma vez reconstituído em memória, a estrutura da árvore da solução será comparada com aquela de referência.
+
+Cada teste unitário será avaliado como correto caso a árvore criada seja estruturalmente idêntica aquela de referência, com a mesma quantidade de nós, arestas e nomes de nós.
+
+A memória alocada dinamicamente deve ser bem gerenciada.
+
+Neste sentido, um teste automático consistirá em lançar a ferramenta valgrind para verificar se toda a memória alocada dinamicamente foi integralmente liberada antes do término do programa.
+
+Ao lançar o compilador com uma determinada entrada, assim:
+
+```
 valgrind ./etapa 3 < uma_entrada_correta
-Será observada esta saída do valgrind: -26684- definitely lost! 0 bytes in 0 blocks --26684- indirectly lost: 0bytes in 0 blocks --26684-
+```
+
+Será observada esta saída do valgrind:
+
+```
+-26684- definitely lost! 0 bytes in 0 blocks --26684- indirectly lost: 0bytes in 0 blocks --26684-
 possibly lost: 0 bytes in 0 blocks -26684- still reachable: O bytes in D blocks --26684--
 suppressed: O bytes in 0 blocks
-Somente passará o teste em que todos os valores de bytes e blocos forem zero. Qualquer valor diferente de 0 bytes in 0 blocks será interpretado como não liberação correta da memória alocada dinamicamente, e o teste será avaliado para falha.
+```
+
+Somente passará o teste em que todos os valores de bytes e blocos forem zero.
+
+Qualquer valor diferente de 0 bytes in 0 blocks será interpretado como não liberação correta da memória alocada dinamicamente, e o teste será avaliado para falha.
+
+&nbsp;
 
 ## C Sobre a Árvore Sintática Abstrata
 
-A árvore sintática abstrata, do inglês Abstract Syntax Tree (AST), é uma árvore n-ária onde os nós folha representam os tokens presentes no programa fonte, os nós intermediários são utilizados para criar uma hierarquia que condiz com as regras sintáticas, e a raiz representa o programa inteiro, ou a primeira função do programa. Essa árvore se inspira nas derivações do analisador sintático, tornando mais fáceis as etapas posteriores de verificação semàntica e síntese de código.
-A árvore é abstrata (quando comparada a árvore de derivação gramatical completa) porque não detalha todas as derivações gramaticais para uma entrada dada. Tipicamente são omitidas derivações intermediárias onde um símbolo não terminal gera somente um outro símbolo terminal, tokens que são palavras reservadas, e todos os símbolos de sincronismo ou identificação do código, os quais estão implícitos na estrutura hierárquica criada. São mantidos somente os nós fundamentais para manter a semântica da entrada. A estrutura do nível de detalhamento de uma AST pode depender das escolhas de projeto de um compilador.
-Os nós da árvore são frequentemente de tipos relacionados aos símbolos não terminais, ou a nós que representam operações diferentes, no caso das expressões. E importante notar que normalmente as declarações de tipos e variáveis são omitidas da AST, pois estas construções linguísticas não geram código, salvo nas situações onde as variáveis declaradas devem ser inicializadas.
+A árvore sintática abstrata, do inglês Abstract Syntax Tree (AST), é uma árvore n-ária onde os nós folha representam os tokens presentes no programa fonte, os nós intermediários são utilizados para criar uma hierarquia que condiz com as regras sintáticas, e a raiz representa o programa inteiro, ou a primeira função do programa.
+
+Essa árvore se inspira nas derivações do analisador sintático, tornando mais fáceis as etapas posteriores de verificação semântica e síntese de código.
+
+A árvore é abstrata (quando comparada a árvore de derivação gramatical completa) porque não detalha todas as derivações gramaticais para uma entrada dada.
+
+Tipicamente são omitidas derivações intermediárias onde um símbolo não terminal gera somente um outro símbolo terminal, tokens que são palavras reservadas, e todos os símbolos de sincronismo ou identificação do código, os quais estão implícitos na estrutura hierárquica criada.
+
+São mantidos somente os nós fundamentais para manter a semântica da entrada.
+
+A estrutura do nível de detalhamento de uma AST pode depender das escolhas de projeto de um compilador.
+
+Os nós da árvore são frequentemente de tipos relacionados aos símbolos não terminais, ou a nós que representam operações diferentes, no caso das expressões.
+
+É importante notar que normalmente as declarações de tipos e variáveis são omitidas da AST, pois estas construções linguísticas não geram código, salvo nas situações onde as variáveis declaradas devem ser inicializadas.
