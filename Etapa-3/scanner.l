@@ -9,8 +9,8 @@
 	// Function prototype
 	void removeQuotes(char* string);
 	void removeLastCharacterFromString(char* string);
-	void setValorLexico(token_type_t token_type);
-	void setValorLexicoForStringValue(token_type_t token_type, char* string);
+	void setValorLexico(enum TokenType token_type);
+	void setValorLexicoForStringValue(enum TokenType token_type, char* string);
 	int setValorLexicoForCompositeOperator(int tokenType, char* yytext);
 
 	// Variable definition
@@ -171,8 +171,8 @@ pattern_string \"(\\.|[^"\n])*\"
 
 %%
 
-void setValorLexico(token_type_t token_type) {
-	valor_lexico_t valor_lexico = { 
+void setValorLexico(enum TokenType token_type) {
+	struct ValorLexico valor_lexico = { 
 		.line_number = line_number,
 		.token_type = token_type,
 	};
@@ -180,7 +180,7 @@ void setValorLexico(token_type_t token_type) {
 	yylval.valor_lexico = valor_lexico;
 }
 
-void setValorLexicoForStringValue(token_type_t token_type, char* string) {
+void setValorLexicoForStringValue(enum TokenType token_type, char* string) {
 	setValorLexico(token_type);
 	yylval.valor_lexico.token_value.string = strdup(string);
 }

@@ -12,65 +12,65 @@ struct CommandList;
 struct Expression;
 struct ExpressionList;
 
-typedef struct Literal {
-	valor_lexico_t valor_lexico;
-} literal_t;
+struct Literal {
+	struct ValorLexico valor_lexico;
+};
 
-typedef struct Identifier {
-	valor_lexico_t valor_lexico;
-} identifier_t;
+struct Identifier {
+	struct ValorLexico valor_lexico;
+};
 
 struct ArrayIndex {
-	identifier_t identifier;
+	struct Identifier identifier;
 	struct ExpressionList* expression;
 };
 
-struct ArrayIndex new_array_index(identifier_t identifier, struct Expression expression);
+struct ArrayIndex new_array_index(struct Identifier identifier, struct Expression expression);
 
-typedef enum StorageAcessType {
+enum StorageAcessType {
 	IDENTIFIER_STORAGE,
 	ARRAY_INDEX_STORAGE,
-} storage_access_type_t;
+};
 
 /// For optional variable or array access.
-typedef union StorageAcessData {
-	identifier_t identifier;
+union StorageAcessData {
+	struct Identifier identifier;
 	struct ArrayIndex array_index;
-} storage_access_data_t;
+};
 
-typedef struct StorageAccess {
-	storage_access_type_t storage_type;
-	storage_access_data_t storage_data;
-} storage_access_t;
+struct StorageAccess {
+	enum StorageAcessType storage_type;
+	union StorageAcessData storage_data;
+};
 
-typedef enum ExpressionType {
+enum ExpressionType {
 	LITERAL,
 	IDENTIFIER_EXPRESSION,
 	ARRAY_INDEX,
 	FUNCTION_CALL_EXPR,
 	UNARY_OP,
 	BINARY_OP,
-} expression_type_t;
+};
 
 struct BinaryOp {
-	valor_lexico_t operation;
+	struct ValorLexico operation;
 	struct Expression* left_expression;
 	struct Expression* right_expression;
 };
 
 struct UnaryOp {
-	valor_lexico_t operation;
+	struct ValorLexico operation;
 	struct Expression* expression;
 };
 
 struct FunctionCall {
-	identifier_t identifier;
+	struct Identifier identifier;
 	struct ExpressionList* first_expression;
 };
 
 union ExpressionValue {
-	identifier_t identifier;
-	literal_t literal;
+	struct Identifier identifier;
+	struct Literal literal;
 	struct ArrayIndex array_index;
 	struct FunctionCall function_call;
 	struct UnaryOp unary_op;
@@ -78,7 +78,7 @@ union ExpressionValue {
 };
 
 struct Expression {
-	expression_type_t expression_type;
+	enum ExpressionType expression_type;
 	union ExpressionValue expression_value;
 };
 
@@ -87,66 +87,66 @@ struct ExpressionList {
 	struct ExpressionList* next_expression;
 };
 
-typedef struct InitVar {
-	identifier_t identifier;
+struct InitVar {
+	struct Identifier identifier;
 	struct Expression expression;
-} init_var_t;
+};
 
-typedef struct SetVar {
-	storage_access_t storage_access;
+struct SetVar {
+	struct StorageAccess storage_access;
 	struct Expression expression;
-} set_var_t;
+};
 
-typedef struct InputOutput {
-	valor_lexico_t valor_lexico; // Nao esta na especificacao, mas assumo que seja isto o esperado no print.
+struct InputOutput {
+	struct ValorLexico valor_lexico; // Nao esta na especificacao, mas assumo que seja isto o esperado no print.
 	struct Expression expression;
-} input_output_t;
+};
 
-typedef struct ShiftLeft {
-	valor_lexico_t valor_lexico;
-	storage_access_t storage_access;
-	literal_t literal; // int only
-} shift_left_t;
+struct ShiftLeft {
+	struct ValorLexico valor_lexico;
+	struct StorageAccess storage_access;
+	struct Literal literal; // int only
+};
 
-typedef struct ShiftRight {
-	valor_lexico_t valor_lexico; // << or >>
-	identifier_t identifier;
-	storage_access_t storage_access;
-	literal_t literal; // int only
-} shift_right_t;
+struct ShiftRight {
+	struct ValorLexico valor_lexico; // << or >>
+	struct Identifier identifier;
+	struct StorageAccess storage_access;
+	struct Literal literal; // int only
+};
 
-typedef struct ReturnCommand {
-	valor_lexico_t valor_lexico;
+struct ReturnCommand {
+	struct ValorLexico valor_lexico;
 	struct Expression expression;
-} return_command_t;
+};
 
-typedef struct BreakCommand {
-	valor_lexico_t valor_lexico;
-} break_command_t;
+struct BreakCommand {
+	struct ValorLexico valor_lexico;
+};
 
-typedef struct ContinueCommand {
-	valor_lexico_t valor_lexico;
-} continue_command_t;
+struct ContinueCommand {
+	struct ValorLexico valor_lexico;
+};
 
-typedef struct IfCommand {
+struct IfCommand {
 	struct Expression control_check;
 	struct CommandList* true_first_command;
 	struct CommandList* else_first_command; // optional
-} if_command_t;
+};
 
-typedef struct ForCommand {
-	init_var_t control_init;
+struct ForCommand {
+	struct InitVar control_init;
 	struct Expression control_check;
-	set_var_t control_iter;
+	struct SetVar control_iter;
 	struct CommandList* first_command;
-} for_command_t;
+};
 
-typedef struct WhileCommand {
+struct WhileCommand {
 	struct Expression control_check;
 	struct CommandList* first_command;
-} while_command_t;
+};
 
-typedef enum CommandType {
+enum CommandType {
 	INIT_VAR, // init_var
 	SET_VAR, // set_var
 	IO, // input_output
@@ -159,31 +159,31 @@ typedef enum CommandType {
 	IF_COMMAND, // if_command
 	FOR_COMMAND, // for_command
 	WHILE_COMMAND, // while_command
-} command_type_t;
+};
 
-typedef union CommandData {
-	init_var_t init_var;
-	set_var_t set_var;
-	input_output_t input_output;
+union CommmandData {
+	struct InitVar init_var;
+	struct SetVar set_var;
+	struct InputOutput input_output;
 	struct FunctionCall function_call;
-	shift_left_t shift_left;
-	shift_right_t shift_right;
-	return_command_t return_command;
-	break_command_t break_command;
-	continue_command_t continue_command;
-	if_command_t if_command;
-	for_command_t for_command;
-	while_command_t while_command;
-} command_data_t;
+	struct ShiftLeft shift_left;
+	struct ShiftRight shift_right;
+	struct ReturnCommand return_command;
+	struct BreakCommand break_command;
+	struct ContinueCommand continue_command;
+	struct IfCommand if_command;
+	struct ForCommand for_command;
+	struct WhileCommand while_command;
+};
 
 struct CommandList {
-	command_type_t command_type;
-	command_data_t command_data;
+	enum CommandType command_type;
+	union CommmandData command_data;
 	struct CommandList* next_command;
 };
 
-typedef struct FunctionDef {
-	valor_lexico_t identifier;
+struct FunctionDef {
+	struct ValorLexico identifier;
 	struct CommandList* first_command;
 	struct FunctionDef* next_function;
-} function_def_t;
+};
