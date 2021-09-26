@@ -3,13 +3,12 @@
     // Guilherme de Oliveira (00278301)
     // Jean Pierre Comerlatto Darricarrere (00182408)
 
-    #include <stdio.h>
-    #include "lexical_structures.h"
+    #include "abstract_syntax_tree.h"
 
     extern void *arvore;
     extern int yylineno;
 
-    function_node_t DUMMY = { .label = "DUMMY"};
+    dummy_function_def_t DUMMY = { .label = "DUMMY"};
 
     int yylex(void);
     void yyerror (char const *s);
@@ -17,7 +16,7 @@
 
 %union {
     valor_lexico_t valor_lexico;
-    function_node_t valor_node;
+    dummy_function_def_t dummy_function_def;
 }
 
 %expect 0
@@ -68,9 +67,9 @@
 %token<valor_lexico> TK_IDENTIFICADOR
 %token<valor_lexico> TOKEN_ERRO
 
-%type <valor_node> functionDef;
-%type <valor_node> topLevelDefList;
-%type <valor_node> program;
+%type<dummy_function_def> program
+%type<dummy_function_def> topLevelDefList
+%type<dummy_function_def> functionDef
 
 %%
 
@@ -127,7 +126,7 @@ param:
 functionDef:
     optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' command_block {
         valor_lexico_t x = $3;
-        function_node_t function = { .label = x.token_value.string, .next_function = NULL};
+        dummy_function_def_t function = { .label = x.token_value.string, .next_function = NULL};
         $$ = function;
     }
     ;
@@ -286,18 +285,28 @@ expressionList:
 
 
 topLevelDefList:
-    globalDef { $$ = DUMMY; }
-    | functionDef {$$ = $1; }
-    | topLevelDefList globalDef { $$ = DUMMY; }
-    | topLevelDefList functionDef { $$ = DUMMY; }
+    globalDef {
+        $$ = DUMMY;
+    }
+    | functionDef {
+        $$ = $1;
+    }
+    | topLevelDefList globalDef {
+        $$ = DUMMY;
+    }
+    | topLevelDefList functionDef {
+        $$ = DUMMY;
+    }
     ;
 
 program:
-    %empty { $$ = DUMMY; }
+    %empty {
+        $$ = DUMMY;
+    }
     | topLevelDefList {
-        function_node_t function = $1;
+        dummy_function_def_t function = $1;
         if(strcmp(function.label, "DUMMY") != 0){
-            printf("%i [label=\"%s\"];", &function, function.label);
+            printf("%p [label=\"%s\"];", &function, function.label);
         }
         $$ = $1;
     }
