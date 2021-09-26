@@ -40,7 +40,8 @@ typedef struct ValorLexico {
 	token_value_t token_value;	// 3. valor do token.
 } valor_lexico_t;
 
-typedef struct FunctionNode {
+// DUMMY INCOMPLETE TYPES
+typedef struct DummyFunctionDef {
 	char* label;
-	struct FunctionNode* next_function;
-} function_node_t;
+	struct DummyFunctionDef* next_function;
+} dummy_function_def_t;
