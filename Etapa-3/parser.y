@@ -124,7 +124,7 @@ param:
     ;
 
 functionDef:
-    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' command_block {
+    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
         valor_lexico_t x = $3;
         dummy_function_def_t function = { .label = x.token_value.string, .next_function = NULL};
         $$ = function;
@@ -132,7 +132,7 @@ functionDef:
     ;
 
 
-command_block:
+commandBlock:
     '{' optionalSimpleCommandList '}'
     ;
 
@@ -147,7 +147,7 @@ simpleCommandList:
     ;
 
 simpleCommand:
-    command_block ';'
+    commandBlock ';'
     | localDef ';'
     | varSet ';'
     | varShift ';'
@@ -219,10 +219,10 @@ IO:
 
 
 conditional:
-    TK_PR_IF '(' expression ')' command_block
-    | TK_PR_IF '(' expression ')' command_block TK_PR_ELSE command_block
-    | TK_PR_FOR '(' varSet ':' expression ':' varSet ')' command_block
-    | TK_PR_WHILE '(' expression ')' TK_PR_DO command_block
+    TK_PR_IF '(' expression ')' commandBlock
+    | TK_PR_IF '(' expression ')' commandBlock TK_PR_ELSE commandBlock
+    | TK_PR_FOR '(' varSet ':' expression ':' varSet ')' commandBlock
+    | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock
     ;
 
 expression:
