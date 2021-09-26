@@ -39,9 +39,3 @@ struct ValorLexico {
 	enum TokenType token_type;	// 2. tipo do token (caracteres especiais, operadores compostos, identificadores e literais);
 	union TokenValue token_value;	// 3. valor do token.
 };
-
-// DUMMY INCOMPLETE TYPES
-struct DummyFunctionDef {
-	char* label;
-	struct DummyFunctionDef* next_function;
-};

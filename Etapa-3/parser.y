@@ -8,8 +8,6 @@
     extern void *arvore;
     extern int yylineno;
 
-    struct DummyFunctionDef DUMMY = { .label = "DUMMY"};
-
     void exporta(void*);
     int yylex(void);
     void yyerror (char const *s);
@@ -19,7 +17,6 @@
     struct ValorLexico valor_lexico;
     struct CommandList* optional_command_list;
     struct FunctionDef* optional_function_def;
-    struct DummyFunctionDef dummy_function_def;
 }
 
 %expect 0
