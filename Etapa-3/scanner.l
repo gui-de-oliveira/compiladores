@@ -80,13 +80,13 @@ pattern_string \"(\\.|[^"\n])*\"
 
 "false" { 
 	setValorLexico(LITERAL_BOOL);
-	yylval.valor_lexico->token_value.boolean = false;
+	yylval.valor_lexico.token_value.boolean = false;
 	return TK_LIT_FALSE;
 }
 
 "true" { 
 	setValorLexico(LITERAL_BOOL);
-	yylval.valor_lexico->token_value.boolean = true;
+	yylval.valor_lexico.token_value.boolean = true;
 	return TK_LIT_TRUE;
 }
 
@@ -115,7 +115,7 @@ pattern_string \"(\\.|[^"\n])*\"
 	int value = atoi(yytext);
 
 	setValorLexico(LITERAL_INT);
-	yylval.valor_lexico->token_value.integer = value;
+	yylval.valor_lexico.token_value.integer = value;
 
 	return TK_LIT_INT;
 }
@@ -124,14 +124,14 @@ pattern_string \"(\\.|[^"\n])*\"
 	float value = atof(yytext);
 
 	setValorLexico(LITERAL_FLOAT);
-	yylval.valor_lexico->token_value.floating_point = value;
+	yylval.valor_lexico.token_value.floating_point = value;
 
 	return TK_LIT_FLOAT;
 }
 
 {pattern_char} {
 	setValorLexico(LITERAL_CHAR);
-	yylval.valor_lexico->token_value.character = yytext[1]; // 'x' => '[x]' 
+	yylval.valor_lexico.token_value.character = yytext[1]; // 'x' => '[x]' 
 
 	return TK_LIT_CHAR;
 }
@@ -142,7 +142,7 @@ pattern_string \"(\\.|[^"\n])*\"
 	removeLastCharacterFromString(string);
 
 	setValorLexico(LITERAL_STRING);
-	yylval.valor_lexico->token_value.string = string;
+	yylval.valor_lexico.token_value.string = string;
 	return TK_LIT_STRING;
 }
 
@@ -179,12 +179,12 @@ void setValorLexico(token_type_t token_type) {
 		.token_type = token_type,
 	};
 
-	yylval.valor_lexico = &valor_lexico;
+	yylval.valor_lexico = valor_lexico;
 }
 
 void setValorLexicoForStringValue(token_type_t token_type, char* string) {
 	setValorLexico(token_type);
-	yylval.valor_lexico->token_value.string = strdup(string);
+	yylval.valor_lexico.token_value.string = strdup(string);
 }
 
 int setValorLexicoForCompositeOperator(int tokenType, char* yytext) {

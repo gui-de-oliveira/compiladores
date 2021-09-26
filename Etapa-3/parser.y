@@ -14,7 +14,7 @@
 %}
 
 %union {
-    valor_lexico_t* valor_lexico;
+    valor_lexico_t valor_lexico;
 }
 
 %expect 0
