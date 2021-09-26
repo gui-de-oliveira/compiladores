@@ -24,6 +24,7 @@ run:
 	./etapa3
 
 test:
+	./runSyntacticTests.sh
 	node aslTests.js
 
 debug:
