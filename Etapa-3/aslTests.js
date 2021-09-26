@@ -166,7 +166,7 @@ B [label="f2"];
     `
 A, B
 B, C
-C, D
+B, D
 A [label="f1"];
 B [label="<="];
 C [label="a"];
@@ -184,7 +184,7 @@ D [label="1"];
     `
 A, B
 B, C
-C, D
+B, D
 A [label="f1"];
 B [label="="];
 C [label="a"];

@@ -17,12 +17,16 @@ struct Literal {
 	struct ValorLexico valor_lexico;
 };
 
+struct Literal* new_literal(struct ValorLexico valor_lexico);
+
 struct Identifier {
 	struct ValorLexico valor_lexico;
 };
 
+struct Identifier* new_identifier(struct ValorLexico valor_lexico);
+
 struct ArrayIndex {
-	struct Identifier identifier;
+	struct Identifier* identifier;
 	struct ExpressionList* expression;
 };
 
@@ -35,7 +39,7 @@ enum StorageAcessType {
 
 /// For optional variable or array access.
 union StorageAcessData {
-	struct Identifier identifier;
+	struct Identifier* identifier;
 	struct ArrayIndex array_index;
 };
 
@@ -56,7 +60,7 @@ struct UnaryOp {
 };
 
 struct FunctionCall {
-	struct Identifier identifier;
+	struct Identifier* identifier;
 	struct ExpressionList* first_expression;
 };
 
@@ -70,8 +74,8 @@ enum ExpressionType {
 };
 
 union ExpressionValue {
-	struct Literal literal;
-	struct Identifier identifier;
+	struct Literal* literal;
+	struct Identifier* identifier;
 	struct ArrayIndex array_index;
 	struct FunctionCall function_call;
 	struct UnaryOp unary_op;
@@ -94,12 +98,12 @@ enum InitVarType {
 };
 
 union InitVarData {
-	struct Literal literal;
-	struct Identifier identifier;
+	struct Literal* literal;
+	struct Identifier* identifier;
 };
 
 struct InitVar {
-	struct Identifier identifier;
+	struct Identifier* identifier;
 	enum InitVarType init_type;
 	union InitVarData init_data;
 };
@@ -117,14 +121,14 @@ struct InputOutput {
 struct ShiftLeft {
 	struct ValorLexico valor_lexico;
 	struct StorageAccess storage_access;
-	struct Literal literal; // int only
+	struct Literal* literal; // int only
 };
 
 struct ShiftRight {
 	struct ValorLexico valor_lexico; // << or >>
-	struct Identifier identifier;
+	struct Identifier* identifier;
 	struct StorageAccess storage_access;
-	struct Literal literal; // int only
+	struct Literal* literal; // int only
 };
 
 struct ReturnCommand {
