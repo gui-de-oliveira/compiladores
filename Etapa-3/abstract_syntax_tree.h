@@ -6,6 +6,7 @@
 #include "lexical_structures.h"
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 struct CommandList;
@@ -187,3 +188,9 @@ struct FunctionDef {
 	struct CommandList* first_command;
 	struct FunctionDef* next_function;
 };
+
+struct FunctionDef* new_function_def(struct ValorLexico identifier, struct CommandList* first_command);
+void append_function_def(struct FunctionDef* parent, struct FunctionDef* child);
+void print_top_function(struct FunctionDef* top_function);
+void print_function_nodes(struct FunctionDef* function_def);
+void print_function_label(struct FunctionDef* function);
