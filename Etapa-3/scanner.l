@@ -7,7 +7,6 @@
 	#include "parser.tab.h"
 
 	// Function prototype
-	int get_ascii_value();
 	void removeQuotes(char* string);
 	void removeLastCharacterFromString(char* string);
 	void setValorLexico(token_type_t token_type);
@@ -94,7 +93,10 @@ pattern_string \"(\\.|[^"\n])*\"
 "default" return TK_PR_DEFAULT;
 
 {pattern_special_char} {
-	return get_ascii_value();
+	setValorLexico(SPECIAL_CHAR);
+	char special_char = yytext[0];
+	yylval.valor_lexico.token_value.character = special_char;
+	return special_char;
 }
 
 "<=" return setValorLexicoForCompositeOperator(TK_OC_LE, yytext);
@@ -168,10 +170,6 @@ pattern_string \"(\\.|[^"\n])*\"
 }
 
 %%
-
-int get_ascii_value() {
-	return yytext[0];
-}
 
 void setValorLexico(token_type_t token_type) {
 	valor_lexico_t valor_lexico = { 
