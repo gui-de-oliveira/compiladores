@@ -10,12 +10,15 @@
 
     struct DummyFunctionDef DUMMY = { .label = "DUMMY"};
 
+    void exporta(void*);
     int yylex(void);
     void yyerror (char const *s);
 %}
 
 %union {
     struct ValorLexico valor_lexico;
+    struct CommandList* optional_command_list;
+    struct FunctionDef* optional_function_def;
     struct DummyFunctionDef dummy_function_def;
 }
 
@@ -67,9 +70,10 @@
 %token<valor_lexico> TK_IDENTIFICADOR
 %token<valor_lexico> TOKEN_ERRO
 
-%type<dummy_function_def> program
-%type<dummy_function_def> topLevelDefList
-%type<dummy_function_def> functionDef
+%type<optional_command_list> commandBlock
+%type<optional_function_def> program
+%type<optional_function_def> topLevelDefList
+%type<optional_function_def> functionDef
 
 %left GROUPING
 %right GROUPING_CLOSE
@@ -99,6 +103,38 @@
 
 
 %%
+
+program:
+    %empty {
+        $$ = NULL;
+    }
+    | topLevelDefList {
+        $$ = $1;
+        arvore = $$;
+    }
+    ;
+
+topLevelDefList:
+    globalDef {
+        $$ = NULL;
+    }
+    | functionDef {
+        $$ = $1;
+    }
+    | topLevelDefList globalDef {
+        $$ = $1;
+    }
+    | topLevelDefList functionDef {
+        append_function_def($1, $2);
+        $$ = $1;
+    }
+    ;
+
+functionDef:
+    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
+        $$ = new_function_def($3, $7);
+    }
+    ;
 
 optionalStatic:
     %empty
@@ -150,17 +186,11 @@ param:
     optionalConst type TK_IDENTIFICADOR
     ;
 
-functionDef:
-    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
-        struct ValorLexico x = $3;
-        struct DummyFunctionDef function = { .label = x.token_value.string, .next_function = NULL};
-        $$ = function;
-    }
-    ;
-
 
 commandBlock:
-    '{' optionalSimpleCommandList '}'
+    '{' optionalSimpleCommandList '}' {
+        $$ = NULL ; // TODO
+    }
     ;
 
 optionalSimpleCommandList:
@@ -375,39 +405,10 @@ expressionList:
     | expressionList ',' expression
     ;
 
-
-topLevelDefList:
-    globalDef {
-        $$ = DUMMY;
-    }
-    | functionDef {
-        $$ = $1;
-    }
-    | topLevelDefList globalDef {
-        $$ = DUMMY;
-    }
-    | topLevelDefList functionDef {
-        $$ = DUMMY;
-    }
-    ;
-
-program:
-    %empty {
-        $$ = DUMMY;
-    }
-    | topLevelDefList {
-        struct DummyFunctionDef function = $1;
-        if(strcmp(function.label, "DUMMY") != 0){
-            printf("%p [label=\"%s\"];", &function, function.label);
-        }
-        $$ = $1;
-    }
-    ;
-
 %%
 
 void exporta(void *arvore) {
-    ;
+    print_top_function((struct FunctionDef*) arvore);
 }
 
 void libera(void *arvore) {
