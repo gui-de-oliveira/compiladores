@@ -294,8 +294,8 @@ localNameDefList:
 
 localNameDefAssign:
     TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR {
-        struct Identifier left_identifier = {.valor_lexico = $1};
-        struct Identifier right_identifier = {.valor_lexico = $3};
+        struct Identifier* left_identifier = new_identifier($1);
+        struct Identifier* right_identifier = new_identifier($3);
         union InitVarData init_data;
         init_data.identifier = right_identifier;
         struct InitVar init_var = {.identifier = left_identifier, .init_type = IDENTIFIER_INIT, .init_data = init_data };
@@ -303,8 +303,8 @@ localNameDefAssign:
         $$ = new_command(INIT_VAR, command);
     }
     | TK_IDENTIFICADOR TK_OC_LE literal {
-        struct Identifier left_identifier = {.valor_lexico = $1};
-        struct Literal literal = {.valor_lexico = $3};
+        struct Identifier* left_identifier = new_identifier($1);
+        struct Literal* literal = new_literal($3);
         union InitVarData init_data;
         init_data.literal = literal;
         struct InitVar init_var = {.identifier = left_identifier, .init_type = LITERAL_INIT, .init_data = init_data};
