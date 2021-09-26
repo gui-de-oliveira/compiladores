@@ -5,6 +5,21 @@
 
 #include "abstract_syntax_tree.h"
 
+struct CommandList* new_command(enum CommandType command_type, union CommandData command_data) {
+	struct CommandList* new_pointer = (struct CommandList*) malloc(sizeof(struct CommandList));
+	new_pointer->command_type = command_type;
+	new_pointer->command_data = command_data;
+	new_pointer->next_command = NULL;
+	return new_pointer;
+}
+
+void append_command(struct CommandList* parent, struct CommandList* child) {
+	if(parent == NULL || child == NULL) {
+		return;
+	}
+	parent->next_command = child;
+}
+
 struct FunctionDef* new_function_def(struct ValorLexico identifier, struct CommandList* first_command){
     struct FunctionDef* new_pointer = (struct FunctionDef*) malloc(sizeof(struct FunctionDef));
     new_pointer->identifier = identifier;
@@ -20,7 +35,7 @@ void append_function_def(struct FunctionDef* parent, struct FunctionDef* child) 
     parent->next_function = child;
 }
 
-void print_commmand_nodes(struct CommandList* command_list){
+void print_command_nodes(struct CommandList* command_list){
     ;
 }
 
@@ -28,7 +43,7 @@ void print_function_nodes(struct FunctionDef* function_def) {
     struct CommandList* current_command = function_def->first_command;
     while(current_command != NULL) {
         printf("\n%p, %p", function_def, current_command);
-        print_commmand_nodes(current_command);
+        print_command_nodes(current_command);
         current_command = current_command->next_command;
     }
     struct FunctionDef* next_function = function_def->next_function;
