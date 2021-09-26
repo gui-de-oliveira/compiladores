@@ -9,12 +9,15 @@
     extern void *arvore;
     extern int yylineno;
 
+    function_node_t DUMMY = { .label = "DUMMY"};
+
     int yylex(void);
     void yyerror (char const *s);
 %}
 
 %union {
     valor_lexico_t valor_lexico;
+    function_node_t valor_node;
 }
 
 %expect 0
@@ -64,6 +67,10 @@
 %token<valor_lexico> TK_LIT_STRING
 %token<valor_lexico> TK_IDENTIFICADOR
 %token<valor_lexico> TOKEN_ERRO
+
+%type <valor_node> functionDef;
+%type <valor_node> topLevelDefList;
+%type <valor_node> program;
 
 %%
 
@@ -118,7 +125,11 @@ param:
     ;
 
 functionDef:
-    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' command_block
+    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' command_block {
+        valor_lexico_t x = $3;
+        function_node_t function = { .label = x.token_value.string, .next_function = NULL};
+        $$ = function;
+    }
     ;
 
 
@@ -275,15 +286,21 @@ expressionList:
 
 
 topLevelDefList:
-    globalDef
-    | functionDef
-    | topLevelDefList globalDef
-    | topLevelDefList functionDef
+    globalDef { $$ = DUMMY; }
+    | functionDef {$$ = $1; }
+    | topLevelDefList globalDef { $$ = DUMMY; }
+    | topLevelDefList functionDef { $$ = DUMMY; }
     ;
 
 program:
-    %empty
-    | topLevelDefList
+    %empty { $$ = DUMMY; }
+    | topLevelDefList {
+        function_node_t function = $1;
+        if(strcmp(function.label, "DUMMY") != 0){
+            printf("%i [label=\"%s\"];", &function, function.label);
+        }
+        $$ = $1;
+    }
     ;
 
 %%

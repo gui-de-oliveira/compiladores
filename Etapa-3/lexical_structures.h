@@ -39,3 +39,8 @@ typedef struct ValorLexico {
 	token_type_t token_type;	// 2. tipo do token (caracteres especiais, operadores compostos, identificadores e literais);
 	token_value_t token_value;	// 3. valor do token.
 } valor_lexico_t;
+
+typedef struct FunctionNode {
+	char* label;
+	struct FunctionNode* next_function;
+} function_node_t;
