@@ -71,6 +71,33 @@
 %type<dummy_function_def> topLevelDefList
 %type<dummy_function_def> functionDef
 
+%left GROUPING
+%right GROUPING_CLOSE
+
+%nonassoc EXPRESSION_OPERAND
+%left EXPRESSION
+
+%left TERNARY_OPERATION
+
+%right TERNARY_CLOSE
+%left TERNARY_OPEN
+
+%left BINARY_OPERATION
+
+%left LOGICAL_OR
+%left LOGICAL_AND
+%left BITWISE_OR
+%left BITWISE_XOR
+%left BITWISE_AND
+%left RELATIONAL_EQUALITY_OP
+%left RELATIONAL_SIZE_OP
+%left SHIFT_OPERATOR
+%left ADD_SUB
+%left MULT_DIV_REMAINDER
+
+%left UNARY_OPERATOR
+
+
 %%
 
 optionalStatic:
@@ -201,8 +228,8 @@ varShift:
     ;
 
 shiftOperator:
-    TK_OC_SR
-    | TK_OC_SL
+    TK_OC_SR %prec SHIFT_OPERATOR
+    | TK_OC_SL %prec SHIFT_OPERATOR
     ;
 
 
@@ -226,15 +253,96 @@ conditional:
     ;
 
 expression:
-    optionalOperator expressionOperand
-    | optionalOperator '(' expression ')'
+    ternaryOperationOrLower
     ;
 
-optionalOperator:
-    %empty
-    | optionalOperator unaryOperator
-    | expression binaryOperator
-    | expression '?' expression ':'
+ternaryOperationOrLower:
+    binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower
+    | binaryOperationOrLower
+    ;
+
+ternaryOpen:
+    '?' %prec TERNARY_OPEN
+    ;
+
+ternaryClose:
+    ':' %prec TERNARY_CLOSE
+    ;
+
+binaryOperationOrLower:
+    binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR
+    | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND
+    | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR
+    | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR
+    | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND
+    | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP
+    | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP
+    | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB
+    | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER
+    | unaryOperationOrOperand
+    ;
+
+logicalOr:
+    TK_OC_OR %prec LOGICAL_OR
+    ;
+
+logicalAnd:
+    TK_OC_AND %prec LOGICAL_AND
+    ;
+
+bitwiseOr:
+    '|' %prec BITWISE_OR
+    ;
+
+bitwiseXor:
+    '^' %prec BITWISE_XOR
+    ;
+
+bitwiseAnd:
+    '&' %prec BITWISE_AND
+    ;
+
+relationalEqualityOperator:
+    TK_OC_EQ %prec RELATIONAL_EQUALITY_OP
+    | TK_OC_NE %prec RELATIONAL_EQUALITY_OP
+    ;
+
+relationalSizeOperator:
+    '<' %prec RELATIONAL_SIZE_OP
+    | '>' %prec RELATIONAL_SIZE_OP
+    | TK_OC_LE %prec RELATIONAL_SIZE_OP
+    | TK_OC_GE %prec RELATIONAL_SIZE_OP
+    ;
+
+addSub:
+    '+' %prec ADD_SUB
+    | '-' %prec ADD_SUB
+    ;
+
+multDivRemainder:
+    '*' %prec MULT_DIV_REMAINDER
+    | '/' %prec MULT_DIV_REMAINDER
+    | '%' %prec MULT_DIV_REMAINDER
+    ;
+
+unaryOperationOrOperand:
+    expressionOperand
+    | unaryOperatorList expressionOperand
+    ;
+
+unaryOperatorList:
+    unaryOperatorList unaryOperator
+    | unaryOperator
+    ;
+
+unaryOperator:
+    '&' %prec UNARY_OPERATOR
+    | '!' %prec UNARY_OPERATOR
+    | '+' %prec UNARY_OPERATOR
+    | '-' %prec UNARY_OPERATOR
+    | '?' %prec UNARY_OPERATOR
+    | '*' %prec UNARY_OPERATOR
+    | '#' %prec UNARY_OPERATOR
     ;
 
 expressionOperand: 
@@ -242,35 +350,19 @@ expressionOperand:
     | TK_IDENTIFICADOR '[' expression ']'
     | literal
     | functionCall
+    | grouping
     ;
 
-unaryOperator:
-    '&'
-    | '!'
-    | '+'
-    | '-'
-    | '?'
-    | '*'
-    | '#'
+grouping:
+    openGrouping expression closeGrouping
     ;
 
-binaryOperator:
-    TK_OC_LE
-    | TK_OC_GE
-    | TK_OC_EQ
-    | TK_OC_NE
-    | TK_OC_AND
-    | TK_OC_OR
-    | '<'
-    | '>'
-    | '+'
-    | '-'
-    | '*'
-    | '/'
-    | '%'
-    | '|'
-    | '&'
-    | '^'
+openGrouping:
+    '('
+    ;
+
+closeGrouping:
+    ')' %prec GROUPING_CLOSE
     ;
 
 optionalExpressionList:
