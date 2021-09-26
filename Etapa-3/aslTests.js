@@ -37,8 +37,6 @@ function replaceFileMemoryWithSymbols(file) {
   return newFile;
 }
 
-var testsCounter = 0;
-
 const FontColor = {
   Reset: "\x1b[0m",
   Bright: "\x1b[1m",
@@ -69,13 +67,19 @@ const FontColor = {
   },
 };
 
+var testsCounter = 0;
+var memoryLeaks = 0;
+var testMemoryLeak = false;
+
 async function testInput(input, expected) {
   try {
     testsCounter++;
 
-    await fs.writeFile("temp", input);
+    const randomNumber = Math.random().toFixed(3).substr(2, 6);
+    const file = `testfile-${randomNumber}.temp`;
+    await fs.writeFile(file, input);
 
-    const { stdout } = await exec("./etapa3 < temp");
+    const { stdout } = await exec(`./etapa3 < ${file}`);
     const rawOutput = stdout;
     const output = replaceFileMemoryWithSymbols(rawOutput);
 
@@ -92,10 +96,25 @@ async function testInput(input, expected) {
     }
 
     process.stdout.write(FontColor.Fg.Green);
-    console.log(`Test ${testsCounter} passed!`);
+    process.stdout.write(`Test ${testsCounter} passed!`);
     process.stdout.write(FontColor.Reset);
 
-    await exec("rm temp");
+    if (testMemoryLeak) {
+      try {
+        await exec(
+          `valgrind --leak-check=full --error-exitcode=2 --quiet ./etapa3 < ${file}`
+        );
+      } catch {
+        process.stdout.write(FontColor.Fg.Red);
+        process.stdout.write(` (Memory leaked!)`);
+        process.stdout.write(FontColor.Reset);
+      }
+      process.exit();
+    }
+
+    console.log("");
+
+    await exec(`rm ${file}`);
   } catch (error) {
     console.log(FontColor.Fg.Red);
     console.log(`Test ${testsCounter} CRASHED!`);
@@ -202,6 +221,20 @@ H [label="2"];
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
+
+  if (!testMemoryLeak) {
+    console.log("Not tested for memory leaks.");
+  } else {
+    if (memoryLeaks === 0) {
+      process.stdout.write(FontColor.Fg.Green);
+      console.log("NO MEMORY LEAKS!");
+      process.stdout.write(FontColor.Reset);
+    } else {
+      process.stdout.write(FontColor.Fg.Red);
+      console.log(`${memoryLeaks} MEMORY LEAKS!`);
+      process.stdout.write(FontColor.Reset);
+    }
+  }
 
   await exec("make clean");
 }

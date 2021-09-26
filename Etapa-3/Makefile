@@ -16,6 +16,7 @@ main:
 
 clean:
 	rm -f etapa3 etapa3.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
+	rm *.temp
 
 zip:
 	tar cvzf etapa3.tgz parser.y scanner.l Makefile runTests.sh
@@ -24,7 +25,6 @@ run:
 	./etapa3
 
 test:
-	./runSyntacticTests.sh
 	node aslTests.js
 
 debug:
