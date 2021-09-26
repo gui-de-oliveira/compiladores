@@ -8,15 +8,15 @@
     extern void *arvore;
     extern int yylineno;
 
-    dummy_function_def_t DUMMY = { .label = "DUMMY"};
+    struct DummyFunctionDef DUMMY = { .label = "DUMMY"};
 
     int yylex(void);
     void yyerror (char const *s);
 %}
 
 %union {
-    valor_lexico_t valor_lexico;
-    dummy_function_def_t dummy_function_def;
+    struct ValorLexico valor_lexico;
+    struct DummyFunctionDef dummy_function_def;
 }
 
 %expect 0
@@ -152,8 +152,8 @@ param:
 
 functionDef:
     optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
-        valor_lexico_t x = $3;
-        dummy_function_def_t function = { .label = x.token_value.string, .next_function = NULL};
+        struct ValorLexico x = $3;
+        struct DummyFunctionDef function = { .label = x.token_value.string, .next_function = NULL};
         $$ = function;
     }
     ;
@@ -396,7 +396,7 @@ program:
         $$ = DUMMY;
     }
     | topLevelDefList {
-        dummy_function_def_t function = $1;
+        struct DummyFunctionDef function = $1;
         if(strcmp(function.label, "DUMMY") != 0){
             printf("%p [label=\"%s\"];", &function, function.label);
         }

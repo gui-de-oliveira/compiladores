@@ -42,7 +42,7 @@ Como esta variável global pode ser configurada com a diretiva %union, sugere-se
 ```c
 // Exemplo de uso da diretiva %union no arquivo parser.y
 %union {
-    valor_lexico_t* valor_lexico;
+    struct ValorLexico* valor_lexico;
 }
 ```
 
@@ -63,7 +63,7 @@ O tipo do valor_lexico (e por consequência o valor que será retido) deve ser u
 
 Não há necessidade de lidar com palavras-reservadas.
 
-- [x] [Implementação do tipo valor_lexico_t](https://github.com/GuiOliveira98/compiladores/issues/9)
+- [x] [Implementação do tipo struct ValorLexico](https://github.com/GuiOliveira98/compiladores/issues/9)
 
 O valor do token deve ser uma cadeia de caracteres (duplicada com strdup a partir de yytext) para os tokens de caracteres especiais, operadores compostos, identificadores.
 

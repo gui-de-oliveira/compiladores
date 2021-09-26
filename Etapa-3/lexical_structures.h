@@ -6,7 +6,7 @@
 #include <stdbool.h> 
 
 // 2.1: tipo do token
-typedef enum TokenType {
+enum TokenType {
 	SPECIAL_CHAR, 		// caracteres especiais,
 	COMPOSITE_OPERATOR, // operadores compostos,
 	IDENTIFIER, 		// identificadores e
@@ -19,29 +19,29 @@ typedef enum TokenType {
 	LITERAL_CHAR, 		
 	LITERAL_BOOL, 		
 	LITERAL_STRING, 	
-} token_type_t;
+};
 
 // e o valor associado a ele através de uma construção union da linguagem C.
 
 // 2.1: Os tokens de valores literais devem ter um tratamento especial, pois o valor do token
 // deve ser convertido para o tipo apropriado (...
-typedef union TokenValue {
+union TokenValue {
 	int integer;			// inteiro int
 	char character;			// caractere char	
 	float floating_point;	// ponto-flutuante float
 	bool boolean;			// booleano bool
 	char* string;			// ou cadeia de caracteres char*)
-} token_value_t;
+};
 
 // 2.1: O tipo do valor_lexico (e por consequência o valor que será retido) deve ser uma estrutura de dados que contém os seguintes campos:
-typedef struct ValorLexico {
+struct ValorLexico {
 	int line_number;			// 1. número da linha onde apareceu o lexema;
-	token_type_t token_type;	// 2. tipo do token (caracteres especiais, operadores compostos, identificadores e literais);
-	token_value_t token_value;	// 3. valor do token.
-} valor_lexico_t;
+	enum TokenType token_type;	// 2. tipo do token (caracteres especiais, operadores compostos, identificadores e literais);
+	union TokenValue token_value;	// 3. valor do token.
+};
 
 // DUMMY INCOMPLETE TYPES
-typedef struct DummyFunctionDef {
+struct DummyFunctionDef {
 	char* label;
 	struct DummyFunctionDef* next_function;
-} dummy_function_def_t;
+};
