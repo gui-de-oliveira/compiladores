@@ -17,6 +17,7 @@
     struct ValorLexico valor_lexico;
     struct CommandList* optional_command_list;
     struct FunctionDef* optional_function_def;
+    struct InitVar* init_var;
 }
 
 %expect 0
@@ -67,6 +68,14 @@
 %token<valor_lexico> TK_IDENTIFICADOR
 %token<valor_lexico> TOKEN_ERRO
 
+%type<valor_lexico> literal
+
+%type<optional_command_list> localNameDefAssign
+%type<optional_command_list> localDef
+%type<optional_command_list> localNameDefList
+%type<optional_command_list> simpleCommand
+%type<optional_command_list> simpleCommandList
+%type<optional_command_list> optionalSimpleCommandList
 %type<optional_command_list> commandBlock
 %type<optional_function_def> program
 %type<optional_function_def> topLevelDefList
@@ -186,31 +195,64 @@ param:
 
 commandBlock:
     '{' optionalSimpleCommandList '}' {
-        $$ = NULL ; // TODO
+        $$ = $2;
     }
     ;
 
 optionalSimpleCommandList:
-    %empty
-    | simpleCommandList
+    %empty {
+        $$ = NULL;
+    }
+    | simpleCommandList {
+        $$ = $1;
+    }
     ;
 
 simpleCommandList:
-    simpleCommand
-    | simpleCommandList simpleCommand
+    simpleCommand {
+        $$ = $1;
+    }
+    | simpleCommandList simpleCommand {
+        if($1 == NULL) {
+            $$ = $2;
+        } else {
+            append_command($1, $2);
+            $$ = $1;
+        }
+    }
     ;
 
 simpleCommand:
-    commandBlock ';'
-    | localDef ';'
-    | varSet ';'
-    | varShift ';'
-    | conditional ';'
-    | IO ';'
-    | functionCall ';'
-    | TK_PR_RETURN expression ';'
-    | TK_PR_CONTINUE ';'
-    | TK_PR_BREAK ';'
+    commandBlock ';' {
+        $$ = $1;
+    }
+    | localDef ';' {
+        $$ = $1;
+    }
+    | varSet ';' {
+        $$ = NULL; // TO DO
+    }
+    | varShift ';' {
+        $$ = NULL; // TO DO
+    }
+    | conditional ';' {
+        $$ = NULL; // TO DO
+    }
+    | IO ';' {
+        $$ = NULL; // TO DO
+    }
+    | functionCall ';' {
+        $$ = NULL; // TO DO
+    }
+    | TK_PR_RETURN expression ';' {
+        $$ = NULL; // TO DO
+    }
+    | TK_PR_CONTINUE ';' {
+        $$ = NULL; // TO DO
+    }
+    | TK_PR_BREAK ';' {
+        $$ = NULL; // TO DO
+    }
     ;
 
 
@@ -225,20 +267,51 @@ literal:
 
 
 localDef:
-    optionalStatic optionalConst type localNameDefList
+    optionalStatic optionalConst type localNameDefList {
+        $$ = $4;
+    }
     ;
 
 localNameDefList:
-    localNameDef
-    | localNameDefList ',' localNameDef
+    TK_IDENTIFICADOR {
+        $$ = NULL;
+    }
+    | localNameDefAssign {
+        $$ = $1;
+    }
+    | localNameDefList ',' TK_IDENTIFICADOR {
+        $$ = $1;
+    }
+    | localNameDefList ',' localNameDefAssign {
+        if($1 == NULL) {
+            $$ = $3;
+        } else {
+            append_command($1, $3);
+            $$ = $1;
+        }
+    }
     ;
 
-localNameDef:
-    TK_IDENTIFICADOR
-    | TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR
-    | TK_IDENTIFICADOR TK_OC_LE literal
+localNameDefAssign:
+    TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR {
+        struct Identifier left_identifier = {.valor_lexico = $1};
+        struct Identifier right_identifier = {.valor_lexico = $3};
+        union InitVarData init_data;
+        init_data.identifier = right_identifier;
+        struct InitVar init_var = {.identifier = left_identifier, .init_type = IDENTIFIER_INIT, .init_data = init_data };
+        union CommandData command = {.init_var = init_var};
+        $$ = new_command(INIT_VAR, command);
+    }
+    | TK_IDENTIFICADOR TK_OC_LE literal {
+        struct Identifier left_identifier = {.valor_lexico = $1};
+        struct Literal literal = {.valor_lexico = $3};
+        union InitVarData init_data;
+        init_data.literal = literal;
+        struct InitVar init_var = {.identifier = left_identifier, .init_type = LITERAL_INIT, .init_data = init_data};
+        union CommandData command = {.init_var = init_var};
+        $$ = new_command(INIT_VAR, command);
+    }
     ;
-
 
 optionalArrayAccess:
     %empty

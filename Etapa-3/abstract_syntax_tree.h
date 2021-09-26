@@ -44,15 +44,6 @@ struct StorageAccess {
 	union StorageAcessData storage_data;
 };
 
-enum ExpressionType {
-	LITERAL,
-	IDENTIFIER_EXPRESSION,
-	ARRAY_INDEX,
-	FUNCTION_CALL_EXPR,
-	UNARY_OP,
-	BINARY_OP,
-};
-
 struct BinaryOp {
 	struct ValorLexico operation;
 	struct Expression* left_expression;
@@ -69,9 +60,18 @@ struct FunctionCall {
 	struct ExpressionList* first_expression;
 };
 
+enum ExpressionType {
+	LITERAL,
+	IDENTIFIER_EXPRESSION,
+	ARRAY_INDEX,
+	FUNCTION_CALL_EXPR,
+	UNARY_OP,
+	BINARY_OP,
+};
+
 union ExpressionValue {
-	struct Identifier identifier;
 	struct Literal literal;
+	struct Identifier identifier;
 	struct ArrayIndex array_index;
 	struct FunctionCall function_call;
 	struct UnaryOp unary_op;
@@ -88,9 +88,20 @@ struct ExpressionList {
 	struct ExpressionList* next_expression;
 };
 
+enum InitVarType {
+	LITERAL_INIT,
+	IDENTIFIER_INIT,
+};
+
+union InitVarData {
+	struct Literal literal;
+	struct Identifier identifier;
+};
+
 struct InitVar {
 	struct Identifier identifier;
-	struct Expression expression;
+	enum InitVarType init_type;
+	union InitVarData init_data;
 };
 
 struct SetVar {
@@ -162,7 +173,7 @@ enum CommandType {
 	WHILE_COMMAND, // while_command
 };
 
-union CommmandData {
+union CommandData {
 	struct InitVar init_var;
 	struct SetVar set_var;
 	struct InputOutput input_output;
@@ -179,9 +190,12 @@ union CommmandData {
 
 struct CommandList {
 	enum CommandType command_type;
-	union CommmandData command_data;
+	union CommandData command_data;
 	struct CommandList* next_command;
 };
+
+struct CommandList* new_command(enum CommandType command_type, union CommandData command_data);
+void append_command(struct CommandList* parent, struct CommandList* child);
 
 struct FunctionDef {
 	struct ValorLexico identifier;
@@ -191,6 +205,7 @@ struct FunctionDef {
 
 struct FunctionDef* new_function_def(struct ValorLexico identifier, struct CommandList* first_command);
 void append_function_def(struct FunctionDef* parent, struct FunctionDef* child);
-void print_top_function(struct FunctionDef* top_function);
 void print_function_nodes(struct FunctionDef* function_def);
 void print_function_label(struct FunctionDef* function);
+
+void print_top_function(struct FunctionDef* top_function);
