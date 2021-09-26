@@ -37,3 +37,7 @@ debug:
 
 	gcc -o etapa3 lex.yy.o parser.tab.o main.o -lfl
 	./etapa3
+
+log:
+	make
+	./etapa3 < .temp

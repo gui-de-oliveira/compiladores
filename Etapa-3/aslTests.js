@@ -75,8 +75,7 @@ async function testInput(input, expected) {
   try {
     testsCounter++;
 
-    const randomNumber = Math.random().toFixed(3).substr(2, 6);
-    const file = `testfile-${randomNumber}.temp`;
+    const file = `.temp`;
     await fs.writeFile(file, input);
 
     const { stdout } = await exec(`./etapa3 < ${file}`);
@@ -232,28 +231,28 @@ D [label="1"];
 
   await testInput(
     `
-  int f1() {
-    int a;
-    a = 1;
-    a = 2;
-  }
-`,
+    int f1() {
+      int a;
+      a = 1;
+      a = 2;
+    }
+  `,
     `
-A, B
-B, C
-B, D
-B, E
-E, F
-F, G
-F, H
-A [label="f1"];
-B [label="="];
-C [label="a"];
-D [label="1"];
-F [label="="];
-G [label="a"];
-H [label="2"];
-`
+  A, B
+  B, C
+  B, D
+  B, E
+  E, F
+  F, G
+  F, H
+  A [label="f1"];
+  B [label="="];
+  C [label="a"];
+  D [label="1"];
+  F [label="="];
+  G [label="a"];
+  H [label="2"];
+  `
   );
 
   process.stdout.write(FontColor.Fg.Green);
