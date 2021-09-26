@@ -121,6 +121,8 @@ async function testInput(input, expected) {
     console.log(`Input: "${input}"`);
     console.log("Error: ", error);
     console.log(FontColor.Reset);
+
+    process.exit();
   }
 }
 
@@ -188,6 +190,42 @@ B, D
 A [label="f1"];
 B [label="="];
 C [label="a"];
+D [label="1"];
+`
+  );
+
+  await testInput(
+    `
+  int f1() {
+    int b;
+    b = 1;
+  }
+`,
+    `
+A, B
+B, C
+B, D
+A [label="f1"];
+B [label="="];
+C [label="b"];
+D [label="1"];
+`
+  );
+
+  await testInput(
+    `
+  int f1() {
+    int b;
+    b = 1;
+  }
+`,
+    `
+A, B
+B, C
+B, D
+A [label="f1"];
+B [label="="];
+C [label="b"];
 D [label="1"];
 `
   );

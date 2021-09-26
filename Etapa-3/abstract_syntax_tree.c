@@ -73,6 +73,26 @@ void print_init_var_label(struct CommandList* command_list) {
     }
 }
 
+void print_set_var_nodes(struct CommandList* command_list) {
+    struct SetVar set_var = command_list->command_data.set_var;
+    char*  id = set_var.storage_access.storage_data.identifier->valor_lexico.token_value.string;
+    int*  x = &set_var.expression.expression_value.literal->valor_lexico.token_value.integer;
+
+    printf("\n%p, %p", command_list, id);
+    printf("\n%p, %p", command_list, x);
+}
+
+
+void print_set_var_label(struct CommandList* command_list) {
+    struct SetVar set_var = command_list->command_data.set_var;
+    char* label = set_var.storage_access.storage_data.identifier->valor_lexico.token_value.string;
+
+    printf("\n%p [label=\"=\"];", command_list);
+    printf("\n%p [label=\"%s\"];", label, label);
+    printf("\n%p [label=\"1\"];",  &set_var.expression.expression_value.literal->valor_lexico.token_value.integer);
+    
+}
+
 struct CommandList* new_command(enum CommandType command_type, union CommandData command_data) {
 	struct CommandList* new_pointer = (struct CommandList*) malloc(sizeof(struct CommandList));
 	new_pointer->command_type = command_type;
@@ -103,11 +123,17 @@ void append_function_def(struct FunctionDef* parent, struct FunctionDef* child) 
     parent->next_function = child;
 }
 
+
 void print_command_nodes(struct CommandList* command_list){
     switch(command_list->command_type) {
         case INIT_VAR:
             print_init_var_nodes(command_list);
             break;
+
+        case SET_VAR:
+            print_set_var_nodes(command_list);
+            break;
+
         default:
             printf("\nUnimplemented command_type in print_command_nodes: %d", command_list->command_type);
     }
@@ -124,6 +150,11 @@ void print_command_label(struct CommandList* command_list) {
         case INIT_VAR:
             print_init_var_label(command_list);
             break;
+
+        case SET_VAR:
+            print_set_var_label(command_list);
+            break;
+
         default:
             printf("\nUnimplemented command_type in print_command_label: %d", command_list->command_type);
     }
@@ -176,4 +207,38 @@ void print_top_function(struct FunctionDef* top_function) {
         print_function_label(current_function);
         current_function = current_function->next_function;
     }
+}
+
+struct Expression createLiteralExpression(){
+    union TokenValue token_value = { .integer = 1 };
+    struct ValorLexico valor_lexico = {.line_number = 1, .token_type = LITERAL_INT, .token_value = token_value } ;
+
+    struct Literal* literal = (struct Literal*) malloc(sizeof(struct Literal));
+    literal->valor_lexico = valor_lexico;
+
+    union ExpressionValue expression_value = { .literal = literal };
+    struct Expression expression = { .expression_type = LITERAL, .expression_value = expression_value };
+    return expression;
+}
+
+struct ValorLexico createStringLiteral(char* string){
+    union TokenValue token_value = { .string = string };
+    struct ValorLexico valor_lexico = {.line_number = 1, .token_type = LITERAL_STRING, .token_value = token_value } ;
+    return valor_lexico;
+}
+
+struct CommandList* createSetVar(struct ValorLexico identificador){
+    char* label = identificador.token_value.string;
+
+    struct Identifier* identifier = (struct Identifier*) malloc(sizeof(struct Identifier));
+    identifier->valor_lexico = createStringLiteral(label);
+
+    struct ArrayIndex array_index = {.identifier = identifier};
+
+    union StorageAcessData storage_data =  { .identifier = identifier, .array_index = array_index };
+    struct StorageAccess storage_access = { .storage_type = IDENTIFIER_STORAGE, .storage_data = storage_data};
+
+    struct SetVar set_var = {.storage_access = storage_access, .expression = createLiteralExpression()};
+    union CommandData command = {.set_var = set_var};
+    return new_command(SET_VAR, command);
 }

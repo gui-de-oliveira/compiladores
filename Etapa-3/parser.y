@@ -81,6 +81,8 @@
 %type<optional_function_def> topLevelDefList
 %type<optional_function_def> functionDef
 
+%type<optional_command_list> varSet
+
 %left GROUPING
 %right GROUPING_CLOSE
 
@@ -230,7 +232,7 @@ simpleCommand:
         $$ = $1;
     }
     | varSet ';' {
-        $$ = NULL; // TO DO
+        $$ = $1;
     }
     | varShift ';' {
         $$ = NULL; // TO DO
@@ -319,9 +321,14 @@ optionalArrayAccess:
     ;
 
 varSet:
-    TK_IDENTIFICADOR optionalArrayAccess '=' expression
+    TK_IDENTIFICADOR '=' expression {
+        $$ = createSetVar($1);
+    } 
+    | TK_IDENTIFICADOR '[' expression ']' '=' expression {
+        $$ = createSetVar($1);
+    }
     ;
-    
+
 
 varShift:
     TK_IDENTIFICADOR optionalArrayAccess shiftOperator expression

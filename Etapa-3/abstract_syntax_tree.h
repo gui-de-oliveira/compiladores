@@ -213,3 +213,5 @@ void print_function_nodes(struct FunctionDef* function_def);
 void print_function_label(struct FunctionDef* function);
 
 void print_top_function(struct FunctionDef* top_function);
+
+struct CommandList* createSetVar(struct ValorLexico identificador);
