@@ -27,10 +27,10 @@ struct Identifier* new_identifier(struct ValorLexico valor_lexico);
 
 struct ArrayIndex {
 	struct Identifier* identifier;
-	struct ExpressionList* expression;
+	struct Expression* expression;
 };
 
-struct ArrayIndex new_array_index(struct Identifier identifier, struct Expression expression);
+struct ArrayIndex* new_array_index(struct Identifier* identifier, struct Expression* expression);
 
 enum StorageAcessType {
 	IDENTIFIER_STORAGE,
@@ -40,7 +40,7 @@ enum StorageAcessType {
 /// For optional variable or array access.
 union StorageAcessData {
 	struct Identifier* identifier;
-	struct ArrayIndex array_index;
+	struct ArrayIndex* array_index;
 };
 
 struct StorageAccess {
@@ -76,7 +76,7 @@ enum ExpressionType {
 union ExpressionValue {
 	struct Literal* literal;
 	struct Identifier* identifier;
-	struct ArrayIndex array_index;
+	struct ArrayIndex* array_index;
 	struct FunctionCall function_call;
 	struct UnaryOp unary_op;
 	struct BinaryOp binary_op;
@@ -118,17 +118,10 @@ struct InputOutput {
 	struct Expression expression;
 };
 
-struct ShiftLeft {
-	struct ValorLexico valor_lexico;
-	struct StorageAccess storage_access;
-	struct Literal* literal; // int only
-};
-
-struct ShiftRight {
+struct ShiftCommand {
 	struct ValorLexico valor_lexico; // << or >>
-	struct Identifier* identifier;
-	struct StorageAccess storage_access;
-	struct Literal* literal; // int only
+	struct StorageAccess left_side;
+	struct Literal* right_side; // literal int only
 };
 
 struct ReturnCommand {
@@ -167,8 +160,7 @@ enum CommandType {
 	SET_VAR, // set_var
 	IO, // input_output
 	FUNCTION_CALL_COMMAND, // function_call
-	SHIFT_LEFT, // shift_left
-	SHIFT_RIGHT, // shift_right
+	SHIFT_COMMAND, // shift_command
 	RETURN_COMMAND, // return_command
 	BREAK_COMMAND, // break_command
 	CONTINUE_COMMAND, // continue_command
@@ -182,8 +174,7 @@ union CommandData {
 	struct SetVar set_var;
 	struct InputOutput input_output;
 	struct FunctionCall function_call;
-	struct ShiftLeft shift_left;
-	struct ShiftRight shift_right;
+	struct ShiftCommand shift_command;
 	struct ReturnCommand return_command;
 	struct BreakCommand break_command;
 	struct ContinueCommand continue_command;

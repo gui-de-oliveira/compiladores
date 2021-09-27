@@ -18,6 +18,7 @@
     struct CommandList* optional_command_list;
     struct FunctionDef* optional_function_def;
     struct InitVar* init_var;
+    struct Expression* expression;
 }
 
 %expect 0
@@ -69,7 +70,12 @@
 %token<valor_lexico> TOKEN_ERRO
 
 %type<valor_lexico> literal
+%type<valor_lexico> literal_int
+%type<valor_lexico> shiftOperator
 
+%type<expression> expression
+
+%type<optional_command_list> varShift
 %type<optional_command_list> localNameDefAssign
 %type<optional_command_list> localDef
 %type<optional_command_list> localNameDefList
@@ -235,7 +241,7 @@ simpleCommand:
         $$ = $1;
     }
     | varShift ';' {
-        $$ = NULL; // TO DO
+        $$ = $1;
     }
     | conditional ';' {
         $$ = NULL; // TO DO
@@ -259,12 +265,16 @@ simpleCommand:
 
 
 literal:
-    TK_LIT_INT
+    literal_int
     | TK_LIT_FLOAT
     | TK_LIT_FALSE
     | TK_LIT_TRUE
     | TK_LIT_CHAR
     | TK_LIT_STRING
+    ;
+
+literal_int:
+    TK_LIT_INT
     ;
 
 
@@ -315,9 +325,27 @@ localNameDefAssign:
     }
     ;
 
-optionalArrayAccess:
-    %empty
-    | '[' expression ']'
+varShift:
+    TK_IDENTIFICADOR shiftOperator literal_int {
+        struct Identifier* identifier = new_identifier($1);
+        union StorageAcessData storage_data = {.identifier = identifier};
+        struct StorageAccess left_side = {.storage_type = IDENTIFIER_STORAGE, .storage_data = storage_data};
+        struct Literal* right_side = new_literal($3);
+        struct ShiftCommand shift = {.valor_lexico = $2, .left_side = left_side, .right_side = right_side};
+        union CommandData command_data = {.shift_command = shift};
+        $$ = new_command(SHIFT_COMMAND, command_data);
+    }
+    | TK_IDENTIFICADOR '[' expression ']' shiftOperator literal_int {
+        struct Identifier* identifier = new_identifier($1);
+        struct Expression* expression = $3;
+        struct ArrayIndex* array_index = new_array_index(identifier, expression);
+        union StorageAcessData storage_data = {.array_index = array_index};
+        struct StorageAccess left_side = {.storage_type = ARRAY_INDEX_STORAGE, .storage_data = storage_data};
+        struct Literal* right_side = new_literal($6);
+        struct ShiftCommand shift = {.valor_lexico = $5, .left_side = left_side, .right_side = right_side};
+        union CommandData command_data = {.shift_command = shift};
+        $$ = new_command(SHIFT_COMMAND, command_data);
+    }
     ;
 
 varSet:
@@ -329,14 +357,13 @@ varSet:
     }
     ;
 
-
-varShift:
-    TK_IDENTIFICADOR optionalArrayAccess shiftOperator expression
-    ;
-
 shiftOperator:
-    TK_OC_SR %prec SHIFT_OPERATOR
-    | TK_OC_SL %prec SHIFT_OPERATOR
+    TK_OC_SR %prec SHIFT_OPERATOR {
+        $$ = $1;
+    }
+    | TK_OC_SL %prec SHIFT_OPERATOR {
+        $$ = $1;
+    }
     ;
 
 
@@ -360,7 +387,9 @@ conditional:
     ;
 
 expression:
-    ternaryOperationOrLower
+    ternaryOperationOrLower {
+        $$ = NULL; //TODO
+    }
     ;
 
 ternaryOperationOrLower:

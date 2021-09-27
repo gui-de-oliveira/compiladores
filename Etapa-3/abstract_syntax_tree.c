@@ -18,6 +18,73 @@ struct Identifier* new_identifier(struct ValorLexico valor_lexico) {
     return new_pointer;
 }
 
+struct ArrayIndex* new_array_index(struct Identifier* identifier, struct Expression* expression) {
+    struct ArrayIndex* new_pointer = (struct ArrayIndex*) malloc(sizeof(struct ArrayIndex));
+    new_pointer->identifier = identifier;
+    new_pointer->expression = expression;
+    return new_pointer;
+}
+
+void print_expression_nodes(struct Expression* expression) {
+    //TODO
+}
+
+void print_array_index_nodes(struct ArrayIndex* array_index) {
+    printf("\n%p, %p", array_index, array_index->identifier);
+    struct Expression* expression = array_index->expression;
+    printf("\n%p, %p", array_index, expression);
+    print_expression_nodes(expression);
+}
+
+void print_shift_nodes(struct CommandList* command_list) {
+    struct ShiftCommand shift_command = command_list->command_data.shift_command;
+    struct StorageAccess left_side = shift_command.left_side;
+    switch(left_side.storage_type) {
+        case IDENTIFIER_STORAGE:
+            printf("\n%p, %p", command_list, left_side.storage_data.identifier);
+            break;
+        case ARRAY_INDEX_STORAGE:
+            printf("\n%p, %p", command_list, left_side.storage_data.array_index);
+            break;
+        default:
+            printf("Erro in print_shift_nodes -> storage_type: %d", left_side.storage_type);
+    }
+    printf("\n%p, %p", command_list, shift_command.right_side);
+}
+
+void print_expression_label(struct Expression* expression) {
+    //TODO
+}
+
+void print_array_index_label(struct ArrayIndex* array_index) {
+    struct ValorLexico valor_lexico = array_index->identifier->valor_lexico;
+    char* string = valor_lexico.token_value.string;
+    printf("\n%p [label=\"%s\"];", array_index, string);
+}
+
+void print_shift_label(struct CommandList* command_list) {
+    struct ShiftCommand shift_command = command_list->command_data.shift_command;
+    struct ValorLexico valor_lexico = shift_command.valor_lexico;
+    char* string = valor_lexico.token_value.string;
+    printf("\n%p [label=\"%s\"];", command_list, string);
+    struct StorageAccess left_side = shift_command.left_side;
+    switch(left_side.storage_type) {
+        case IDENTIFIER_STORAGE:
+            valor_lexico = left_side.storage_data.identifier->valor_lexico;
+            string = valor_lexico.token_value.string;
+            printf("\n%p [label=\"%s\"];", left_side.storage_data.identifier, string);
+            break;
+        case ARRAY_INDEX_STORAGE:
+            print_array_index_label(left_side.storage_data.array_index);
+            break;
+        default:
+            printf("Erro in print_shift_label -> storage_type: %d", left_side.storage_type);
+    }
+    struct Literal* right_side = shift_command.right_side;
+    int value = right_side->valor_lexico.token_value.integer;
+    printf("\n%p [label=\"%d\"];", right_side, value);
+}
+
 void print_init_var_nodes(struct CommandList* command_list) {
     struct InitVar init_var = command_list->command_data.init_var;
     printf("\n%p, %p", command_list, init_var.identifier);
@@ -129,11 +196,12 @@ void print_command_nodes(struct CommandList* command_list){
         case INIT_VAR:
             print_init_var_nodes(command_list);
             break;
-
         case SET_VAR:
             print_set_var_nodes(command_list);
             break;
-
+        case SHIFT_COMMAND:
+            print_shift_nodes(command_list);
+            break;
         default:
             printf("\nUnimplemented command_type in print_command_nodes: %d", command_list->command_type);
     }
@@ -150,11 +218,12 @@ void print_command_label(struct CommandList* command_list) {
         case INIT_VAR:
             print_init_var_label(command_list);
             break;
-
         case SET_VAR:
             print_set_var_label(command_list);
             break;
-
+        case SHIFT_COMMAND:
+            print_shift_label(command_list);
+            break;
         default:
             printf("\nUnimplemented command_type in print_command_label: %d", command_list->command_type);
     }
@@ -228,14 +297,8 @@ struct ValorLexico createStringLiteral(char* string){
 }
 
 struct CommandList* createSetVar(struct ValorLexico identificador){
-    char* label = identificador.token_value.string;
-
-    struct Identifier* identifier = (struct Identifier*) malloc(sizeof(struct Identifier));
-    identifier->valor_lexico = createStringLiteral(label);
-
-    struct ArrayIndex array_index = {.identifier = identifier};
-
-    union StorageAcessData storage_data =  { .identifier = identifier, .array_index = array_index };
+    struct Identifier* identifier = new_identifier(identificador);
+    union StorageAcessData storage_data =  { .identifier = identifier };
     struct StorageAccess storage_access = { .storage_type = IDENTIFIER_STORAGE, .storage_data = storage_data};
 
     struct SetVar set_var = {.storage_access = storage_access, .expression = createLiteralExpression()};
