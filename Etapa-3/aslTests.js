@@ -179,6 +179,24 @@ D [label="1"];
     `
   int f1() {
     int a;
+    a << 1;
+  }
+`,
+    `
+A, B
+B, C
+B, D
+A [label="f1"];
+B [label="<<"];
+C [label="a"];
+D [label="1"];
+`
+  );
+
+  await testInput(
+    `
+  int f1() {
+    int a;
     a = 1;
   }
 `,
