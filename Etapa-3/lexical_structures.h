@@ -51,6 +51,9 @@ void printDependencies(ValorLexico* valorLexico);
 ValorLexico* createIntegerValorLexico(int integer);
 ValorLexico* createStringValorLexico(enum TokenType type, char* string);
 ValorLexico* createSpecialCharValorLexico(char character);
+ValorLexico* createFloatValorLexico(float floating_point);
+ValorLexico* createCharValorLexico(char character);
+ValorLexico* createBoolValorLexico(bool boolean);
 
 ValorLexico* appendToValorLexico(ValorLexico* parent, ValorLexico* child);
 ListElement* appendToList(ListElement* parent, ValorLexico* item);

@@ -32,11 +32,21 @@ void printLabels(ValorLexico* valorLexico) {
             break;
         
         case SPECIAL_CHAR:
+        case LITERAL_CHAR:
             printf("%p [label=\"%c\"];\n", valorLexico, valorLexico->token_value.character);
+            break;
+
+        case LITERAL_BOOL:
+            if (valorLexico->token_value.boolean) printf("%p [label=\"true\"];\n", valorLexico);
+            else printf("%p [label=\"false\"];\n", valorLexico);
             break;
 
         case LITERAL_INT:
             printf("%p [label=\"%d\"];\n", valorLexico, valorLexico->token_value.integer);
+            break;
+
+        case LITERAL_FLOAT:
+            printf("%p [label=\"%f\"];\n", valorLexico, valorLexico->token_value.floating_point);
             break;
 
         default:
@@ -78,11 +88,47 @@ ValorLexico* createIntegerValorLexico(int integer){
     return functionNode;
 }
 
+ValorLexico* createFloatValorLexico(float floating_point){
+    TokenValue value = {.floating_point = floating_point}; 
+
+    ValorLexico* functionNode = malloc(sizeof(ValorLexico));
+    functionNode->token_type = LITERAL_FLOAT;
+    functionNode->token_value = value;
+    functionNode->children = NULL;
+    functionNode->next = NULL;
+
+    return functionNode;
+}
+
 ValorLexico* createSpecialCharValorLexico(char character){
     TokenValue value = {.character = character}; 
 
     ValorLexico* functionNode = malloc(sizeof(ValorLexico));
     functionNode->token_type = SPECIAL_CHAR;
+    functionNode->token_value = value;
+    functionNode->children = NULL;
+    functionNode->next = NULL;
+
+    return functionNode;
+}
+
+ValorLexico* createCharValorLexico(char character){
+    TokenValue value = {.character = character}; 
+
+    ValorLexico* functionNode = malloc(sizeof(ValorLexico));
+    functionNode->token_type = LITERAL_CHAR;
+    functionNode->token_value = value;
+    functionNode->children = NULL;
+    functionNode->next = NULL;
+
+    return functionNode;
+}
+
+ValorLexico* createBoolValorLexico(bool boolean){
+    TokenValue value = {.boolean = boolean}; 
+
+    ValorLexico* functionNode = malloc(sizeof(ValorLexico));
+    functionNode->token_type = LITERAL_BOOL;
     functionNode->token_value = value;
     functionNode->children = NULL;
     functionNode->next = NULL;

@@ -271,6 +271,35 @@ async function test() {
     `
   );
 
+  const literalAsserts = [
+    { declaration: 2, expected: 2 },
+    { declaration: "1.0", expected: "1.000000" },
+    { declaration: "'a'", expected: "a" },
+    { declaration: '"XXX"', expected: "XXX" },
+    { declaration: "true", expected: "true" },
+    { declaration: "false", expected: "false" },
+  ];
+
+  for (const literal of literalAsserts) {
+    await testInput(
+      `
+      int f1() {
+        int a;
+        a = ${literal.declaration};
+      }
+      `,
+      `
+      A, B
+      B, C
+      B, D
+      A [label="f1"];
+      B [label="="];
+      C [label="a"];
+      D [label="${literal.expected}"];
+      `
+    );
+  }
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);

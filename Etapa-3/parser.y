@@ -68,10 +68,6 @@
 %token<valor_lexico> TK_IDENTIFICADOR
 %token<valor_lexico> TOKEN_ERRO
 
-%type<valor_lexico> literal
-%type<valor_lexico> literal_int
-%type<valor_lexico> shiftOperator
-
 %left GROUPING
 %right GROUPING_CLOSE
 
@@ -107,6 +103,15 @@
 %type<valor_lexico_ptr> optionalSimpleCommandList
 %type<valor_lexico_ptr> simpleCommand
 %type<valor_lexico_ptr> varSet
+
+%type<valor_lexico_ptr> literal_int
+%type<valor_lexico_ptr> literal
+%type<valor_lexico_ptr> expressionOperand
+%type<valor_lexico_ptr> unaryOperationOrOperand
+%type<valor_lexico_ptr> binaryOperationOrLower
+%type<valor_lexico_ptr> ternaryOperationOrLower
+%type<valor_lexico_ptr> expression
+
 
 %%
 
@@ -220,16 +225,16 @@ simpleCommand:
 
 
 literal:
-    literal_int
-    | TK_LIT_FLOAT
-    | TK_LIT_FALSE
-    | TK_LIT_TRUE
-    | TK_LIT_CHAR
-    | TK_LIT_STRING
+    literal_int { $$ = $1; }
+    | TK_LIT_FLOAT { $$ = createFloatValorLexico($1.token_value.floating_point); }
+    | TK_LIT_FALSE { $$ = createBoolValorLexico(false); }
+    | TK_LIT_TRUE { $$ = createBoolValorLexico(true); }
+    | TK_LIT_CHAR { $$ = createCharValorLexico($1.token_value.character); }
+    | TK_LIT_STRING { $$ = createStringValorLexico(LITERAL_STRING, $1.token_value.string); }
     ;
 
 literal_int:
-    TK_LIT_INT
+    TK_LIT_INT { $$ = createIntegerValorLexico($1.token_value.integer); }
     ;
 
 
@@ -259,12 +264,11 @@ varSet:
         char* identifier = $1.token_value.string;
         ValorLexico* vlId = createStringValorLexico(IDENTIFIER, identifier);
 
-        ValorLexico* vlExpression = createIntegerValorLexico(1);
+        ValorLexico* vlExpression = $3;
 
         ListElement* children = NULL;
         children = appendToList(children, vlId);
         children = appendToList(children, vlExpression);
-
 
         ValorLexico* valorLexico = createSpecialCharValorLexico('=');
         valorLexico->children = children;
@@ -299,11 +303,11 @@ conditional:
     | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock
     ;
 
-expression: ternaryOperationOrLower ;
+expression: ternaryOperationOrLower { $$ = $1; };
 
 ternaryOperationOrLower:
-    binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower
-    | binaryOperationOrLower
+    binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower { $$ = NULL; }
+    | binaryOperationOrLower { $$ = $1; }
     ;
 
 ternaryOpen:
@@ -315,16 +319,16 @@ ternaryClose:
     ;
 
 binaryOperationOrLower:
-    binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR
-    | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND
-    | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR
-    | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR
-    | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND
-    | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP
-    | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP
-    | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB
-    | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER
-    | unaryOperationOrOperand
+    binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR { $$ = NULL; }
+    | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND { $$ = NULL; }
+    | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR { $$ = NULL; }
+    | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR { $$ = NULL; }
+    | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND { $$ = NULL; }
+    | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP { $$ = NULL; }
+    | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP { $$ = NULL; }
+    | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB { $$ = NULL; }
+    | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER { $$ = NULL; }
+    | unaryOperationOrOperand { $$ = $1; }
     ;
 
 logicalOr:
@@ -371,8 +375,8 @@ multDivRemainder:
     ;
 
 unaryOperationOrOperand:
-    expressionOperand
-    | unaryOperatorList expressionOperand
+    expressionOperand { $$ = $1; }
+    | unaryOperatorList expressionOperand { $$ = NULL; }
     ;
 
 unaryOperatorList:
@@ -391,11 +395,11 @@ unaryOperator:
     ;
 
 expressionOperand: 
-    TK_IDENTIFICADOR
-    | TK_IDENTIFICADOR '[' expression ']'
-    | literal
-    | functionCall
-    | grouping
+    TK_IDENTIFICADOR { $$ = NULL; }
+    | TK_IDENTIFICADOR '[' expression ']' { $$ = NULL; }
+    | literal  { $$ = $1; }
+    | functionCall { $$ = NULL; }
+    | grouping { $$ = NULL; }
     ;
 
 grouping:
