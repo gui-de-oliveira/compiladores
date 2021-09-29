@@ -8,29 +8,48 @@
 #include <stdio.h> 
 #include <string.h>
 
+extern const char* SK_RETURN;
+extern const char* SK_CONTINUE;
+extern const char* SK_BREAK;
+extern const char* SK_LEFT_SHIFT;
+extern const char* SK_RIGHT_SHIFT;
+extern const char* SK_INPUT;
+extern const char* SK_OUTPUT;
+extern const char* SK_IF;
+extern const char* SK_FOR;
+extern const char* SK_WHILE;
+extern const char* SK_TERNARY;
+extern const char* SK_BOOL_OR;
+extern const char* SK_BOOL_AND;
+extern const char* SK_EQUAL;
+extern const char* SK_UNEQUAL;
+extern const char* SK_LESS_EQUAL;
+extern const char* SK_MORE_EQUAL;
+extern const char* SK_ARRAY;
+
 typedef struct ValorLexico ValorLexico;
 typedef struct ListElement ListElement;
 typedef struct Node Node;
 typedef union TokenValue TokenValue;
 
 enum TokenType {
-	SPECIAL_CHAR, 		
-	COMPOSITE_OPERATOR, 
-	IDENTIFIER, 		
-	LITERAL_INT, 		
-	LITERAL_FLOAT, 		
-	LITERAL_CHAR, 		
-	LITERAL_BOOL, 		
+	SPECIAL_CHAR,
+	SPECIAL_KEYWORD,
+	IDENTIFIER,
+	LITERAL_INT,
+	LITERAL_FLOAT,
+	LITERAL_CHAR,
+	LITERAL_BOOL,
 	LITERAL_STRING,
 	NODE
 };
 
 union TokenValue {
-	int integer;		
-	char character;		
-	char* string;		
+	int integer;
+	char character;
+	char* string;
 	float floating_point;
-	bool boolean;		
+	bool boolean;
 };
 
 struct ValorLexico {

@@ -88,14 +88,14 @@ pattern_string \"(\\.|[^"\n])*\"
 	return yytext[0];
 }
 
-"<=" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_LE; }
-">=" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_GE; }
-"==" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_EQ; }
-"!=" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_NE; }
-"&&" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_AND; }
-"||" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_OR; }
-">>" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_SL; }
-"<<" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_SR; }
+"<=" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_LESS_EQUAL); return TK_OC_LE; }
+">=" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_MORE_EQUAL); return TK_OC_GE; }
+"==" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_EQUAL); return TK_OC_EQ; }
+"!=" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_UNEQUAL); return TK_OC_NE; }
+"&&" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_BOOL_AND); return TK_OC_AND; }
+"||" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_BOOL_OR); return TK_OC_OR; }
+">>" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_RIGHT_SHIFT); return TK_OC_SR; }
+"<<" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_LEFT_SHIFT); return TK_OC_SL; }
 
 {pattern_identifier} {
 	char* string = strdup(yytext);
@@ -117,8 +117,7 @@ pattern_string \"(\\.|[^"\n])*\"
 }
 
 {pattern_string} {
-	char* string = strdup(yytext);
-	string++;
+	char* string = strdup(yytext + 1);
 	string[ strlen(string) - 1 ] = '\0';
 	yylval.valor_lexico = createStringValorLexico(LITERAL_STRING, string);
 	return TK_LIT_STRING;
