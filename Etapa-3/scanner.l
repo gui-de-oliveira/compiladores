@@ -17,7 +17,8 @@
 
 pattern_line_comment "//".*
 
-pattern_special_char [,;:()\[\]{}+\-|*/<>=!&%#^.$\?]
+pattern_aux_char [,;:()\[\]{}|.$]
+pattern_special_char [+\-*/<>=!&%#^\?]
 
 pattern_alphabetic [a-zA-Z_]
 pattern_alphanumeric [a-zA-Z_0-9]
@@ -49,22 +50,22 @@ pattern_string \"(\\.|[^"\n])*\"
 "bool" return TK_PR_BOOL;
 "char" return TK_PR_CHAR;
 "string" return TK_PR_STRING;
-"if" return TK_PR_IF;
 "then" return TK_PR_THEN;
 "else" return TK_PR_ELSE;
-"while" return TK_PR_WHILE;
 "do" return TK_PR_DO;
-"input" return TK_PR_INPUT;
-"output" return TK_PR_OUTPUT;
-"return" return TK_PR_RETURN;
+"if" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_IF); return TK_PR_IF; }
+"for" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_FOR); return TK_PR_FOR; }
+"while" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_WHILE); return TK_PR_WHILE; }
+"input" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_INPUT); return TK_PR_INPUT; }
+"output" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_OUTPUT); return TK_PR_OUTPUT; }
+"return" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_RETURN); return TK_PR_RETURN; }
+"break" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_BREAK); return TK_PR_BREAK; }
+"continue" { yylval.valor_lexico = createStringValorLexico(SPECIAL_KEYWORD, SK_CONTINUE); return TK_PR_CONTINUE; }
 "const" return TK_PR_CONST;
 "static" return TK_PR_STATIC;
 "foreach" return TK_PR_FOREACH;
-"for" return TK_PR_FOR;
 "switch" return TK_PR_SWITCH;
 "case" return TK_PR_CASE;
-"break" return TK_PR_BREAK;
-"continue" return TK_PR_CONTINUE;
 "class" return TK_PR_CLASS;
 "private" return TK_PR_PRIVATE;
 "public" return TK_PR_PUBLIC;
@@ -82,6 +83,10 @@ pattern_string \"(\\.|[^"\n])*\"
 
 "end" return TK_PR_END;
 "default" return TK_PR_DEFAULT;
+
+{pattern_aux_char} {
+	return yytext[0];
+}
 
 {pattern_special_char} {
 	yylval.valor_lexico = createSpecialCharValorLexico(yytext[0]);
