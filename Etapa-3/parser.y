@@ -99,19 +99,26 @@
 
 %type<valor_lexico_ptr> functionDef
 %type<valor_lexico_ptr> topLevelDefList
+%type<valor_lexico_ptr> program
 
 %%
 
 program:
-    %empty { arvore = NULL; }
-    | topLevelDefList { arvore = (void *) $1; }    
+    %empty { 
+        $$ = NULL; 
+        arvore = NULL;
+    }
+    | topLevelDefList { 
+        $$ = $1; 
+        arvore = $1;
+    }    
     ;
 
 topLevelDefList:
     globalDef { $$ = NULL; }
-    | functionDef
-    | topLevelDefList globalDef { $$ = NULL; }
-    | topLevelDefList functionDef { $$ = addAsNext($1, $2); }
+    | functionDef { $$ =$1; }
+    | topLevelDefList globalDef { $$ = $1; }
+    | topLevelDefList functionDef { $$ = $1 == NULL ? $2 : addAsNext($1, $2); }
     ;
 
 functionDef:

@@ -173,6 +173,36 @@ async function test() {
     C [label="f3"];
     `
   );
+  await testInput(
+    `
+    int f1() { }
+    int x;
+    `,
+    `
+    A [label="f1"];
+    `
+  );
+  await testInput(
+    `
+    int x;
+    int f1() { }
+    `,
+    `
+    A [label="f1"];
+    `
+  );
+  await testInput(
+    `
+    int f1() { }
+    int x;
+    int f2() { }
+    `,
+    `
+    A, B
+    A [label="f1"];
+    B [label="f2"];
+    `
+  );
 
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
