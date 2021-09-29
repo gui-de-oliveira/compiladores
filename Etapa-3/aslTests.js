@@ -766,6 +766,90 @@ async function test() {
     `
   );
 
+  await testInput(
+    `
+    int c[10];
+    int f(int a)
+    {
+      int a;
+      c[5] = 3 * f(a) + a;
+    }
+
+    `,
+    `
+    A, B
+    B, C
+    C, D
+    C, E
+    B, F
+    F, G
+    G, H
+    G, I
+    I, J
+    F, K
+    A [label="f"];
+    B [label="="];
+    C [label="[]"];
+    D [label="c"];
+    E [label="5"];
+    F [label="+"];
+    G [label="*"];
+    H [label="3"];
+    I [label="call f"];
+    J [label="a"];
+    K [label="a"];
+    `
+  );
+
+  await testInput(
+    `
+    int f()
+    {
+      if (a == 2) { };
+      if ((a+b) <= 10) { };
+    }
+    
+    `,
+    `
+    A, B
+    B, C
+    C, D
+    C, E
+    B, F
+    F, G
+    G, H
+    H, I
+    H, J
+    G, K
+    A [label="f"];
+    B [label="if"];
+    C [label="=="];
+    D [label="a"];
+    E [label="2"];
+    F [label="if"];
+    G [label="<="];
+    H [label="+"];
+    I [label="a"];
+    J [label="b"];
+    K [label="10"];
+    `
+  );
+
+  await testInput(
+    `
+    int v1;
+    int f1 (float k, int l) 
+    {
+      int a;
+    }
+    int v2[100];
+    char v3;
+    `,
+    `
+    A [label="f1"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
