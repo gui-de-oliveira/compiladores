@@ -47,5 +47,10 @@ struct ListElement {
 
 void printLabels(ValorLexico* valorLexico);
 void printDependencies(ValorLexico* valorLexico);
-ValorLexico* createFunction(char* identifier);
-ValorLexico* addAsNext(ValorLexico* parent, ValorLexico* child);
+
+ValorLexico* createIntegerValorLexico(int integer);
+ValorLexico* createStringValorLexico(enum TokenType type, char* string);
+ValorLexico* createSpecialCharValorLexico(char character);
+
+ValorLexico* appendToValorLexico(ValorLexico* parent, ValorLexico* child);
+ListElement* appendToList(ListElement* parent, ValorLexico* item);

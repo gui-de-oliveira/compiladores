@@ -138,6 +138,7 @@ async function test() {
   await testInput("int x;", "");
   await testInput(`int f1() { }`, `A [label="f1"];`);
   await testInput(`int f2() { }`, `A [label="f2"];`);
+
   await testInput(
     `
     int f1() { }
@@ -148,6 +149,7 @@ async function test() {
     B [label="f2"];
     `
   );
+
   await testInput(
     `
     int f1() { }
@@ -159,6 +161,7 @@ async function test() {
     B [label="f2"];
     `
   );
+
   await testInput(
     `
     int f1() { }
@@ -173,6 +176,7 @@ async function test() {
     C [label="f3"];
     `
   );
+
   await testInput(
     `
     int f1() { }
@@ -182,6 +186,7 @@ async function test() {
     A [label="f1"];
     `
   );
+
   await testInput(
     `
     int x;
@@ -191,6 +196,7 @@ async function test() {
     A [label="f1"];
     `
   );
+
   await testInput(
     `
     int f1() { }
@@ -201,6 +207,67 @@ async function test() {
     A, B
     A [label="f1"];
     B [label="f2"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int a;
+      a = 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="="];
+    C [label="a"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int b;
+      b = 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="="];
+    C [label="b"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int a, b;
+      a = 1;
+      b = 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    E, F
+    E, G
+    A [label="f1"];
+    B [label="="];
+    C [label="a"];
+    D [label="1"];
+    E [label="="];
+    F [label="b"];
+    G [label="1"];
     `
   );
 

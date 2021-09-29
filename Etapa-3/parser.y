@@ -17,6 +17,7 @@
 %union {
     struct ValorLexico valor_lexico;
     struct ValorLexico* valor_lexico_ptr;
+    struct ListElement* list_element_ptr;
 }
 
 %expect 0
@@ -101,6 +102,12 @@
 %type<valor_lexico_ptr> topLevelDefList
 %type<valor_lexico_ptr> program
 
+%type<valor_lexico_ptr> commandBlock
+%type<valor_lexico_ptr> simpleCommandList
+%type<valor_lexico_ptr> optionalSimpleCommandList
+%type<valor_lexico_ptr> simpleCommand
+%type<valor_lexico_ptr> varSet
+
 %%
 
 program:
@@ -118,13 +125,18 @@ topLevelDefList:
     globalDef { $$ = NULL; }
     | functionDef { $$ =$1; }
     | topLevelDefList globalDef { $$ = $1; }
-    | topLevelDefList functionDef { $$ = $1 == NULL ? $2 : addAsNext($1, $2); }
+    | topLevelDefList functionDef { $$ = appendToValorLexico($1, $2); }
     ;
 
 functionDef:
     optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
         char* identificador = $3.token_value.string;
-        $$ = createFunction(identificador);
+        ValorLexico* commandBlock = $7;
+
+        ValorLexico* valorLexico = createStringValorLexico(IDENTIFIER, identificador);
+        valorLexico->children = appendToList(NULL, commandBlock);
+
+        $$ = valorLexico;
     }
     ;
 
@@ -180,30 +192,30 @@ param:
 
 
 commandBlock:
-    '{' optionalSimpleCommandList '}'
+    '{' optionalSimpleCommandList '}' { $$ = $2; }
     ;
 
 optionalSimpleCommandList:
-    %empty
-    | simpleCommandList
+    %empty { $$ = NULL; }
+    | simpleCommandList { $$ = $1; }
     ;
 
 simpleCommandList:
-    simpleCommand
-    | simpleCommandList simpleCommand
+    simpleCommand { $$ = $1; }
+    | simpleCommandList simpleCommand { $$ = appendToValorLexico($1, $2);}
     ;
 
 simpleCommand:
-    commandBlock ';'
-    | localDef ';'
-    | varSet ';'
-    | varShift ';'
-    | conditional ';'
-    | IO ';'
-    | functionCall ';'
-    | TK_PR_RETURN expression ';'
-    | TK_PR_CONTINUE ';'
-    | TK_PR_BREAK ';'
+    commandBlock ';' { $$ = NULL; }
+    | localDef ';' { $$ = NULL; }
+    | varSet ';' { $$ = $1; }
+    | varShift ';' { $$ = NULL; }
+    | conditional ';' { $$ = NULL; }
+    | IO ';' { $$ = NULL; }
+    | functionCall ';' { $$ = NULL; }
+    | TK_PR_RETURN expression ';' { $$ = NULL; }
+    | TK_PR_CONTINUE ';' { $$ = NULL; }
+    | TK_PR_BREAK ';' { $$ = NULL; }
     ;
 
 
@@ -243,8 +255,23 @@ varShift:
     ;
 
 varSet:
-    TK_IDENTIFICADOR '=' expression
-    | TK_IDENTIFICADOR '[' expression ']' '=' expression
+    TK_IDENTIFICADOR '=' expression {
+        char* identifier = $1.token_value.string;
+        ValorLexico* vlId = createStringValorLexico(IDENTIFIER, identifier);
+
+        ValorLexico* vlExpression = createIntegerValorLexico(1);
+
+        ListElement* children = NULL;
+        children = appendToList(children, vlId);
+        children = appendToList(children, vlExpression);
+
+
+        ValorLexico* valorLexico = createSpecialCharValorLexico('=');
+        valorLexico->children = children;
+
+        $$ = valorLexico;
+    }
+    | TK_IDENTIFICADOR '[' expression ']' '=' expression { $$ = NULL; }
     ;
 
 shiftOperator:
