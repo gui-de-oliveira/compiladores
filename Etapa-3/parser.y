@@ -118,6 +118,11 @@
 
 %type<valor_lexico> IO
 
+%type<valor_lexico> varShift
+%type<valor_lexico> shiftOperator
+
+
+
 %%
 
 program:
@@ -217,7 +222,7 @@ simpleCommand:
     commandBlock ';' { $$ = NULL; }
     | localDef ';' { $$ = NULL; }
     | varSet ';' { $$ = $1; }
-    | varShift ';' { $$ = NULL; }
+    | varShift ';' { $$ = $1; }
     | conditional ';' { $$ = NULL; }
     | IO ';' { $$ = $1; }
     | functionCall ';' { $$ = $1; }
@@ -262,8 +267,22 @@ localNameDefAssign:
     ;
 
 varShift:
-    TK_IDENTIFICADOR shiftOperator literal_int
-    | TK_IDENTIFICADOR '[' expression ']' shiftOperator literal_int
+    TK_IDENTIFICADOR shiftOperator literal_int {
+        ListElement* children = appendToList(NULL, $1);
+        children = appendToList(children, $3);
+        $2->children = children;
+        $$ = $2;
+    }
+    | TK_IDENTIFICADOR '[' expression ']' shiftOperator literal_int {
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "[]");
+        id->children = appendToList(NULL, $1);
+        id->children = appendToList(id->children, $3);
+
+        ListElement* children = appendToList(NULL, id);
+        children = appendToList(children, $6);
+        $5->children = children;
+        $$ = $5;
+    }
     ;
 
 varSet:
@@ -283,8 +302,8 @@ varSet:
     ;
 
 shiftOperator:
-    TK_OC_SR %prec SHIFT_OPERATOR
-    | TK_OC_SL %prec SHIFT_OPERATOR
+    TK_OC_SR %prec SHIFT_OPERATOR { $$ = createStringValorLexico(LITERAL_STRING, "<<"); } ;
+    | TK_OC_SL %prec SHIFT_OPERATOR { $$ = createStringValorLexico(LITERAL_STRING, ">>"); } ;
     ;
 
 

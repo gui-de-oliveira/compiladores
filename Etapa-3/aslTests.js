@@ -422,6 +422,82 @@ async function test() {
     `
   );
 
+  await testInput(
+    `
+    int f1() {
+      id << 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="<<"];
+    C [label="id"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      id >> 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label=">>"];
+    C [label="id"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      id[1] << 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    C, D
+    C, E
+    B, F
+    A [label="f1"];
+    B [label="<<"];
+    C [label="[]"];
+    D [label="id"];
+    E [label="1"];
+    F [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      id[1] >> 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    C, D
+    C, E
+    B, F
+    A [label="f1"];
+    B [label=">>"];
+    C [label="[]"];
+    D [label="id"];
+    E [label="1"];
+    F [label="1"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
