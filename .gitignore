@@ -14,3 +14,5 @@ parser.tab.c
 parser.tab.h
 parser.tab.o
 parser.output
+
+*.temp

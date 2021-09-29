@@ -129,148 +129,27 @@ async function test() {
   await exec("make");
 
   await testInput("int x;", "");
-  await testInput("int x;", "");
-  await testInput("int x;", "");
-  await testInput("int x;", "");
-
   await testInput(`int f1() { }`, `A [label="f1"];`);
   await testInput(
     `
-int f1() { }
-int f2() { }
-`,
+    int f1() { }
+    int f2() { }`,
     `
-A, B
-A [label="f1"];
-B [label="f2"];
-`
+    A, B
+    A [label="f1"];
+    B [label="f2"];
+    `
   );
-
   await testInput(
     `
-int f1() { }
-int f2() { }
-`,
+    int f1() { }
+    int f2() { }
+    `,
     `
-A, B
-A [label="f1"];
-B [label="f2"];
-`
-  );
-
-  await testInput(
+    A, B
+    A [label="f1"];
+    B [label="f2"];
     `
-  int f1() {
-    int a <= 1;
-  }
-`,
-    `
-A, B
-B, C
-B, D
-A [label="f1"];
-B [label="<="];
-C [label="a"];
-D [label="1"];
-`
-  );
-
-  await testInput(
-    `
-  int f1() {
-    int a;
-    a << 1;
-  }
-`,
-    `
-A, B
-B, C
-B, D
-A [label="f1"];
-B [label="<<"];
-C [label="a"];
-D [label="1"];
-`
-  );
-
-  await testInput(
-    `
-  int f1() {
-    int a;
-    a = 1;
-  }
-`,
-    `
-A, B
-B, C
-B, D
-A [label="f1"];
-B [label="="];
-C [label="a"];
-D [label="1"];
-`
-  );
-
-  await testInput(
-    `
-  int f1() {
-    int b;
-    b = 1;
-  }
-`,
-    `
-A, B
-B, C
-B, D
-A [label="f1"];
-B [label="="];
-C [label="b"];
-D [label="1"];
-`
-  );
-
-  await testInput(
-    `
-  int f1() {
-    int b;
-    b = 1;
-  }
-`,
-    `
-A, B
-B, C
-B, D
-A [label="f1"];
-B [label="="];
-C [label="b"];
-D [label="1"];
-`
-  );
-
-  await testInput(
-    `
-    int f1() {
-      int a;
-      a = 1;
-      a = 2;
-    }
-  `,
-    `
-  A, B
-  B, C
-  B, D
-  B, E
-  E, F
-  F, G
-  F, H
-  A [label="f1"];
-  B [label="="];
-  C [label="a"];
-  D [label="1"];
-  F [label="="];
-  G [label="a"];
-  H [label="2"];
-  `
   );
 
   process.stdout.write(FontColor.Fg.Green);

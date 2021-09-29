@@ -9,10 +9,9 @@ main:
 
 	gcc -c lex.yy.c
 	gcc -c parser.tab.c
-	gcc -c abstract_syntax_tree.c
 	gcc -c main.c
 
-	gcc -o etapa3 lex.yy.o parser.tab.o abstract_syntax_tree.o main.o -lfl
+	gcc -o etapa3 lex.yy.o parser.tab.o main.o -lfl
 
 clean:
 	rm -f etapa3 etapa3.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output

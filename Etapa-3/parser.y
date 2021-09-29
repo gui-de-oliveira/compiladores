@@ -3,7 +3,8 @@
     // Guilherme de Oliveira (00278301)
     // Jean Pierre Comerlatto Darricarrere (00182408)
 
-    #include "abstract_syntax_tree.h"
+	#include<stdio.h>
+	#include "lexical_structures.h"
 
     extern void *arvore;
     extern int yylineno;
@@ -15,10 +16,6 @@
 
 %union {
     struct ValorLexico valor_lexico;
-    struct CommandList* optional_command_list;
-    struct FunctionDef* optional_function_def;
-    struct InitVar* init_var;
-    struct Expression* expression;
 }
 
 %expect 0
@@ -73,22 +70,6 @@
 %type<valor_lexico> literal_int
 %type<valor_lexico> shiftOperator
 
-%type<expression> expression
-
-%type<optional_command_list> varShift
-%type<optional_command_list> localNameDefAssign
-%type<optional_command_list> localDef
-%type<optional_command_list> localNameDefList
-%type<optional_command_list> simpleCommand
-%type<optional_command_list> simpleCommandList
-%type<optional_command_list> optionalSimpleCommandList
-%type<optional_command_list> commandBlock
-%type<optional_function_def> program
-%type<optional_function_def> topLevelDefList
-%type<optional_function_def> functionDef
-
-%type<optional_command_list> varSet
-
 %left GROUPING
 %right GROUPING_CLOSE
 
@@ -119,35 +100,19 @@
 %%
 
 program:
-    %empty {
-        $$ = NULL;
-    }
-    | topLevelDefList {
-        $$ = $1;
-        arvore = $$;
-    }
+    %empty
+    | topLevelDefList
     ;
 
 topLevelDefList:
-    globalDef {
-        $$ = NULL;
-    }
-    | functionDef {
-        $$ = $1;
-    }
-    | topLevelDefList globalDef {
-        $$ = $1;
-    }
-    | topLevelDefList functionDef {
-        append_function_def($1, $2);
-        $$ = $1;
-    }
+    globalDef
+    | functionDef
+    | topLevelDefList globalDef
+    | topLevelDefList functionDef
     ;
 
 functionDef:
-    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
-        $$ = new_function_def($3, $7);
-    }
+    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock
     ;
 
 optionalStatic:
@@ -202,65 +167,30 @@ param:
 
 
 commandBlock:
-    '{' optionalSimpleCommandList '}' {
-        $$ = $2;
-    }
+    '{' optionalSimpleCommandList '}'
     ;
 
 optionalSimpleCommandList:
-    %empty {
-        $$ = NULL;
-    }
-    | simpleCommandList {
-        $$ = $1;
-    }
+    %empty
+    | simpleCommandList
     ;
 
 simpleCommandList:
-    simpleCommand {
-        $$ = $1;
-    }
-    | simpleCommandList simpleCommand {
-        if($1 == NULL) {
-            $$ = $2;
-        } else {
-            append_command($1, $2);
-            $$ = $1;
-        }
-    }
+    simpleCommand
+    | simpleCommandList simpleCommand
     ;
 
 simpleCommand:
-    commandBlock ';' {
-        $$ = $1;
-    }
-    | localDef ';' {
-        $$ = $1;
-    }
-    | varSet ';' {
-        $$ = $1;
-    }
-    | varShift ';' {
-        $$ = $1;
-    }
-    | conditional ';' {
-        $$ = NULL; // TO DO
-    }
-    | IO ';' {
-        $$ = NULL; // TO DO
-    }
-    | functionCall ';' {
-        $$ = NULL; // TO DO
-    }
-    | TK_PR_RETURN expression ';' {
-        $$ = NULL; // TO DO
-    }
-    | TK_PR_CONTINUE ';' {
-        $$ = NULL; // TO DO
-    }
-    | TK_PR_BREAK ';' {
-        $$ = NULL; // TO DO
-    }
+    commandBlock ';'
+    | localDef ';'
+    | varSet ';'
+    | varShift ';'
+    | conditional ';'
+    | IO ';'
+    | functionCall ';'
+    | TK_PR_RETURN expression ';'
+    | TK_PR_CONTINUE ';'
+    | TK_PR_BREAK ';'
     ;
 
 
@@ -279,91 +209,34 @@ literal_int:
 
 
 localDef:
-    optionalStatic optionalConst type localNameDefList {
-        $$ = $4;
-    }
+    optionalStatic optionalConst type localNameDefList
     ;
 
 localNameDefList:
-    TK_IDENTIFICADOR {
-        $$ = NULL;
-    }
-    | localNameDefAssign {
-        $$ = $1;
-    }
-    | localNameDefList ',' TK_IDENTIFICADOR {
-        $$ = $1;
-    }
-    | localNameDefList ',' localNameDefAssign {
-        if($1 == NULL) {
-            $$ = $3;
-        } else {
-            append_command($1, $3);
-            $$ = $1;
-        }
-    }
+    TK_IDENTIFICADOR
+    | localNameDefAssign
+    | localNameDefList ',' TK_IDENTIFICADOR
+    | localNameDefList ',' localNameDefAssign
     ;
 
 localNameDefAssign:
-    TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR {
-        struct Identifier* left_identifier = new_identifier($1);
-        struct Identifier* right_identifier = new_identifier($3);
-        union InitVarData init_data;
-        init_data.identifier = right_identifier;
-        struct InitVar init_var = {.identifier = left_identifier, .init_type = IDENTIFIER_INIT, .init_data = init_data };
-        union CommandData command = {.init_var = init_var};
-        $$ = new_command(INIT_VAR, command);
-    }
-    | TK_IDENTIFICADOR TK_OC_LE literal {
-        struct Identifier* left_identifier = new_identifier($1);
-        struct Literal* literal = new_literal($3);
-        union InitVarData init_data;
-        init_data.literal = literal;
-        struct InitVar init_var = {.identifier = left_identifier, .init_type = LITERAL_INIT, .init_data = init_data};
-        union CommandData command = {.init_var = init_var};
-        $$ = new_command(INIT_VAR, command);
-    }
+    TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR
+    | TK_IDENTIFICADOR TK_OC_LE literal
     ;
 
 varShift:
-    TK_IDENTIFICADOR shiftOperator literal_int {
-        struct Identifier* identifier = new_identifier($1);
-        union StorageAcessData storage_data = {.identifier = identifier};
-        struct StorageAccess left_side = {.storage_type = IDENTIFIER_STORAGE, .storage_data = storage_data};
-        struct Literal* right_side = new_literal($3);
-        struct ShiftCommand shift = {.valor_lexico = $2, .left_side = left_side, .right_side = right_side};
-        union CommandData command_data = {.shift_command = shift};
-        $$ = new_command(SHIFT_COMMAND, command_data);
-    }
-    | TK_IDENTIFICADOR '[' expression ']' shiftOperator literal_int {
-        struct Identifier* identifier = new_identifier($1);
-        struct Expression* expression = $3;
-        struct ArrayIndex* array_index = new_array_index(identifier, expression);
-        union StorageAcessData storage_data = {.array_index = array_index};
-        struct StorageAccess left_side = {.storage_type = ARRAY_INDEX_STORAGE, .storage_data = storage_data};
-        struct Literal* right_side = new_literal($6);
-        struct ShiftCommand shift = {.valor_lexico = $5, .left_side = left_side, .right_side = right_side};
-        union CommandData command_data = {.shift_command = shift};
-        $$ = new_command(SHIFT_COMMAND, command_data);
-    }
+    TK_IDENTIFICADOR shiftOperator literal_int
+    | TK_IDENTIFICADOR '[' expression ']' shiftOperator literal_int
     ;
 
 varSet:
-    TK_IDENTIFICADOR '=' expression {
-        $$ = createSetVar($1);
-    } 
-    | TK_IDENTIFICADOR '[' expression ']' '=' expression {
-        $$ = createSetVar($1);
-    }
+    TK_IDENTIFICADOR '=' expression
+    | TK_IDENTIFICADOR '[' expression ']' '=' expression
     ;
 
 shiftOperator:
-    TK_OC_SR %prec SHIFT_OPERATOR {
-        $$ = $1;
-    }
-    | TK_OC_SL %prec SHIFT_OPERATOR {
-        $$ = $1;
-    }
+    TK_OC_SR %prec SHIFT_OPERATOR
+    | TK_OC_SL %prec SHIFT_OPERATOR
     ;
 
 
@@ -386,11 +259,7 @@ conditional:
     | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock
     ;
 
-expression:
-    ternaryOperationOrLower {
-        $$ = NULL; //TODO
-    }
-    ;
+expression: ternaryOperationOrLower ;
 
 ternaryOperationOrLower:
     binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower
@@ -514,7 +383,6 @@ expressionList:
 %%
 
 void exporta(void *arvore) {
-    print_top_function((struct FunctionDef*) arvore);
 }
 
 void libera(void *arvore) {
