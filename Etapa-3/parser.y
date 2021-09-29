@@ -67,6 +67,19 @@
 %token<valor_lexico> TK_IDENTIFICADOR
 %token<valor_lexico> TOKEN_ERRO
 
+%token<valor_lexico> '<'
+%token<valor_lexico> '>'
+%token<valor_lexico> '+'
+%token<valor_lexico> '-'
+%token<valor_lexico> '*'
+%token<valor_lexico> '/'
+%token<valor_lexico> '%'
+%token<valor_lexico> '&'
+%token<valor_lexico> '!'
+%token<valor_lexico> '?'
+%token<valor_lexico> '#'
+%token<valor_lexico> '='
+
 %left GROUPING
 %right GROUPING_CLOSE
 
@@ -162,7 +175,7 @@ topLevelDefList:
     ;
 
 functionDef:
-    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
+    optionalStatic type_rule TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
         ValorLexico* valorLexico = $3;
         ValorLexico* commandBlock = $7;
         valorLexico->children = appendToList(NULL, commandBlock);
@@ -176,7 +189,7 @@ optionalStatic:
     | TK_PR_STATIC
     ;
 
-type:
+type_rule:
     TK_PR_INT
     | TK_PR_FLOAT
     | TK_PR_BOOL
@@ -186,11 +199,13 @@ type:
 
 optionalArray:
     %empty
-    | '[' TK_LIT_INT ']'
+    | '[' TK_LIT_INT ']'  {
+        freeValorLexico($2);
+    }
     ;
 
 varOrVecName:
-    TK_IDENTIFICADOR optionalArray
+    TK_IDENTIFICADOR optionalArray { freeValorLexico($1); }
     ;
 
 varOrVecNameList:
@@ -199,7 +214,7 @@ varOrVecNameList:
     ;
 
 globalDef:
-    optionalStatic type varOrVecNameList ';'
+    optionalStatic type_rule varOrVecNameList ';'
     ;
 
 optionalConst:
@@ -218,7 +233,7 @@ paramList:
     ;
 
 param:
-    optionalConst type TK_IDENTIFICADOR
+    optionalConst type_rule TK_IDENTIFICADOR { freeValorLexico($3); }
     ;
 
 
@@ -245,12 +260,12 @@ simpleCommand:
     | IO ';' { $$ = $1; }
     | functionCall ';' { $$ = $1; }
     | TK_PR_RETURN expression ';' { 
-        ValorLexico* valorLexico = createStringValorLexico(SPECIAL_KEYWORD, SK_RETURN);
+        ValorLexico* valorLexico = $1;
         valorLexico->children = appendToList(NULL, $2);
         $$ = valorLexico;
     }
-    | TK_PR_CONTINUE ';' { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_CONTINUE); }
-    | TK_PR_BREAK ';' { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_BREAK); }
+    | TK_PR_CONTINUE ';' { $$ = $1; }
+    | TK_PR_BREAK ';' { $$ = $1; }
     ;
 
 
@@ -269,29 +284,33 @@ literal_int:
 
 
 localDef:
-    optionalStatic optionalConst type localNameDefList { $$ = $4; }
+    optionalStatic optionalConst type_rule localNameDefList { $$ = $4; }
     ;
 
 localNameDefList:
-    TK_IDENTIFICADOR { $$ = NULL; }
+    TK_IDENTIFICADOR {
+        freeValorLexico($1);
+        $$ = NULL;
+    }
     | localNameDefAssign { $$ = $1;}
-    | localNameDefList ',' TK_IDENTIFICADOR { $$ = $1; }
+    | localNameDefList ',' TK_IDENTIFICADOR {
+        freeValorLexico($3);
+        $$ = $1;
+    }
     | localNameDefList ',' localNameDefAssign { $$ = appendToValorLexico($1, $3); }
     ;
 
 localNameDefAssign:
     TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR {
-        ValorLexico* id = createStringValorLexico(SPECIAL_KEYWORD, SK_LESS_EQUAL);
+        ValorLexico* id = $2;
         id->children = appendToList(NULL, $1);
         id->children = appendToList(id->children, $3);
-
         $$ = id;
     }
     | TK_IDENTIFICADOR TK_OC_LE literal{
-        ValorLexico* id = createStringValorLexico(SPECIAL_KEYWORD, SK_LESS_EQUAL);
+        ValorLexico* id = $2;
         id->children = appendToList(NULL, $1);
         id->children = appendToList(id->children, $3);
-
         $$ = id;
     }
     ;
@@ -316,22 +335,22 @@ varSet:
     TK_IDENTIFICADOR '=' expression {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
-        ValorLexico* set_operator = createSpecialCharValorLexico('=');
+        ValorLexico* set_operator = $2;
         set_operator->children = children;
         $$ = set_operator;
     }
     | arrayAccess '=' expression {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
-        ValorLexico* set_operator = createSpecialCharValorLexico('=');
+        ValorLexico* set_operator = $2;
         set_operator->children = children;
         $$ = set_operator;
     }
     ;
 
 shiftOperator:
-    TK_OC_SR %prec SHIFT_OPERATOR { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_RIGHT_SHIFT); } ;
-    | TK_OC_SL %prec SHIFT_OPERATOR { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_LEFT_SHIFT); } ;
+    TK_OC_SR %prec SHIFT_OPERATOR { $$ = $1; }
+    | TK_OC_SL %prec SHIFT_OPERATOR { $$ = $1; }
     ;
 
 
@@ -358,17 +377,17 @@ functionCall:
 
 IO:
     TK_PR_INPUT TK_IDENTIFICADOR { 
-        ValorLexico* valorLexico = createStringValorLexico(SPECIAL_KEYWORD, SK_INPUT);
+        ValorLexico* valorLexico = $1;
         valorLexico->children = appendToList(NULL, $2);
         $$ = valorLexico;
     }
     | TK_PR_OUTPUT TK_IDENTIFICADOR {
-        ValorLexico* valorLexico = createStringValorLexico(SPECIAL_KEYWORD, SK_OUTPUT);
+        ValorLexico* valorLexico = $1;
         valorLexico->children = appendToList(NULL, $2);
         $$ = valorLexico;
     }
     | TK_PR_OUTPUT literal {
-        ValorLexico* valorLexico = createStringValorLexico(SPECIAL_KEYWORD, SK_OUTPUT);
+        ValorLexico* valorLexico = $1;
         valorLexico->children = appendToList(NULL, $2);
         $$ = valorLexico;
     }
@@ -377,14 +396,14 @@ IO:
 
 conditional:
     TK_PR_IF '(' expression ')' commandBlock {
-        ValorLexico* id = createStringValorLexico(SPECIAL_KEYWORD, SK_IF);
+        ValorLexico* id = $1;
         id->children = appendToList(NULL, $3);
         id->children = appendToList(id->children, $5);
 
         $$ = id; 
     }
     | TK_PR_IF '(' expression ')' commandBlock TK_PR_ELSE commandBlock {
-        ValorLexico* id = createStringValorLexico(SPECIAL_KEYWORD, SK_IF);
+        ValorLexico* id = $1;
         id->children = appendToList(NULL, $3);
         id->children = appendToList(id->children, $5);
         id->children = appendToList(id->children, $7);
@@ -392,7 +411,7 @@ conditional:
         $$ = id; 
     }
     | TK_PR_FOR '(' varSet ':' expression ':' varSet ')' commandBlock  {
-        ValorLexico* id = createStringValorLexico(SPECIAL_KEYWORD, SK_FOR);
+        ValorLexico* id = $1;
         id->children = appendToList(NULL, $3);
         id->children = appendToList(id->children, $5);
         id->children = appendToList(id->children, $7);
@@ -401,7 +420,7 @@ conditional:
         $$ = id; 
     }
     | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock {
-        ValorLexico* id = createStringValorLexico(SPECIAL_KEYWORD, SK_WHILE);
+        ValorLexico* id = $1;
         id->children = appendToList(NULL, $3);
         id->children = appendToList(id->children, $6);
 
@@ -529,26 +548,26 @@ bitwiseAnd:
     ;
 
 relationalEqualityOperator:
-    TK_OC_EQ %prec RELATIONAL_EQUALITY_OP { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_EQUAL); }
-    | TK_OC_NE %prec RELATIONAL_EQUALITY_OP { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_UNEQUAL); }
+    TK_OC_EQ %prec RELATIONAL_EQUALITY_OP { $$ = $1; }
+    | TK_OC_NE %prec RELATIONAL_EQUALITY_OP { $$ = $1; }
     ;
 
 relationalSizeOperator:
-    '<' %prec RELATIONAL_SIZE_OP { $$ = createSpecialCharValorLexico('<'); }
-    | '>' %prec RELATIONAL_SIZE_OP { $$ = createSpecialCharValorLexico('>'); }
-    | TK_OC_LE %prec RELATIONAL_SIZE_OP { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_LESS_EQUAL); }
-    | TK_OC_GE %prec RELATIONAL_SIZE_OP { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_MORE_EQUAL); }
+    '<' %prec RELATIONAL_SIZE_OP { $$ = $1; }
+    | '>' %prec RELATIONAL_SIZE_OP { $$ = $1; }
+    | TK_OC_LE %prec RELATIONAL_SIZE_OP { $$ = $1; }
+    | TK_OC_GE %prec RELATIONAL_SIZE_OP { $$ = $1; }
     ;
 
 addSub:
-    '+' %prec ADD_SUB { $$ = createSpecialCharValorLexico('+'); }
-    | '-' %prec ADD_SUB { $$ = createSpecialCharValorLexico('-'); }
+    '+' %prec ADD_SUB { $$ = $1; }
+    | '-' %prec ADD_SUB { $$ = $1; }
     ;
 
 multDivRemainder:
-    '*' %prec MULT_DIV_REMAINDER { $$ = createSpecialCharValorLexico('*'); }
-    | '/' %prec MULT_DIV_REMAINDER { $$ = createSpecialCharValorLexico('/'); }
-    | '%' %prec MULT_DIV_REMAINDER { $$ = createSpecialCharValorLexico('%'); }
+    '*' %prec MULT_DIV_REMAINDER { $$ = $1; }
+    | '/' %prec MULT_DIV_REMAINDER { $$ = $1; }
+    | '%' %prec MULT_DIV_REMAINDER { $$ = $1; }
     ;
 
 unaryOperationOrOperand:
@@ -567,25 +586,22 @@ unaryOperationOrOperand:
 
 unaryOperatorList:
     unaryOperatorList unaryOperator {
-        ListElement* children = NULL;
-        children = appendToList(children, $2);
-
+        ListElement* children = appendToList(NULL, $2);
         ValorLexico* value = $1;
         value->children = children;
-
         $$ = value;
     }
     | unaryOperator { $$ = $1; }
     ;
 
 unaryOperator:
-    '&' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('&'); }
-    | '!' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('!'); }
-    | '+' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('+'); }
-    | '-' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('-'); }
-    | '?' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('?'); }
-    | '*' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('*'); }
-    | '#' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('#'); }
+    '&' %prec UNARY_OPERATOR { $$ = $1; }
+    | '!' %prec UNARY_OPERATOR { $$ = $1; }
+    | '+' %prec UNARY_OPERATOR { $$ = $1; }
+    | '-' %prec UNARY_OPERATOR { $$ = $1; }
+    | '?' %prec UNARY_OPERATOR { $$ = $1; }
+    | '*' %prec UNARY_OPERATOR { $$ = $1; }
+    | '#' %prec UNARY_OPERATOR { $$ = $1; }
     ;
 
 expressionOperand: 

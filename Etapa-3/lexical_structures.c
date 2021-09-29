@@ -5,24 +5,24 @@
 
 #include "lexical_structures.h"
 
-const char* SK_RETURN = "return";
-const char* SK_CONTINUE = "continue";
-const char* SK_BREAK = "break";
-const char* SK_LEFT_SHIFT = "<<";
-const char* SK_RIGHT_SHIFT = ">>";
-const char* SK_INPUT = "input";
-const char* SK_OUTPUT = "output";
-const char* SK_IF = "if";
-const char* SK_FOR = "for";
-const char* SK_WHILE = "while";
-const char* SK_TERNARY = "?:";
-const char* SK_BOOL_OR = "||";
-const char* SK_BOOL_AND = "&&";
-const char* SK_EQUAL = "==";
-const char* SK_UNEQUAL = "!=";
-const char* SK_LESS_EQUAL = "<=";
-const char* SK_MORE_EQUAL = ">=";
-const char* SK_ARRAY = "[]";
+char* SK_RETURN = "return";
+char* SK_CONTINUE = "continue";
+char* SK_BREAK = "break";
+char* SK_LEFT_SHIFT = "<<";
+char* SK_RIGHT_SHIFT = ">>";
+char* SK_INPUT = "input";
+char* SK_OUTPUT = "output";
+char* SK_IF = "if";
+char* SK_FOR = "for";
+char* SK_WHILE = "while";
+char* SK_TERNARY = "?:";
+char* SK_BOOL_OR = "||";
+char* SK_BOOL_AND = "&&";
+char* SK_EQUAL = "==";
+char* SK_UNEQUAL = "!=";
+char* SK_LESS_EQUAL = "<=";
+char* SK_MORE_EQUAL = ">=";
+char* SK_ARRAY = "[]";
 
 void printDependencies(ValorLexico* valorLexico){
     if(valorLexico == NULL) return;
