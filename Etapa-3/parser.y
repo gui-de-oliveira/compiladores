@@ -110,11 +110,24 @@
 %type<valor_lexico> binaryOperationOrLower
 %type<valor_lexico> ternaryOperationOrLower
 %type<valor_lexico> expression
+%type<valor_lexico> grouping
+
+%type<valor_lexico> logicalOr
+%type<valor_lexico> logicalAnd
+%type<valor_lexico> bitwiseOr
+%type<valor_lexico> bitwiseXor
+%type<valor_lexico> bitwiseAnd
+%type<valor_lexico> relationalEqualityOperator
+%type<valor_lexico> relationalSizeOperator
+%type<valor_lexico> addSub
+%type<valor_lexico> multDivRemainder
+%type<valor_lexico> unaryOperatorList
+%type<valor_lexico> unaryOperator
 
 %type<valor_lexico> functionCall
 
-%type<list_element_ptr> optionalExpressionList
-%type<list_element_ptr> expressionList
+%type<valor_lexico> optionalExpressionList
+%type<valor_lexico> expressionList
 
 %type<valor_lexico> IO
 
@@ -326,11 +339,18 @@ shiftOperator:
 functionCall:
     TK_IDENTIFICADOR '(' optionalExpressionList ')' {
         ValorLexico* identifier = $1;
-        ValorLexico* functionCall = createStringValorLexico(LITERAL_STRING, "call g1");
-        
-        ValorLexico* children = NULL;
-        children = appendToList(children, $3);
-        functionCall->children = children;
+
+        char* function_name = identifier->token_value.string;
+        int length = strlen(function_name);
+        char* function_call = (char*) malloc(length + 5);
+        function_call[0] = '\0';
+        strcat(function_call, "call ");
+        strcat(function_call, function_name);
+
+        freeValorLexico(identifier);
+
+        ValorLexico* functionCall = createStringValorLexico(LITERAL_STRING, function_call);
+        functionCall->children = appendToList(functionCall->children, $3);
 
         $$ = functionCall;
     }
@@ -393,7 +413,15 @@ conditional:
 expression: ternaryOperationOrLower { $$ = $1; };
 
 ternaryOperationOrLower:
-    binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower { $$ = NULL; }
+    binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        children = appendToList(children, $5);
+        ValorLexico* value = createStringValorLexico(COMPOSITE_OPERATOR, "?:");
+        value->children = children;
+        $$ = value;
+     }
     | binaryOperationOrLower { $$ = $1; }
     ;
 
@@ -406,79 +434,159 @@ ternaryClose:
     ;
 
 binaryOperationOrLower:
-    binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR { $$ = NULL; }
-    | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND { $$ = NULL; }
-    | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR { $$ = NULL; }
-    | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR { $$ = NULL; }
-    | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND { $$ = NULL; }
-    | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP { $$ = NULL; }
-    | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP { $$ = NULL; }
-    | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB { $$ = NULL; }
-    | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER { $$ = NULL; }
+    binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
+    | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER {
+        ListElement* children = NULL;
+        children = appendToList(children, $1);
+        children = appendToList(children, $3);
+        ValorLexico* value = $2;
+        value->children = children;
+        $$ = value;
+     }
     | unaryOperationOrOperand { $$ = $1; }
     ;
 
 logicalOr:
-    TK_OC_OR %prec LOGICAL_OR
+    TK_OC_OR %prec LOGICAL_OR { $$ = createStringValorLexico(COMPOSITE_OPERATOR, "||"); }
     ;
 
 logicalAnd:
-    TK_OC_AND %prec LOGICAL_AND
+    TK_OC_AND %prec LOGICAL_AND { $$ = createStringValorLexico(COMPOSITE_OPERATOR, "&&"); }
     ;
 
 bitwiseOr:
-    '|' %prec BITWISE_OR
+    '|' %prec BITWISE_OR { $$ = createSpecialCharValorLexico('|'); }
     ;
 
 bitwiseXor:
-    '^' %prec BITWISE_XOR
+    '^' %prec BITWISE_XOR { $$ = createSpecialCharValorLexico('^'); }
     ;
 
 bitwiseAnd:
-    '&' %prec BITWISE_AND
+    '&' %prec BITWISE_AND { $$ = createSpecialCharValorLexico('&'); }
     ;
 
 relationalEqualityOperator:
-    TK_OC_EQ %prec RELATIONAL_EQUALITY_OP
-    | TK_OC_NE %prec RELATIONAL_EQUALITY_OP
+    TK_OC_EQ %prec RELATIONAL_EQUALITY_OP { $$ = createStringValorLexico(COMPOSITE_OPERATOR, "=="); }
+    | TK_OC_NE %prec RELATIONAL_EQUALITY_OP { $$ = createStringValorLexico(COMPOSITE_OPERATOR, "!="); }
     ;
 
 relationalSizeOperator:
-    '<' %prec RELATIONAL_SIZE_OP
-    | '>' %prec RELATIONAL_SIZE_OP
-    | TK_OC_LE %prec RELATIONAL_SIZE_OP
-    | TK_OC_GE %prec RELATIONAL_SIZE_OP
+    '<' %prec RELATIONAL_SIZE_OP { $$ = createSpecialCharValorLexico('<'); }
+    | '>' %prec RELATIONAL_SIZE_OP { $$ = createSpecialCharValorLexico('>'); }
+    | TK_OC_LE %prec RELATIONAL_SIZE_OP { $$ = createStringValorLexico(COMPOSITE_OPERATOR, "<="); }
+    | TK_OC_GE %prec RELATIONAL_SIZE_OP { $$ = createStringValorLexico(COMPOSITE_OPERATOR, ">="); }
     ;
 
 addSub:
-    '+' %prec ADD_SUB
-    | '-' %prec ADD_SUB
+    '+' %prec ADD_SUB { $$ = createSpecialCharValorLexico('+'); }
+    | '-' %prec ADD_SUB { $$ = createSpecialCharValorLexico('-'); }
     ;
 
 multDivRemainder:
-    '*' %prec MULT_DIV_REMAINDER
-    | '/' %prec MULT_DIV_REMAINDER
-    | '%' %prec MULT_DIV_REMAINDER
+    '*' %prec MULT_DIV_REMAINDER { $$ = createSpecialCharValorLexico('*'); }
+    | '/' %prec MULT_DIV_REMAINDER { $$ = createSpecialCharValorLexico('/'); }
+    | '%' %prec MULT_DIV_REMAINDER { $$ = createSpecialCharValorLexico('%'); }
     ;
 
 unaryOperationOrOperand:
     expressionOperand { $$ = $1; }
-    | unaryOperatorList expressionOperand { $$ = NULL; }
+    | unaryOperatorList expressionOperand {
+        ValorLexico* top_value = $1;
+        ValorLexico* bottom_value = top_value;
+        while(bottom_value->children != NULL) {
+            bottom_value = bottom_value->children->value;
+        }
+        bottom_value->children = appendToList(bottom_value->children, $2);
+
+        $$ = top_value;
+        }
     ;
 
 unaryOperatorList:
-    unaryOperatorList unaryOperator
-    | unaryOperator
+    unaryOperatorList unaryOperator {
+        ListElement* children = NULL;
+        children = appendToList(children, $2);
+
+        ValorLexico* value = $1;
+        value->children = children;
+
+        $$ = value;
+    }
+    | unaryOperator { $$ = $1; }
     ;
 
 unaryOperator:
-    '&' %prec UNARY_OPERATOR
-    | '!' %prec UNARY_OPERATOR
-    | '+' %prec UNARY_OPERATOR
-    | '-' %prec UNARY_OPERATOR
-    | '?' %prec UNARY_OPERATOR
-    | '*' %prec UNARY_OPERATOR
-    | '#' %prec UNARY_OPERATOR
+    '&' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('&'); }
+    | '!' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('!'); }
+    | '+' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('+'); }
+    | '-' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('-'); }
+    | '?' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('?'); }
+    | '*' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('*'); }
+    | '#' %prec UNARY_OPERATOR { $$ = createSpecialCharValorLexico('#'); }
     ;
 
 expressionOperand: 
@@ -498,11 +606,11 @@ expressionOperand:
     }
     | literal  { $$ = $1; }
     | functionCall { $$ = $1; }
-    | grouping { $$ = NULL; }
+    | grouping { $$ = $1; }
     ;
 
 grouping:
-    openGrouping expression closeGrouping
+    openGrouping expression closeGrouping { $$ = $2; }
     ;
 
 openGrouping:
@@ -520,7 +628,13 @@ optionalExpressionList:
 
 expressionList:
     expression { $$ = $1; }
-    | expressionList ',' expression { $$ = appendToValorLexico($1, $3); }
+    | expressionList ',' expression {
+        if($1 == NULL) {
+            $$ = $3;
+        } else {
+            $$ = appendToValorLexico($1, $3);
+        }
+    }
     ;
 
 %%

@@ -6,6 +6,7 @@
 #include <stdbool.h> 
 #include <stdlib.h> 
 #include <stdio.h> 
+#include <string.h>
 
 typedef struct ValorLexico ValorLexico;
 typedef struct ListElement ListElement;
@@ -57,3 +58,6 @@ ValorLexico* createBoolValorLexico(bool boolean);
 
 ValorLexico* appendToValorLexico(ValorLexico* parent, ValorLexico* child);
 ListElement* appendToList(ListElement* parent, ValorLexico* item);
+
+void freeValorLexico(ValorLexico* lexical_value);
+void freeListElement(ListElement* list_element);
