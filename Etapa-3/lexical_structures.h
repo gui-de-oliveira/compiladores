@@ -4,8 +4,12 @@
 // Jean Pierre Comerlatto Darricarrere (00182408)
 
 #include <stdbool.h> 
+#include <stdlib.h> 
+#include <stdio.h> 
 
 typedef struct ValorLexico ValorLexico;
+typedef struct ListElement ListElement;
+typedef struct Node Node;
 typedef union TokenValue TokenValue;
 
 enum TokenType {
@@ -26,11 +30,22 @@ union TokenValue {
 	char* string;		
 	float floating_point;
 	bool boolean;		
-	ValorLexico* children;		
 };
 
 struct ValorLexico {
 	int line_number;
 	enum TokenType token_type;
 	union TokenValue token_value;
+	ListElement* children;
+	ValorLexico* next;
 };
+
+struct ListElement {
+	ValorLexico* value;
+	ListElement* next;
+};
+
+void printLabels(ValorLexico* valorLexico);
+void printDependencies(ValorLexico* valorLexico);
+ValorLexico* createFunction(char* identifier);
+ValorLexico* addAsNext(ValorLexico* parent, ValorLexico* child);

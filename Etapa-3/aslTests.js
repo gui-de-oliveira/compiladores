@@ -80,14 +80,21 @@ async function testInput(input, expected) {
 
     const { stdout } = await exec(`./etapa3 < ${file}`);
     const rawOutput = stdout;
-    const output = replaceFileMemoryWithSymbols(rawOutput);
+    const formattedOutput = replaceFileMemoryWithSymbols(rawOutput).trim();
 
-    if (output.trim() !== expected.trim()) {
+    const formattedExpected = expected
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => line.trim())
+      .join("\n")
+      .trim();
+
+    if (formattedOutput !== formattedExpected) {
       console.log(FontColor.Fg.Red);
       console.log(`Test ${testsCounter} failed!`);
       console.log(`Input: "${input}"`);
-      console.log(`Expected: "${expected}"`);
-      console.log(`Received: "${output}"`);
+      console.log(`Expected: "${formattedExpected}"`);
+      console.log(`Received: "${formattedOutput}"`);
       console.log(`(no replacing): "${rawOutput}"`);
       console.log(FontColor.Reset);
 
@@ -130,6 +137,7 @@ async function test() {
 
   await testInput("int x;", "");
   await testInput(`int f1() { }`, `A [label="f1"];`);
+  await testInput(`int f2() { }`, `A [label="f2"];`);
   await testInput(
     `
     int f1() { }
@@ -149,6 +157,20 @@ async function test() {
     A, B
     A [label="f1"];
     B [label="f2"];
+    `
+  );
+  await testInput(
+    `
+    int f1() { }
+    int f2() { }
+    int f3() { }
+    `,
+    `
+    A, B
+    B, C
+    A [label="f1"];
+    B [label="f2"];
+    C [label="f3"];
     `
   );
 

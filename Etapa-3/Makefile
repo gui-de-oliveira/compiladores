@@ -9,13 +9,13 @@ main:
 
 	gcc -c lex.yy.c
 	gcc -c parser.tab.c
+	gcc -c lexical_structures.c
 	gcc -c main.c
 
-	gcc -o etapa3 lex.yy.o parser.tab.o main.o -lfl
+	gcc -o etapa3 lex.yy.o parser.tab.o lexical_structures.o main.o -lfl
 
 clean:
 	rm -f etapa3 etapa3.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
-	rm *.temp
 
 zip:
 	tar cvzf etapa3.tgz parser.y scanner.l Makefile runTests.sh

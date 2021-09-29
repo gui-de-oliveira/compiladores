@@ -3,8 +3,8 @@
     // Guilherme de Oliveira (00278301)
     // Jean Pierre Comerlatto Darricarrere (00182408)
 
-	#include<stdio.h>
 	#include "lexical_structures.h"
+	#include<stdio.h>
 
     extern void *arvore;
     extern int yylineno;
@@ -16,6 +16,7 @@
 
 %union {
     struct ValorLexico valor_lexico;
+    struct ValorLexico* valor_lexico_ptr;
 }
 
 %expect 0
@@ -96,23 +97,28 @@
 
 %left UNARY_OPERATOR
 
+%type<valor_lexico_ptr> functionDef
+%type<valor_lexico_ptr> topLevelDefList
 
 %%
 
 program:
-    %empty
-    | topLevelDefList
+    %empty { arvore = NULL; }
+    | topLevelDefList { arvore = (void *) $1; }    
     ;
 
 topLevelDefList:
-    globalDef
+    globalDef { $$ = NULL; }
     | functionDef
-    | topLevelDefList globalDef
-    | topLevelDefList functionDef
+    | topLevelDefList globalDef { $$ = NULL; }
+    | topLevelDefList functionDef { $$ = addAsNext($1, $2); }
     ;
 
 functionDef:
-    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock
+    optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
+        char* identificador = $3.token_value.string;
+        $$ = createFunction(identificador);
+    }
     ;
 
 optionalStatic:
@@ -383,6 +389,8 @@ expressionList:
 %%
 
 void exporta(void *arvore) {
+    printDependencies((ValorLexico *) arvore);
+    printLabels((ValorLexico *) arvore);
 }
 
 void libera(void *arvore) {
