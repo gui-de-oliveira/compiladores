@@ -112,6 +112,10 @@
 %type<valor_lexico_ptr> ternaryOperationOrLower
 %type<valor_lexico_ptr> expression
 
+%type<valor_lexico_ptr> functionCall
+
+%type<list_element_ptr> optionalExpressionList
+%type<list_element_ptr> expressionList
 
 %%
 
@@ -217,7 +221,7 @@ simpleCommand:
     | varShift ';' { $$ = NULL; }
     | conditional ';' { $$ = NULL; }
     | IO ';' { $$ = NULL; }
-    | functionCall ';' { $$ = NULL; }
+    | functionCall ';' { $$ = $1; }
     | TK_PR_RETURN expression ';' { $$ = NULL; }
     | TK_PR_CONTINUE ';' { $$ = NULL; }
     | TK_PR_BREAK ';' { $$ = NULL; }
@@ -285,7 +289,16 @@ shiftOperator:
 
 
 functionCall:
-    TK_IDENTIFICADOR '(' optionalExpressionList ')'
+    TK_IDENTIFICADOR '(' optionalExpressionList ')' {
+        ValorLexico* identifier = createStringValorLexico(IDENTIFIER, $1.token_value.string);
+        ValorLexico* functionCall = createStringValorLexico(LITERAL_STRING, "call g1");
+        
+        ValorLexico* children = NULL;
+        children = appendToList(children, $3);
+        functionCall->children = children;
+
+        $$ = functionCall;
+    }
     ;
 
 
@@ -410,7 +423,7 @@ expressionOperand:
         $$ = value;
     }
     | literal  { $$ = $1; }
-    | functionCall { $$ = NULL; }
+    | functionCall { $$ = $1; }
     | grouping { $$ = NULL; }
     ;
 
@@ -427,13 +440,13 @@ closeGrouping:
     ;
 
 optionalExpressionList:
-    %empty
-    | expressionList
+    %empty { $$ = NULL; }
+    | expressionList { $$ = $1; } 
     ;
 
 expressionList:
-    expression
-    | expressionList ',' expression
+    expression { $$ = $1; }
+    | expressionList ',' expression { $$ = appendToValorLexico($1, $3); }
     ;
 
 %%

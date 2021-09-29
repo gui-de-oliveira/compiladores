@@ -9,6 +9,7 @@ function getSymbolsFromFile(file) {
     .map((line) => line.split(" "))
     .reduce((array, value) => array.concat(value), [])
     .filter((element) => !element.endsWith(";")) // Remove labels "0x555f51974580 ([label="f1"];)"
+    .filter((element) => !element.includes("call"))
     .map((element) => element.replace(",", "")) //  Remove comma separator from element "0x555f51974b00[,] 0x555f51974dc0"
     .map((symbol) => symbol.trim()); // remove whitespaces
 }
@@ -92,10 +93,10 @@ async function testInput(input, expected) {
     if (formattedOutput !== formattedExpected) {
       console.log(FontColor.Fg.Red);
       console.log(`Test ${testsCounter} failed!`);
-      console.log(`Input: "${input}"`);
-      console.log(`Expected: "${formattedExpected}"`);
-      console.log(`Received: "${formattedOutput}"`);
-      console.log(`(no replacing): "${rawOutput}"`);
+      console.log(`Input: \n${input}\n`);
+      console.log(`Expected: \n${formattedExpected}\n`);
+      console.log(`Received: \n${formattedOutput}\n`);
+      console.log(`(no replacing): \n${rawOutput}\n`);
       console.log(FontColor.Reset);
 
       process.exit();
@@ -318,6 +319,59 @@ async function test() {
     D [label="[]"];
     E [label="v"];
     F [label="3"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      g1();
+    }
+    `,
+    `
+    A, B
+    A [label="f1"];
+    B [label="call g1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      x = g1();
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="="];
+    C [label="x"];
+    D [label="call g1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      x = g1(1, 2, 3);
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    D, E
+    E, F
+    F, G 
+    A [label="f1"];
+    B [label="="];
+    C [label="x"];
+    D [label="call g1"];
+    E [label="1"];
+    F [label="2"];
+    G [label="3"];
     `
   );
 
