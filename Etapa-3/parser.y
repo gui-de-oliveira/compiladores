@@ -395,7 +395,7 @@ unaryOperator:
     ;
 
 expressionOperand: 
-    TK_IDENTIFICADOR { $$ = NULL; }
+    TK_IDENTIFICADOR { $$ = createStringValorLexico(IDENTIFIER, $1.token_value.string); }
     | TK_IDENTIFICADOR '[' expression ']' { $$ = NULL; }
     | literal  { $$ = $1; }
     | functionCall { $$ = NULL; }

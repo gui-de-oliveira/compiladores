@@ -278,6 +278,7 @@ async function test() {
     { declaration: '"XXX"', expected: "XXX" },
     { declaration: "true", expected: "true" },
     { declaration: "false", expected: "false" },
+    { declaration: "id", expected: "id" },
   ];
 
   for (const literal of literalAsserts) {
