@@ -375,6 +375,38 @@ async function test() {
     `
   );
 
+  const valueAsserts = ["continue", "break"];
+
+  for (const value of valueAsserts) {
+    await testInput(
+      `
+      int f1() {
+        ${value};
+      }
+      `,
+      `
+      A, B
+      A [label="f1"];
+      B [label="${value}"];
+      `
+    );
+  }
+
+  await testInput(
+    `
+    int f1() {
+      return 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    A [label="f1"];
+    B [label="return"];
+    C [label="1"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);

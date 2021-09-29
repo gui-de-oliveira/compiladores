@@ -219,9 +219,13 @@ simpleCommand:
     | conditional ';' { $$ = NULL; }
     | IO ';' { $$ = NULL; }
     | functionCall ';' { $$ = $1; }
-    | TK_PR_RETURN expression ';' { $$ = NULL; }
-    | TK_PR_CONTINUE ';' { $$ = NULL; }
-    | TK_PR_BREAK ';' { $$ = NULL; }
+    | TK_PR_RETURN expression ';'  { 
+        ValorLexico* valorLexico = createStringValorLexico(LITERAL_STRING, "return");
+        valorLexico->children = appendToList(NULL, $2);
+        $$ = valorLexico;
+    }
+    | TK_PR_CONTINUE ';' { $$ = createStringValorLexico(LITERAL_STRING, "continue"); }
+    | TK_PR_BREAK ';' { $$ = createStringValorLexico(LITERAL_STRING, "break"); }
     ;
 
 
