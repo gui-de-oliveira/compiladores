@@ -121,7 +121,9 @@
 %type<valor_lexico> varShift
 %type<valor_lexico> shiftOperator
 
-
+%type<valor_lexico> localDef
+%type<valor_lexico> localNameDefList
+%type<valor_lexico> localNameDefAssign
 
 %%
 
@@ -220,7 +222,7 @@ simpleCommandList:
 
 simpleCommand:
     commandBlock ';' { $$ = NULL; }
-    | localDef ';' { $$ = NULL; }
+    | localDef ';' { $$ = $1; }
     | varSet ';' { $$ = $1; }
     | varShift ';' { $$ = $1; }
     | conditional ';' { $$ = NULL; }
@@ -251,19 +253,31 @@ literal_int:
 
 
 localDef:
-    optionalStatic optionalConst type localNameDefList
+    optionalStatic optionalConst type localNameDefList { $$ = $4; }
     ;
 
 localNameDefList:
-    TK_IDENTIFICADOR
-    | localNameDefAssign
-    | localNameDefList ',' TK_IDENTIFICADOR
-    | localNameDefList ',' localNameDefAssign
+    TK_IDENTIFICADOR { $$ = NULL; }
+    | localNameDefAssign { $$ = $1;}
+    | localNameDefList ',' TK_IDENTIFICADOR { $$ = $1; }
+    | localNameDefList ',' localNameDefAssign { $$ = appendToValorLexico($1, $3); }
     ;
 
 localNameDefAssign:
-    TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR
-    | TK_IDENTIFICADOR TK_OC_LE literal
+    TK_IDENTIFICADOR TK_OC_LE TK_IDENTIFICADOR {
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "<=");
+        id->children = appendToList(NULL, $1);
+        id->children = appendToList(id->children, $3);
+
+        $$ = id;
+    }
+    | TK_IDENTIFICADOR TK_OC_LE literal{
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "<=");
+        id->children = appendToList(NULL, $1);
+        id->children = appendToList(id->children, $3);
+
+        $$ = id;
+    }
     ;
 
 varShift:

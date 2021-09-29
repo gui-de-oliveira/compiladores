@@ -498,6 +498,166 @@ async function test() {
     `
   );
 
+  await testInput(
+    `
+    int f1() {
+      int a <= 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int b, a <= 1;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int a <= 1, b;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int c, a <= 1, b;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int a <= 1, b <= 2;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    E, F
+    E, G
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    E [label="<="];
+    F [label="b"];
+    G [label="2"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int a <= 1, c, b <= 2;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    E, F
+    E, G
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    E [label="<="];
+    F [label="b"];
+    G [label="2"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int a <= 1, b <= 2, c;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    E, F
+    E, G
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    E [label="<="];
+    F [label="b"];
+    G [label="2"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      int c, a <= 1, b <= 2;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    E, F
+    E, G
+    A [label="f1"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    E [label="<="];
+    F [label="b"];
+    G [label="2"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
