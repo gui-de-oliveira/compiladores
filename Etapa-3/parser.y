@@ -15,8 +15,7 @@
 %}
 
 %union {
-    struct ValorLexico valor_lexico;
-    struct ValorLexico* valor_lexico_ptr;
+    ValorLexico* valor_lexico;
     struct ListElement* list_element_ptr;
 }
 
@@ -94,25 +93,25 @@
 
 %left UNARY_OPERATOR
 
-%type<valor_lexico_ptr> functionDef
-%type<valor_lexico_ptr> topLevelDefList
-%type<valor_lexico_ptr> program
+%type<valor_lexico> functionDef
+%type<valor_lexico> topLevelDefList
+%type<valor_lexico> program
 
-%type<valor_lexico_ptr> commandBlock
-%type<valor_lexico_ptr> simpleCommandList
-%type<valor_lexico_ptr> optionalSimpleCommandList
-%type<valor_lexico_ptr> simpleCommand
-%type<valor_lexico_ptr> varSet
+%type<valor_lexico> commandBlock
+%type<valor_lexico> simpleCommandList
+%type<valor_lexico> optionalSimpleCommandList
+%type<valor_lexico> simpleCommand
+%type<valor_lexico> varSet
 
-%type<valor_lexico_ptr> literal_int
-%type<valor_lexico_ptr> literal
-%type<valor_lexico_ptr> expressionOperand
-%type<valor_lexico_ptr> unaryOperationOrOperand
-%type<valor_lexico_ptr> binaryOperationOrLower
-%type<valor_lexico_ptr> ternaryOperationOrLower
-%type<valor_lexico_ptr> expression
+%type<valor_lexico> literal_int
+%type<valor_lexico> literal
+%type<valor_lexico> expressionOperand
+%type<valor_lexico> unaryOperationOrOperand
+%type<valor_lexico> binaryOperationOrLower
+%type<valor_lexico> ternaryOperationOrLower
+%type<valor_lexico> expression
 
-%type<valor_lexico_ptr> functionCall
+%type<valor_lexico> functionCall
 
 %type<list_element_ptr> optionalExpressionList
 %type<list_element_ptr> expressionList
@@ -139,10 +138,8 @@ topLevelDefList:
 
 functionDef:
     optionalStatic type TK_IDENTIFICADOR '(' optionalParamList ')' commandBlock {
-        char* identificador = $3.token_value.string;
+        ValorLexico* valorLexico = $3;
         ValorLexico* commandBlock = $7;
-
-        ValorLexico* valorLexico = createStringValorLexico(IDENTIFIER, identificador);
         valorLexico->children = appendToList(NULL, commandBlock);
 
         $$ = valorLexico;
@@ -230,15 +227,15 @@ simpleCommand:
 
 literal:
     literal_int { $$ = $1; }
-    | TK_LIT_FLOAT { $$ = createFloatValorLexico($1.token_value.floating_point); }
-    | TK_LIT_FALSE { $$ = createBoolValorLexico(false); }
-    | TK_LIT_TRUE { $$ = createBoolValorLexico(true); }
-    | TK_LIT_CHAR { $$ = createCharValorLexico($1.token_value.character); }
-    | TK_LIT_STRING { $$ = createStringValorLexico(LITERAL_STRING, $1.token_value.string); }
+    | TK_LIT_FLOAT { $$ = $1; }
+    | TK_LIT_FALSE { $$ = $1; }
+    | TK_LIT_TRUE { $$ = $1; }
+    | TK_LIT_CHAR { $$ = $1; }
+    | TK_LIT_STRING { $$ = $1; }
     ;
 
 literal_int:
-    TK_LIT_INT { $$ = createIntegerValorLexico($1.token_value.integer); }
+    TK_LIT_INT { $$ = $1; }
     ;
 
 
@@ -265,13 +262,10 @@ varShift:
 
 varSet:
     TK_IDENTIFICADOR '=' expression {
-        char* identifier = $1.token_value.string;
-        ValorLexico* vlId = createStringValorLexico(IDENTIFIER, identifier);
-
         ValorLexico* vlExpression = $3;
 
         ListElement* children = NULL;
-        children = appendToList(children, vlId);
+        children = appendToList(children, $1);
         children = appendToList(children, vlExpression);
 
         ValorLexico* valorLexico = createSpecialCharValorLexico('=');
@@ -290,7 +284,7 @@ shiftOperator:
 
 functionCall:
     TK_IDENTIFICADOR '(' optionalExpressionList ')' {
-        ValorLexico* identifier = createStringValorLexico(IDENTIFIER, $1.token_value.string);
+        ValorLexico* identifier = $1;
         ValorLexico* functionCall = createStringValorLexico(LITERAL_STRING, "call g1");
         
         ValorLexico* children = NULL;
@@ -408,9 +402,9 @@ unaryOperator:
     ;
 
 expressionOperand: 
-    TK_IDENTIFICADOR { $$ = createStringValorLexico(IDENTIFIER, $1.token_value.string); }
+    TK_IDENTIFICADOR { $$ = $1; }
     | TK_IDENTIFICADOR '[' expression ']' {
-        ValorLexico* identifier = createStringValorLexico(IDENTIFIER, $1.token_value.string);
+        ValorLexico* identifier = $1;
         ValorLexico* expression = $3;
 
         ListElement* children = NULL;

@@ -6,13 +6,6 @@
 	#include "lexical_structures.h"
 	#include "parser.tab.h"
 
-	// Function prototype
-	void removeQuotes(char* string);
-	void removeLastCharacterFromString(char* string);
-	void setValorLexico(enum TokenType token_type);
-	void setValorLexicoForStringValue(enum TokenType token_type, char* string);
-	int setValorLexicoForCompositeOperator(int tokenType, char* yytext);
-
 	// Variable definition
 	int line_number = 1;
 	int state_before_comment;
@@ -78,14 +71,12 @@ pattern_string \"(\\.|[^"\n])*\"
 "protected" return TK_PR_PROTECTED;
 
 "false" { 
-	setValorLexico(LITERAL_BOOL);
-	yylval.valor_lexico.token_value.boolean = false;
+	yylval.valor_lexico = createBoolValorLexico(false);
 	return TK_LIT_FALSE;
 }
 
 "true" { 
-	setValorLexico(LITERAL_BOOL);
-	yylval.valor_lexico.token_value.boolean = true;
+	yylval.valor_lexico = createBoolValorLexico(true);
 	return TK_LIT_TRUE;
 }
 
@@ -93,58 +84,43 @@ pattern_string \"(\\.|[^"\n])*\"
 "default" return TK_PR_DEFAULT;
 
 {pattern_special_char} {
-	setValorLexico(SPECIAL_CHAR);
-	char special_char = yytext[0];
-	yylval.valor_lexico.token_value.character = special_char;
-	return special_char;
+	yylval.valor_lexico = createSpecialCharValorLexico(yytext[0]);
+	return yytext[0];
 }
 
-"<=" return setValorLexicoForCompositeOperator(TK_OC_LE, yytext);
-">=" return setValorLexicoForCompositeOperator(TK_OC_GE, yytext);
-"==" return setValorLexicoForCompositeOperator(TK_OC_EQ, yytext);
-"!=" return setValorLexicoForCompositeOperator(TK_OC_NE, yytext);
-"&&" return setValorLexicoForCompositeOperator(TK_OC_AND, yytext);
-"||" return setValorLexicoForCompositeOperator(TK_OC_OR, yytext);
-">>" return setValorLexicoForCompositeOperator(TK_OC_SL, yytext);
-"<<" return setValorLexicoForCompositeOperator(TK_OC_SR, yytext);
+"<=" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_LE; }
+">=" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_GE; }
+"==" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_EQ; }
+"!=" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_NE; }
+"&&" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_AND; }
+"||" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_OR; }
+">>" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_SL; }
+"<<" { yylval.valor_lexico = createStringValorLexico(COMPOSITE_OPERATOR, strdup(yytext)); return TK_OC_SR; }
 
 {pattern_identifier} {
-	setValorLexicoForStringValue(IDENTIFIER, yytext);
+	char* string = strdup(yytext);
+	yylval.valor_lexico = createStringValorLexico(IDENTIFIER, string);
 	return TK_IDENTIFICADOR;
 }
 {pattern_integer} {
-	// ! for some reason, calling atoi(yytext) after setting yyval bugs stuff up
-	int value = atoi(yytext);
-
-	setValorLexico(LITERAL_INT);
-	yylval.valor_lexico.token_value.integer = value;
-
+	yylval.valor_lexico = createIntegerValorLexico(atoi(yytext));
 	return TK_LIT_INT;
 }
 {pattern_float} {
-	// ! for some reason, calling atof(yytext) after setting yyval bugs stuff up
-	float value = atof(yytext);
-
-	setValorLexico(LITERAL_FLOAT);
-	yylval.valor_lexico.token_value.floating_point = value;
-
+	yylval.valor_lexico = createFloatValorLexico(atof(yytext));
 	return TK_LIT_FLOAT;
 }
 
 {pattern_char} {
-	setValorLexico(LITERAL_CHAR);
-	yylval.valor_lexico.token_value.character = yytext[1]; // 'x' => '[x]' 
-
+	yylval.valor_lexico = createCharValorLexico(yytext[1]);
 	return TK_LIT_CHAR;
 }
 
 {pattern_string} {
 	char* string = strdup(yytext);
 	string++;
-	removeLastCharacterFromString(string);
-
-	setValorLexico(LITERAL_STRING);
-	yylval.valor_lexico.token_value.string = string;
+	string[ strlen(string) - 1 ] = '\0';
+	yylval.valor_lexico = createStringValorLexico(LITERAL_STRING, string);
 	return TK_LIT_STRING;
 }
 
@@ -170,27 +146,3 @@ pattern_string \"(\\.|[^"\n])*\"
 }
 
 %%
-
-void setValorLexico(enum TokenType token_type) {
-	struct ValorLexico valor_lexico = { 
-		.line_number = line_number,
-		.token_type = token_type,
-	};
-
-	yylval.valor_lexico = valor_lexico;
-}
-
-void setValorLexicoForStringValue(enum TokenType token_type, char* string) {
-	setValorLexico(token_type);
-	yylval.valor_lexico.token_value.string = strdup(string);
-}
-
-int setValorLexicoForCompositeOperator(int tokenType, char* yytext) {
-	setValorLexicoForStringValue(COMPOSITE_OPERATOR, yytext);
-	return tokenType;
-}
-
-void removeLastCharacterFromString(char* string) {
-	// adds end-of-file to next-to-last character
-	string[ strlen(string) - 1 ] = '\0';
-}
