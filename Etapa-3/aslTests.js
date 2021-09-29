@@ -285,7 +285,6 @@ async function test() {
     await testInput(
       `
       int f1() {
-        int a;
         a = ${literal.declaration};
       }
       `,
@@ -300,6 +299,27 @@ async function test() {
       `
     );
   }
+
+  await testInput(
+    `
+    int f1() {
+      x = v[3];
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    D, E
+    D, F
+    A [label="f1"];
+    B [label="="];
+    C [label="x"];
+    D [label="[]"];
+    E [label="v"];
+    F [label="3"];
+    `
+  );
 
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");

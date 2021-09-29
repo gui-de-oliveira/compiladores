@@ -396,7 +396,19 @@ unaryOperator:
 
 expressionOperand: 
     TK_IDENTIFICADOR { $$ = createStringValorLexico(IDENTIFIER, $1.token_value.string); }
-    | TK_IDENTIFICADOR '[' expression ']' { $$ = NULL; }
+    | TK_IDENTIFICADOR '[' expression ']' {
+        ValorLexico* identifier = createStringValorLexico(IDENTIFIER, $1.token_value.string);
+        ValorLexico* expression = $3;
+
+        ListElement* children = NULL;
+        children = appendToList(children, identifier);
+        children = appendToList(children, expression);
+
+        ValorLexico* value = createStringValorLexico(LITERAL_STRING, "[]");
+        value->children = children;
+
+        $$ = value;
+    }
     | literal  { $$ = $1; }
     | functionCall { $$ = NULL; }
     | grouping { $$ = NULL; }
