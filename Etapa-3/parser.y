@@ -116,6 +116,8 @@
 %type<list_element_ptr> optionalExpressionList
 %type<list_element_ptr> expressionList
 
+%type<valor_lexico> IO
+
 %%
 
 program:
@@ -217,7 +219,7 @@ simpleCommand:
     | varSet ';' { $$ = $1; }
     | varShift ';' { $$ = NULL; }
     | conditional ';' { $$ = NULL; }
-    | IO ';' { $$ = NULL; }
+    | IO ';' { $$ = $1; }
     | functionCall ';' { $$ = $1; }
     | TK_PR_RETURN expression ';'  { 
         ValorLexico* valorLexico = createStringValorLexico(LITERAL_STRING, "return");
@@ -301,9 +303,21 @@ functionCall:
 
 
 IO:
-    TK_PR_INPUT TK_IDENTIFICADOR
-    | TK_PR_OUTPUT TK_IDENTIFICADOR
-    | TK_PR_OUTPUT literal
+    TK_PR_INPUT TK_IDENTIFICADOR { 
+        ValorLexico* valorLexico = createStringValorLexico(LITERAL_STRING, "input");
+        valorLexico->children = appendToList(NULL, $2);
+        $$ = valorLexico;
+    }
+    | TK_PR_OUTPUT TK_IDENTIFICADOR {
+        ValorLexico* valorLexico = createStringValorLexico(LITERAL_STRING, "output");
+        valorLexico->children = appendToList(NULL, $2);
+        $$ = valorLexico;
+    }
+    | TK_PR_OUTPUT literal {
+        ValorLexico* valorLexico = createStringValorLexico(LITERAL_STRING, "output");
+        valorLexico->children = appendToList(NULL, $2);
+        $$ = valorLexico;
+    }
     ;
 
 

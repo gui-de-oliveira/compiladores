@@ -407,6 +407,21 @@ async function test() {
     `
   );
 
+  await testInput(
+    `
+    int f1() {
+      input id;
+    }
+    `,
+    `
+    A, B
+    B, C
+    A [label="f1"];
+    B [label="input"];
+    C [label="id"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
