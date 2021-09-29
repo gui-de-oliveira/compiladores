@@ -28,6 +28,7 @@ void printLabels(ValorLexico* valorLexico) {
     {
         case IDENTIFIER:
         case LITERAL_STRING:
+        case COMPOSITE_OPERATOR:
             printf("%p [label=\"%s\"];\n", valorLexico, valorLexico->token_value.string);
             break;
         
@@ -171,3 +172,45 @@ ListElement* appendToList(ListElement* parent, ValorLexico* item) {
     lastItem->next = listElement;
     return parent;
 };
+
+void freeValorLexico(ValorLexico* lexical_value) {
+    char* string = NULL;
+    switch(lexical_value->token_type) {
+        case IDENTIFIER:
+        case LITERAL_STRING:
+        case COMPOSITE_OPERATOR:
+            string = lexical_value->token_value.string;
+            if(string != NULL) {
+                free(string);
+            }
+            break;
+    }
+    if(lexical_value->children != NULL) {
+        ListElement* children = lexical_value->children;
+        children->value = NULL;
+        lexical_value->children = NULL;
+        freeListElement(children);
+    }
+    if(lexical_value->next != NULL) {
+        ValorLexico* next_value = lexical_value->next;
+        lexical_value->next = NULL;
+        freeValorLexico(next_value);
+    }
+    free(lexical_value);
+}
+
+void freeListElement(ListElement* list_element) {
+    if(list_element->value != NULL) {
+        ValorLexico* value = list_element->value;
+        value->children = NULL;
+        list_element->value = NULL;
+        freeValorLexico(value);
+    }
+    if(list_element->next != NULL) {
+        ListElement* next = list_element->next;
+        list_element->next = NULL;
+        freeListElement(next);
+    }
+    free(list_element);
+}
+
