@@ -381,7 +381,13 @@ conditional:
 
         $$ = id; 
     }
-    | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock { $$ = NULL; }
+    | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock {
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "while");
+        id->children = appendToList(NULL, $3);
+        id->children = appendToList(id->children, $6);
+
+        $$ = id; 
+    }
     ;
 
 expression: ternaryOperationOrLower { $$ = $1; };

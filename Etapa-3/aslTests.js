@@ -743,6 +743,29 @@ async function test() {
     `
   );
 
+  await testInput(
+    `
+    int f(){
+      while (true) do {
+         i = 3;
+      };
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    D, E
+    D, F
+    A [label="f"];
+    B [label="while"];
+    C [label="true"];
+    D [label="="];
+    E [label="i"];
+    F [label="3"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
