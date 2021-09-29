@@ -125,6 +125,8 @@
 %type<valor_lexico> localNameDefList
 %type<valor_lexico> localNameDefAssign
 
+%type<valor_lexico> conditional
+
 %%
 
 program:
@@ -225,7 +227,7 @@ simpleCommand:
     | localDef ';' { $$ = $1; }
     | varSet ';' { $$ = $1; }
     | varShift ';' { $$ = $1; }
-    | conditional ';' { $$ = NULL; }
+    | conditional ';' { $$ = $1; }
     | IO ';' { $$ = $1; }
     | functionCall ';' { $$ = $1; }
     | TK_PR_RETURN expression ';'  { 
@@ -355,10 +357,31 @@ IO:
 
 
 conditional:
-    TK_PR_IF '(' expression ')' commandBlock
-    | TK_PR_IF '(' expression ')' commandBlock TK_PR_ELSE commandBlock
-    | TK_PR_FOR '(' varSet ':' expression ':' varSet ')' commandBlock
-    | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock
+    TK_PR_IF '(' expression ')' commandBlock {
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "if");
+        id->children = appendToList(NULL, $3);
+        id->children = appendToList(id->children, $5);
+
+        $$ = id; 
+    }
+    | TK_PR_IF '(' expression ')' commandBlock TK_PR_ELSE commandBlock {
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "if");
+        id->children = appendToList(NULL, $3);
+        id->children = appendToList(id->children, $5);
+        id->children = appendToList(id->children, $7);
+
+        $$ = id; 
+    }
+    | TK_PR_FOR '(' varSet ':' expression ':' varSet ')' commandBlock  {
+        ValorLexico* id = createStringValorLexico(LITERAL_STRING, "for");
+        id->children = appendToList(NULL, $3);
+        id->children = appendToList(id->children, $5);
+        id->children = appendToList(id->children, $7);
+        id->children = appendToList(id->children, $9);
+
+        $$ = id; 
+    }
+    | TK_PR_WHILE '(' expression ')' TK_PR_DO commandBlock { $$ = NULL; }
     ;
 
 expression: ternaryOperationOrLower { $$ = $1; };

@@ -658,6 +658,91 @@ async function test() {
     `
   );
 
+  await testInput(
+    `
+    int f1() {
+      if(true){
+        continue;
+      };
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    A [label="f1"];
+    B [label="if"];
+    C [label="true"];
+    D [label="continue"];
+    `
+  );
+
+  await testInput(
+    `
+    int f1() {
+      if(true){
+        continue;
+      } else {
+        break;
+      };
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    A [label="f1"];
+    B [label="if"];
+    C [label="true"];
+    D [label="continue"];
+    E [label="break"];
+    `
+  );
+
+  await testInput(
+    `
+    int f(){
+      int i;
+      for(i = 0 : i : i = 2) {
+         i = 3;
+         i = 4;
+      };
+    }
+    `,
+    `
+    A, B
+    B, C
+    C, D
+    C, E
+    B, F
+    B, G
+    G, H
+    G, I
+    B, J
+    J, K
+    J, L
+    J, M
+    M, N
+    M, O
+    A [label="f"];
+    B [label="for"];
+    C [label="="];
+    D [label="i"];
+    E [label="0"];
+    F [label="i"];
+    G [label="="];
+    H [label="i"];
+    I [label="2"];
+    J [label="="];
+    K [label="i"];
+    L [label="3"];
+    M [label="="];
+    N [label="i"];
+    O [label="4"];
+    `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
