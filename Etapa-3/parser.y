@@ -75,6 +75,8 @@
 %token<valor_lexico> '/'
 %token<valor_lexico> '%'
 %token<valor_lexico> '&'
+%token<valor_lexico> '|'
+%token<valor_lexico> '^'
 %token<valor_lexico> '!'
 %token<valor_lexico> '?'
 %token<valor_lexico> '#'
@@ -360,7 +362,7 @@ functionCall:
 
         char* function_name = identifier->token_value.string;
         int length = strlen(function_name);
-        char* function_call = (char*) malloc(length + 5);
+        char* function_call = (char*) malloc(length + 5 + 1);
         function_call[0] = '\0';
         strcat(function_call, "call ");
         strcat(function_call, function_name);
@@ -368,7 +370,7 @@ functionCall:
         freeValorLexico(identifier);
 
         ValorLexico* functionCall = createStringValorLexico(IDENTIFIER, function_call);
-        functionCall->children = appendToList(functionCall->children, $3);
+        functionCall->children = appendToList(NULL, $3);
 
         $$ = functionCall;
     }
@@ -444,7 +446,7 @@ ternaryOperationOrLower:
     ;
 
 ternaryOpen:
-    '?' %prec TERNARY_OPEN
+    '?' %prec TERNARY_OPEN { freeValorLexico($1); }
     ;
 
 ternaryClose:
@@ -453,72 +455,63 @@ ternaryClose:
 
 binaryOperationOrLower:
     binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
      }
     | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER {
-        ListElement* children = NULL;
-        children = appendToList(children, $1);
+        ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
@@ -528,23 +521,23 @@ binaryOperationOrLower:
     ;
 
 logicalOr:
-    TK_OC_OR %prec LOGICAL_OR { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_BOOL_OR); }
+    TK_OC_OR %prec LOGICAL_OR { $$ = $1; }
     ;
 
 logicalAnd:
-    TK_OC_AND %prec LOGICAL_AND { $$ = createStringValorLexico(SPECIAL_KEYWORD, SK_BOOL_AND); }
+    TK_OC_AND %prec LOGICAL_AND { $$ = $1; }
     ;
 
 bitwiseOr:
-    '|' %prec BITWISE_OR { $$ = createSpecialCharValorLexico('|'); }
+    '|' %prec BITWISE_OR { $$ = $1; }
     ;
 
 bitwiseXor:
-    '^' %prec BITWISE_XOR { $$ = createSpecialCharValorLexico('^'); }
+    '^' %prec BITWISE_XOR { $$ = $1; }
     ;
 
 bitwiseAnd:
-    '&' %prec BITWISE_AND { $$ = createSpecialCharValorLexico('&'); }
+    '&' %prec BITWISE_AND { $$ = $1; }
     ;
 
 relationalEqualityOperator:

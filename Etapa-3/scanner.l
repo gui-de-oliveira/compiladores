@@ -17,8 +17,8 @@
 
 pattern_line_comment "//".*
 
-pattern_aux_char [,;:()\[\]{}|.$]
-pattern_special_char [+\-*/<>=!&%#^\?]
+pattern_aux_char [,;:()\[\]{}.$]
+pattern_special_char [+\-*/<>=!&|%#^\?]
 
 pattern_alphabetic [a-zA-Z_]
 pattern_alphanumeric [a-zA-Z_0-9]
