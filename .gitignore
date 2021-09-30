@@ -14,5 +14,6 @@ parser.tab.c
 parser.tab.h
 parser.tab.o
 parser.output
+lexical_structures.o
 
 *.temp
