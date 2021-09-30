@@ -31,13 +31,13 @@ pattern_exponent [eE]{pattern_signed_int}
 pattern_float {pattern_integer}\.{pattern_integer}{pattern_exponent}?
 
 pattern_char '.'
-pattern_string \"(\\.|[^"\n])*\"
+pattern_string \"(\\.|[^"\r\n])*\"
 /* " <-- This messes up the editor color coding */
 
 %%
 
 {pattern_line_comment} {
-	/* Discards anything between // and \n */
+	/* Discards anything between // and new line */
 };
 
 "/*" {
@@ -128,7 +128,7 @@ pattern_string \"(\\.|[^"\n])*\"
 	return TK_LIT_STRING;
 }
 
-<INITIAL,MULTILINE_COMMENT>\n {
+<INITIAL,MULTILINE_COMMENT>\n|(\r\n) {
 	++line_number;
 	/* Increment line counter regardless of state, takes precedence over next rule due to order. */
 }
