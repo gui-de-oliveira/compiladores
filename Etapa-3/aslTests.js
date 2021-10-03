@@ -115,8 +115,8 @@ async function testInput(input, expected) {
         process.stdout.write(FontColor.Fg.Red);
         process.stdout.write(` (Memory leaked!)`);
         process.stdout.write(FontColor.Reset);
-      }
       process.exit();
+      }
     }
 
     console.log("");
