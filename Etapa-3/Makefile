@@ -27,6 +27,7 @@ test:
 	make
 	node aslTests.js
 	node runSpecialTests.js
+	node runMemTests.js
 	make clean
 
 debug:
