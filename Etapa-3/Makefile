@@ -18,7 +18,7 @@ clean:
 	rm -f etapa3 etapa3.tgz lex.yy.c lex.yy.o parser.tab.c parser.tab.h parser.tab.o main.o parser.output
 
 zip:
-	tar cvzf etapa3.tgz parser.y scanner.l Makefile runTests.sh
+	tar cvzf etapa3.tgz parser.y scanner.l Makefile lexical_structures.h lexical_structures.c main.c
 
 run:
 	./etapa3
