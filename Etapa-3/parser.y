@@ -123,7 +123,17 @@
 %type<valor_lexico> literal
 %type<valor_lexico> expressionOperand
 %type<valor_lexico> unaryOperationOrOperand
-%type<valor_lexico> binaryOperationOrLower
+
+%type<valor_lexico> logicalOrOrLower
+%type<valor_lexico> logicalAndOrLower
+%type<valor_lexico> bitwiseOrOrLower
+%type<valor_lexico> bitwiseXorOrLower
+%type<valor_lexico> bitwiseAndOrLower
+%type<valor_lexico> relationalEqualityOrLower
+%type<valor_lexico> relationalSizeOrLower
+%type<valor_lexico> addSubOrLower
+%type<valor_lexico> multDivRemainderOrLower
+
 %type<valor_lexico> ternaryOperationOrLower
 %type<valor_lexico> expression
 %type<valor_lexico> grouping
@@ -433,7 +443,7 @@ conditional:
 expression: ternaryOperationOrLower { $$ = $1; };
 
 ternaryOperationOrLower:
-    binaryOperationOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower {
+    logicalOrOrLower ternaryOpen ternaryOperationOrLower ternaryClose ternaryOperationOrLower {
         ListElement* children = NULL;
         children = appendToList(children, $1);
         children = appendToList(children, $3);
@@ -441,8 +451,8 @@ ternaryOperationOrLower:
         ValorLexico* value = createStringValorLexico(SPECIAL_KEYWORD, SK_TERNARY);
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower { $$ = $1; }
+    }
+    | logicalOrOrLower { $$ = $1; }
     ;
 
 ternaryOpen:
@@ -453,70 +463,102 @@ ternaryClose:
     ':' %prec TERNARY_CLOSE
     ;
 
-binaryOperationOrLower:
-    binaryOperationOrLower logicalOr unaryOperationOrOperand %prec LOGICAL_OR {
+logicalOrOrLower:
+    logicalOrOrLower logicalOr logicalAndOrLower %prec LOGICAL_OR {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower logicalAnd unaryOperationOrOperand %prec LOGICAL_AND {
+    }
+    | logicalAndOrLower { $$ = $1; }
+    ;
+
+logicalAndOrLower:
+    logicalAndOrLower logicalAnd bitwiseOrOrLower %prec LOGICAL_AND {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower bitwiseOr unaryOperationOrOperand %prec BITWISE_OR {
+    }
+    | bitwiseOrOrLower { $$ = $1; }
+    ;
+
+bitwiseOrOrLower:
+    bitwiseOrOrLower bitwiseOr bitwiseXorOrLower %prec BITWISE_OR {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower bitwiseXor unaryOperationOrOperand %prec BITWISE_XOR {
+    }
+    | bitwiseXorOrLower { $$ = $1; }
+    ;
+
+bitwiseXorOrLower:
+    bitwiseXorOrLower bitwiseXor bitwiseAndOrLower %prec BITWISE_XOR {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower bitwiseAnd unaryOperationOrOperand %prec BITWISE_AND {
+    }
+    | bitwiseAndOrLower { $$ = $1; }
+    ;
+
+bitwiseAndOrLower:
+    bitwiseAndOrLower bitwiseAnd relationalEqualityOrLower %prec BITWISE_AND {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower relationalEqualityOperator unaryOperationOrOperand %prec RELATIONAL_EQUALITY_OP {
+    }
+    | relationalEqualityOrLower { $$ = $1; }
+    ;
+
+relationalEqualityOrLower:
+    relationalEqualityOrLower relationalEqualityOperator relationalSizeOrLower %prec RELATIONAL_EQUALITY_OP {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower relationalSizeOperator unaryOperationOrOperand %prec RELATIONAL_SIZE_OP {
+    }
+    | relationalSizeOrLower { $$ = $1; }
+    ;
+
+relationalSizeOrLower:
+    relationalSizeOrLower relationalSizeOperator addSubOrLower %prec RELATIONAL_SIZE_OP {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower addSub unaryOperationOrOperand %prec ADD_SUB {
+    }
+    | addSubOrLower { $$ = $1; }
+    ;
+
+addSubOrLower:
+    addSubOrLower addSub multDivRemainderOrLower %prec ADD_SUB {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
-    | binaryOperationOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER {
+    }
+    | multDivRemainderOrLower { $$ = $1; }
+    ;
+
+multDivRemainderOrLower:
+    multDivRemainderOrLower multDivRemainder unaryOperationOrOperand %prec MULT_DIV_REMAINDER {
         ListElement* children = appendToList(NULL, $1);
         children = appendToList(children, $3);
         ValorLexico* value = $2;
         value->children = children;
         $$ = value;
-     }
+    }
     | unaryOperationOrOperand { $$ = $1; }
     ;
 
