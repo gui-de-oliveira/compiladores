@@ -30,12 +30,20 @@ void printDependencies(ValorLexico* valorLexico){
     ListElement* child = valorLexico->children;    
     while (child != NULL){
         printf("%p, %p\n", valorLexico, child->value);
-        printDependencies(child->value);
         child = child->next;
     }
 
     if(valorLexico->next != NULL){
         printf("%p, %p\n", valorLexico, valorLexico->next);
+    }
+
+    child = valorLexico->children;    
+    while (child != NULL){
+        printDependencies(child->value);
+        child = child->next;
+    }
+
+    if(valorLexico->next != NULL){
         printDependencies(valorLexico->next);        
     }
 }

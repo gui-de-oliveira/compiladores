@@ -18,7 +18,9 @@ function listOfSymbolsToDictionaryOfSymbols(listOfSymbols) {
   return listOfSymbols.reduce((previousValue, currentSymbol) => {
     if (previousValue[currentSymbol] === undefined) {
       const totalKeys = Object.keys(previousValue).length;
-      const letter = String.fromCharCode((totalKeys < 26 ? 65 : 71) + totalKeys); // Skip the 6 ascii characters between upper and lower-case.
+      const letter = String.fromCharCode(
+        (totalKeys < 26 ? 65 : 71) + totalKeys
+      ); // Skip the 6 ascii characters between upper and lower-case.
       previousValue[currentSymbol] = letter;
     }
 
@@ -115,7 +117,7 @@ async function testInput(input, expected) {
         process.stdout.write(FontColor.Fg.Red);
         process.stdout.write(` (Memory leaked!)`);
         process.stdout.write(FontColor.Reset);
-      process.exit();
+        process.exit();
       }
     }
 
@@ -134,8 +136,6 @@ async function testInput(input, expected) {
 }
 
 async function test() {
-  await exec("make");
-
   await testInput("int x;", "");
   await testInput(`int f1() { }`, `A [label="f1"];`);
   await testInput(`int f2() { }`, `A [label="f2"];`);
@@ -465,15 +465,15 @@ async function test() {
     `
     A, B
     B, C
-    C, D
+    B, D
     C, E
-    B, F
+    C, F
     A [label="f1"];
     B [label="<<"];
     C [label="[]"];
-    D [label="id"];
-    E [label="1"];
+    E [label="id"];
     F [label="1"];
+    D [label="1"];
     `
   );
 
@@ -486,15 +486,15 @@ async function test() {
     `
     A, B
     B, C
-    C, D
+    B, D
     C, E
-    B, F
+    C, F
     A [label="f1"];
     B [label=">>"];
     C [label="[]"];
-    D [label="id"];
-    E [label="1"];
+    E [label="id"];
     F [label="1"];
+    D [label="1"];
     `
   );
 
@@ -713,28 +713,28 @@ async function test() {
     `
     A, B
     B, C
-    C, D
-    C, E
+    B, D
+    B, E
     B, F
-    B, G
-    G, H
-    G, I
-    B, J
-    J, K
-    J, L
-    J, M
+    C, G
+    C, H
+    E, I
+    E, J
+    F, K
+    F, L
+    F, M
     M, N
     M, O
     A [label="f"];
     B [label="for"];
     C [label="="];
+    G [label="i"];
+    H [label="0"];
     D [label="i"];
-    E [label="0"];
-    F [label="i"];
-    G [label="="];
-    H [label="i"];
-    I [label="2"];
-    J [label="="];
+    E [label="="];
+    I [label="i"];
+    J [label="2"];
+    F [label="="];
     K [label="i"];
     L [label="3"];
     M [label="="];
@@ -796,27 +796,27 @@ async function test() {
     A, B
     B, C
     B, D
-    D, E
+    B, E
     D, F
-    F, G
-    F, H
-    B, I
-    I, J
-    I, K
-    K, L
-    L, M
-    L, N
-    K, O
-    I, P
-    P, Q
-    P, R
-    R, S
-    S, T
-    S, U
-    R, V
-    P, W
-    W, X
-    W, Y
+    D, G
+    G, H
+    G, I
+    E, J
+    E, K
+    E, L
+    K, M
+    K, N
+    M, O
+    M, P
+    L, Q
+    L, R
+    L, S
+    R, T
+    R, U
+    T, V
+    T, W
+    S, X
+    S, Y
     Y, Z
     Y, a
     a, b
@@ -825,25 +825,25 @@ async function test() {
     B [label="="];
     C [label="x"];
     D [label="-"];
-    E [label="a"];
-    F [label="*"];
-    G [label="b"];
-    H [label="c"];
-    I [label="="];
+    F [label="a"];
+    G [label="*"];
+    H [label="b"];
+    I [label="c"];
+    E [label="="];
     J [label="y"];
     K [label="+"];
-    L [label="/"];
-    M [label="d"];
-    N [label="e"];
-    O [label="f"];
-    P [label="="];
+    M [label="/"];
+    O [label="d"];
+    P [label="e"];
+    N [label="f"];
+    L [label="="];
     Q [label="z"];
     R [label="/"];
-    S [label="-"];
-    T [label="g"];
-    U [label="h"];
-    V [label="i"];
-    W [label="="];
+    T [label="-"];
+    V [label="g"];
+    W [label="h"];
+    U [label="i"];
+    S [label="="];
     X [label="w"];
     Y [label="*"];
     Z [label="j"];
@@ -884,70 +884,70 @@ async function test() {
     A, B
     B, C
     B, D
-    D, E
-    E, F
-    F, G
-    G, H
-    G, I
-    F, J
-    E, K
-    D, L
-    B, M
-    M, N
-    M, O
-    O, P
-    P, Q
-    Q, R
-    R, S
-    R, T
-    Q, U
-    P, V
-    O, W
-    M, X
-    X, Y
-    X, Z
+    B, E
+    D, F
+    D, G
+    F, H
+    F, I
+    H, J
+    H, K
+    J, L
+    J, M
+    E, N
+    E, O
+    E, P
+    O, Q
+    O, R
+    Q, S
+    Q, T
+    S, U
+    S, V
+    U, W
+    U, X
+    P, Y
+    P, Z
     Z, a
-    a, b
-    b, c
-    c, d
+    Z, b
+    a, c
+    a, d
     c, e
-    b, f
-    a, g
-    Z, h
+    c, f
+    e, g
+    e, h
     A [label="f"];
     B [label="="];
     C [label="x"];
     D [label="-"];
-    E [label="-"];
-    F [label="+"];
-    G [label="+"];
-    H [label="a"];
-    I [label="b"];
-    J [label="c"];
-    K [label="d"];
-    L [label="e"];
-    M [label="="];
+    F [label="-"];
+    H [label="+"];
+    J [label="+"];
+    L [label="a"];
+    M [label="b"];
+    K [label="c"];
+    I [label="d"];
+    G [label="e"];
+    E [label="="];
     N [label="y"];
     O [label="/"];
-    P [label="/"];
-    Q [label="*"];
-    R [label="*"];
-    S [label="f"];
-    T [label="g"];
-    U [label="h"];
-    V [label="i"];
-    W [label="j"];
-    X [label="="];
+    Q [label="/"];
+    S [label="*"];
+    U [label="*"];
+    W [label="f"];
+    X [label="g"];
+    V [label="h"];
+    T [label="i"];
+    R [label="j"];
+    P [label="="];
     Y [label="z"];
     Z [label="+"];
     a [label="+"];
-    b [label="*"];
     c [label="*"];
-    d [label="k"];
-    e [label="l"];
+    e [label="*"];
+    g [label="k"];
+    h [label="l"];
     f [label="m"];
-    g [label="n"];
-    h [label="o"];
+    d [label="n"];
+    b [label="o"];
     `
   );
 
@@ -981,27 +981,27 @@ async function test() {
     A, B
     B, C
     B, D
-    D, E
+    B, E
     D, F
-    F, G
-    F, H
-    B, I
-    I, J
-    I, K
-    K, L
-    L, M
-    L, N
-    K, O
-    I, P
-    P, Q
-    P, R
-    R, S
-    S, T
-    S, U
-    R, V
-    P, W
-    W, X
-    W, Y
+    D, G
+    G, H
+    G, I
+    E, J
+    E, K
+    E, L
+    K, M
+    K, N
+    M, O
+    M, P
+    L, Q
+    L, R
+    L, S
+    R, T
+    R, U
+    T, V
+    T, W
+    S, X
+    S, Y
     Y, Z
     Y, a
     a, b
@@ -1010,25 +1010,25 @@ async function test() {
     B [label="="];
     C [label="x"];
     D [label="+"];
-    E [label="a"];
-    F [label="*"];
-    G [label="b"];
-    H [label="c"];
-    I [label="="];
+    F [label="a"];
+    G [label="*"];
+    H [label="b"];
+    I [label="c"];
+    E [label="="];
     J [label="y"];
     K [label="-"];
-    L [label="/"];
-    M [label="d"];
-    N [label="e"];
-    O [label="f"];
-    P [label="="];
+    M [label="/"];
+    O [label="d"];
+    P [label="e"];
+    N [label="f"];
+    L [label="="];
     Q [label="z"];
     R [label="*"];
-    S [label="+"];
-    T [label="g"];
-    U [label="h"];
-    V [label="i"];
-    W [label="="];
+    T [label="+"];
+    V [label="g"];
+    W [label="h"];
+    U [label="i"];
+    S [label="="];
     X [label="w"];
     Y [label="/"];
     Z [label="j"];
@@ -1133,22 +1133,22 @@ async function test() {
     B, D
     B, E
     E, F
-    F, G
+    E, G
     F, H
-    H, I
-    H, J
-    E, K
+    F, I
+    I, J
+    I, K
     A [label="f"];
     B [label="="];
     C [label="c"];
     D [label="2"];
     E [label="="];
     F [label="[]"];
-    G [label="a"];
-    H [label="+"];
-    I [label="c"];
+    H [label="a"];
+    I [label="+"];
     J [label="c"];
-    K [label="2"];
+    K [label="c"];
+    G [label="2"];
     `
   );
 
@@ -1168,19 +1168,19 @@ async function test() {
     B, C
     B, D
     D, E
-    E, F
+    D, F
     E, G
-    D, H
-    H, I
-    H, J
+    E, H
+    F, I
+    F, J
     A [label="f"];
     B [label="="];
     C [label="a"];
     D [label="+"];
     E [label="*"];
-    F [label="2"];
-    G [label="c"];
-    H [label="/"];
+    G [label="2"];
+    H [label="c"];
+    F [label="/"];
     I [label="a"];
     J [label="b"];
     `
@@ -1198,27 +1198,27 @@ async function test() {
     `
     A, B
     B, C
-    C, D
+    B, D
     C, E
-    B, F
-    F, G
-    F, H
+    C, F
+    D, G
+    D, H
     H, I
-    I, J
+    H, J
     I, K
-    H, L
+    I, L
     A [label="f"];
     B [label="="];
     C [label="[]"];
-    D [label="c"];
-    E [label="5"];
-    F [label="[]"];
+    E [label="c"];
+    F [label="5"];
+    D [label="[]"];
     G [label="a"];
     H [label="+"];
     I [label="*"];
-    J [label="2"];
-    K [label="c"];
-    L [label="k"];
+    K [label="2"];
+    L [label="c"];
+    J [label="k"];
     `
   );
 
@@ -1236,25 +1236,25 @@ async function test() {
     `
     A, B
     B, C
-    C, D
+    B, D
     C, E
-    B, F
-    F, G
-    G, H
+    C, F
+    D, G
+    D, H
     G, I
-    I, J
-    F, K
+    G, J
+    J, K
     A [label="f"];
     B [label="="];
     C [label="[]"];
-    D [label="c"];
-    E [label="5"];
-    F [label="+"];
+    E [label="c"];
+    F [label="5"];
+    D [label="+"];
     G [label="*"];
-    H [label="3"];
-    I [label="call f"];
-    J [label="a"];
+    I [label="3"];
+    J [label="call f"];
     K [label="a"];
+    H [label="a"];
     `
   );
 
@@ -1271,25 +1271,25 @@ async function test() {
     `
     A, B
     B, C
-    C, D
+    B, D
     C, E
-    B, F
-    F, G
+    C, F
+    D, G
     G, H
-    H, I
+    G, I
     H, J
-    G, K
+    H, K
     A [label="f"];
     B [label="if"];
     C [label="=="];
-    D [label="a"];
-    E [label="2"];
-    F [label="if"];
+    E [label="a"];
+    F [label="2"];
+    D [label="if"];
     G [label="<="];
     H [label="+"];
-    I [label="a"];
-    J [label="b"];
-    K [label="10"];
+    J [label="a"];
+    K [label="b"];
+    I [label="10"];
     `
   );
 
@@ -1326,8 +1326,6 @@ async function test() {
       process.stdout.write(FontColor.Reset);
     }
   }
-
-  await exec("make clean");
 }
 
 test();

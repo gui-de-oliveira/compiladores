@@ -24,7 +24,10 @@ run:
 	./etapa3
 
 test:
+	make
 	node aslTests.js
+	node runSpecialTests.js
+	make clean
 
 debug:
 	bison -d parser.y --debug -v
