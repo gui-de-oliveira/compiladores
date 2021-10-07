@@ -21,4 +21,4 @@ lexical_structures.o
 etapa4
 etapa4.tgz
 Cargo.lock
-target/*
+*/target/*
