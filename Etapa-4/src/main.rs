@@ -2,14 +2,14 @@
 // Guilherme de Oliveira (00278301)
 // Jean Pierre Comerlatto Darricarrere (00182408)
 
-mod lexical_structures;
-mod auxiliary_structures;
 mod ast_node;
+mod auxiliary_structures;
+mod lexical_structures;
 
 //use std::io::{self, BufRead, Write};
+use std::ffi::c_void;
 use std::io::{self, Read, Write};
 use std::ptr::addr_of;
-use std::ffi::c_void;
 
 use lrlex::lrlex_mod;
 use lrpar::lrpar_mod;
@@ -39,26 +39,14 @@ fn main() {
         println!("{}", error.pp(&lexer, &parser_y::token_epp));
     }
 
-    if let Some(Ok(tree)) = parsed {
-        let mut last_node = None;
-        for top_level_def in &tree {
-            if !top_level_def.is_tree_member() {
-                continue
-            }
-            let current_node = addr_of!(*top_level_def) as *const c_void;
-            if let Some(pointer) = last_node {
-                println!("{:p}, {:p}", pointer, current_node);
-            }
-            top_level_def.print_dependencies(current_node);
-            last_node = Some(current_node);
-        }
-        for top_level_def in &tree {
-            if !top_level_def.is_tree_member() {
-                continue
-            }
-            let current_node = addr_of!(*top_level_def) as *const c_void;
-            top_level_def.print_labels(&lexer, current_node)
-        }
+    if let Some(Ok(maybe_top_node)) = parsed {
+        let top_node: Box<dyn AstNode> = match maybe_top_node {
+            Some(node) => node,
+            None => return,
+        };
+        let address = addr_of!(*top_node) as *const c_void;
+        top_node.print_dependencies(address, false);
+        top_node.print_labels(&lexer, address);
     } else {
         println!("Unable to evaluate expression: {:?}", buffer);
     }

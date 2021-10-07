@@ -17,21 +17,21 @@
 
 %%
 
-program -> Result<Vec<TopLevelDef>>:
-     { /* %empty */ Ok(vec![]) }
-    | topLevelDefList { $1 }
+program -> Result<Option<Box<dyn AstNode>>>:
+     { /* %empty */ Ok(None) }
+    | topLevelDefList { Ok(Some($1?)) }
     ;
 
-topLevelDefList -> Result<Vec<TopLevelDef>>:
+topLevelDefList -> Result<Box<dyn AstNode>>:
     topLevelDef { $1 }
     | topLevelDefList topLevelDef {
-        let mut list = $1?;
-        list.extend($2?);
-        Ok(list)
+        let mut upper_def = $1?;
+        upper_def.append_to_next($2?);
+        Ok(upper_def)
     }
     ;
 
-topLevelDef -> Result<Vec<TopLevelDef>>:
+topLevelDef -> Result<Box<dyn AstNode>>:
     optionalStatic type_rule identifier_rule topDefEnd {
         let is_static = $1?;
         let var_type = $2?;
@@ -39,18 +39,18 @@ topLevelDef -> Result<Vec<TopLevelDef>>:
         Ok(
             match $4? {
                 AuxTopDefEnd::FnDefEnd{params, commands} => {
-                    vec![TopLevelDef::FnDef{is_static, return_type: var_type, fn_name: name, params, commands}]
+                    Box::new(FnDef::new(is_static, var_type, name, params, commands, None))
                 },
                 AuxTopDefEnd::SingleGlob => {
-                    vec![TopLevelDef::VarDef{is_static, var_type, var_name: name}]
+                    Box::new(GlobalVarDef::new(is_static, var_type, name, None))
                 },
                 AuxTopDefEnd::GlobList(var_or_vec) => {
-                    top_level_def_assembler(is_static, var_type, var_or_vec)
+                    top_level_def_assembler(is_static, var_type, var_or_vec)?
                 },
                 AuxTopDefEnd::VecAndGlobList(vec_size, var_or_vec) => {
-                    let mut list = vec![TopLevelDef::VecDef{is_static, var_type, var_name: name, vec_size}];
-                    list.extend(top_level_def_assembler(is_static, var_type, var_or_vec));
-                    list
+                    let mut upper_def = GlobalVecDef::new(is_static, var_type, name, vec_size, None);
+                    upper_def.append_to_next(top_level_def_assembler(is_static, var_type, var_or_vec)?);
+                    Box::new(upper_def)
                 },
             }
         )
@@ -570,21 +570,8 @@ use anyhow::Result;
 use lrpar::Span;
 use super::lexical_structures::*;
 use super::auxiliary_structures::*;
+use super::ast_node::AstNode;
 
-fn top_level_def_assembler(is_static: bool, var_type: Span, var_or_vec: Vec<AuxVarOrVecName>) -> Vec<TopLevelDef> {
-    let mut def_vec = vec![];
-    for element in var_or_vec.into_iter() {
-        match element {
-            AuxVarOrVecName::Var(var_name) => {
-                def_vec.push(TopLevelDef::VarDef{is_static, var_type, var_name});
-            },
-            AuxVarOrVecName::Vec{name, size} => {
-                def_vec.push(TopLevelDef::VecDef{is_static, var_type, var_name: name, vec_size: size});
-            },
-        }
-    }
-    def_vec
-}
 
 /*
 void exporta(void* arvore) {
