@@ -1,0 +1,22 @@
+# Grupo L
+# Guilherme de Oliveira (00278301)
+# Jean Pierre Comerlatto Darricarrere (00182408)
+
+[package]
+name = "etapa_4"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+cfgrammar = "0.10"
+lrlex = "0.10"
+lrpar = "0.10"
+anyhow = "1.0"
+
+[dependencies]
+cfgrammar = "0.10"
+lrlex = "0.10"
+lrpar = "0.10"
+anyhow = "1.0"
