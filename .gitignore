@@ -17,3 +17,8 @@ parser.output
 lexical_structures.o
 
 *.temp
+
+etapa4
+etapa4.tgz
+Cargo.lock
+target/*
