@@ -225,12 +225,12 @@ localNameDefAssign -> Result<AuxLocalNameDef>:
     ;
 
 literal -> Result<Box<dyn AstNode>>:
-    literal_int { Ok(Box::new(Literal::Int($1?))) }
-    | 'TK_LIT_FLOAT' { Ok(Box::new(Literal::Float($span))) }
-    | 'TK_LIT_FALSE' { Ok(Box::new(Literal::Bool($span))) }
-    | 'TK_LIT_TRUE' { Ok(Box::new(Literal::Bool($span))) }
-    | 'TK_LIT_CHAR' { Ok(Box::new(Literal::Char($span))) }
-    | 'TK_LIT_STRING' { Ok(Box::new(Literal::String($span))) }
+    literal_int { Ok(Box::new(LiteralInt::new($1?, None))) }
+    | 'TK_LIT_FLOAT' { Ok(Box::new(LiteralFloat::new($span, None))) }
+    | 'TK_LIT_FALSE' { Ok(Box::new(LiteralBool::new($span, None))) }
+    | 'TK_LIT_TRUE' { Ok(Box::new(LiteralBool::new($span, None))) }
+    | 'TK_LIT_CHAR' { Ok(Box::new(LiteralChar::new($span, None))) }
+    | 'TK_LIT_STRING' { Ok(Box::new(LiteralString::new($span, None))) }
     ;
 
 literal_int -> Result<Span>:
