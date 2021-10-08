@@ -78,11 +78,7 @@ pub fn mount_local_def(
 ) -> Box<dyn AstNode> {
     match name_def {
         AuxLocalNameDef::Def(var_name) => Box::new(LocalVarDef::new(
-            is_static,
-            is_const,
-            var_type,
-            var_name,
-            None,
+            is_static, is_const, var_type, var_name, None,
         )),
         AuxLocalNameDef::InitWithVar {
             var_name,

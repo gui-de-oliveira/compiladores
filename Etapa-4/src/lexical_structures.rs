@@ -1012,55 +1012,6 @@ impl AstNode for EmptyBlock {
 }
 
 #[derive(Debug)]
-pub enum Literal {
-    Int(Span),
-    Float(Span),
-    Bool(Span),
-    Char(Span),
-    String(Span),
-}
-
-impl AstNode for Literal {
-    fn print_dependencies(&self, _own_address: *const c_void, _ripple: bool) {}
-    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        match self {
-            Literal::Int(value) => {
-                println!("{:p} [label=\"{}\"];", own_address, lexer.span_str(*value))
-            }
-            Literal::Float(value) => {
-                println!("{:p} [label=\"{}\"];", own_address, lexer.span_str(*value))
-            }
-            Literal::Bool(value) => {
-                println!("{:p} [label=\"{}\"];", own_address, lexer.span_str(*value))
-            }
-            Literal::Char(value) => {
-                let text = lexer.span_str(*value);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    own_address,
-                    &text[1..(text.len() - 1)]
-                );
-            }
-            Literal::String(value) => {
-                let text = lexer.span_str(*value);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    own_address,
-                    &text[1..(text.len() - 1)]
-                );
-            }
-        }
-    }
-    fn is_tree_member(&self) -> bool {
-        true
-    }
-    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {
-        // WIP: Make this return Option
-    }
-}
-
-#[derive(Debug)]
 pub struct Ternary {
     left_span: Span,
     right_span: Span,
@@ -1221,14 +1172,8 @@ pub struct VarAccess {
 }
 
 impl VarAccess {
-    pub fn new(
-        var_name: Span,
-        next: Option<Box<dyn AstNode>>,
-    ) -> VarAccess {
-        VarAccess {
-            var_name,
-            next,
-        }
+    pub fn new(var_name: Span, next: Option<Box<dyn AstNode>>) -> VarAccess {
+        VarAccess { var_name, next }
     }
 }
 
@@ -1270,7 +1215,7 @@ impl VecAccess {
             expr_span,
             vec_name,
             vec_index,
-            next
+            next,
         }
     }
 
@@ -1302,6 +1247,182 @@ impl AstNode for VecAccess {
     }
 }
 
+#[derive(Debug)]
+pub struct LiteralInt {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl LiteralInt {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralInt {
+        LiteralInt { expr_span, next }
+    }
+}
+
+impl AstNode for LiteralInt {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.expr_span, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct LiteralFloat {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl LiteralFloat {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralFloat {
+        LiteralFloat { expr_span, next }
+    }
+}
+
+impl AstNode for LiteralFloat {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.expr_span, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct LiteralBool {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl LiteralBool {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralBool {
+        LiteralBool { expr_span, next }
+    }
+}
+
+impl AstNode for LiteralBool {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.expr_span, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct LiteralChar {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl LiteralChar {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralChar {
+        LiteralChar { expr_span, next }
+    }
+
+    fn print_label_lit_char(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        let text = lexer.span_str(self.expr_span);
+        println!(
+            "{:p} [label=\"{}\"];",
+            own_address,
+            &text[1..(text.len() - 1)]
+        );
+    }
+}
+
+impl AstNode for LiteralChar {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        self.print_label_lit_char(lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct LiteralString {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl LiteralString {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralString {
+        LiteralString { expr_span, next }
+    }
+
+    fn print_label_lit_string(
+        &self,
+        lexer: &dyn NonStreamingLexer<u32>,
+        own_address: *const c_void,
+    ) {
+        let text = lexer.span_str(self.expr_span);
+        println!(
+            "{:p} [label=\"{}\"];",
+            own_address,
+            &text[1..(text.len() - 1)]
+        );
+    }
+}
+
+impl AstNode for LiteralString {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        self.print_label_lit_string(lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
 
 #[derive(Debug)]
 pub enum BinaryType {
