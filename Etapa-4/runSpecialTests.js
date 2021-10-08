@@ -50,6 +50,10 @@ async function testFile(file) {
   const result = formattedExpectedOutput === formattedReceivedOutput;
 
   if (!result) {
+    console.log("Failed Input:");
+    const failedInput = await fs.readFile(`TestsE3/${file}`, "utf-8");
+    console.log(failedInput);
+    console.log("");
     console.log("Expected:");
     console.log(toGraph(formattedExpectedOutput));
     console.log("");
