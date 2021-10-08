@@ -188,7 +188,10 @@ localDefList -> Result<Box<dyn AstNode>>:
         let is_const = $2?;
         let var_type = $3?;
         let mut name_def_vec = $4?;
-        let mut top_name_def = mount_local_def(is_static, is_const, var_type, name_def_vec.pop().unwrap());
+        if name_def_vec.len() < 1 {
+            bail!("localNameDefList returned vector with zero elements")
+        };
+        let mut top_name_def = mount_local_def(is_static, is_const, var_type, name_def_vec.remove(0));
         for name_def in name_def_vec {
             top_name_def.append_to_next(mount_local_def(is_static, is_const, var_type, name_def))
         };
