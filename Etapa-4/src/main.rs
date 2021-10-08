@@ -6,7 +6,6 @@ mod ast_node;
 mod auxiliary_structures;
 mod lexical_structures;
 
-//use std::io::{self, BufRead, Write};
 use std::ffi::c_void;
 use std::io::{self, Read, Write};
 use std::ptr::addr_of;
