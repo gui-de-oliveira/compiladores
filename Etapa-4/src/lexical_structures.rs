@@ -123,6 +123,7 @@ impl FnDef {
 impl AstNode for FnDef {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.commands, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.commands, own_address);
         print_dependencies_next(&self.next, own_address);
     }
@@ -231,6 +232,7 @@ impl AstNode for VarDefInitId {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
         print_dependencies_own(&self.var_value, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_child(&self.var_value, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -289,6 +291,7 @@ impl AstNode for VarDefInitLit {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
         print_dependencies_own(&self.var_value, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_child(&self.var_value, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -338,6 +341,7 @@ impl AstNode for VarLeftShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
         print_dependencies_own(&self.shift_amount, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_child(&self.shift_amount, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -387,6 +391,7 @@ impl AstNode for VarRightShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
         print_dependencies_own(&self.shift_amount, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_child(&self.shift_amount, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -436,6 +441,7 @@ impl AstNode for VecLeftShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.vec_access, own_address);
         print_dependencies_own(&self.shift_amount, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.vec_access, own_address);
         print_dependencies_child(&self.shift_amount, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -485,6 +491,7 @@ impl AstNode for VecRightShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.vec_access, own_address);
         print_dependencies_own(&self.shift_amount, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.vec_access, own_address);
         print_dependencies_child(&self.shift_amount, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -534,6 +541,7 @@ impl AstNode for VarSet {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
         print_dependencies_own(&self.new_value, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_child(&self.new_value, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -583,6 +591,7 @@ impl AstNode for VecSet {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.vec_access, own_address);
         print_dependencies_own(&self.new_value, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.vec_access, own_address);
         print_dependencies_child(&self.new_value, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -624,6 +633,7 @@ impl Input {
 impl AstNode for Input {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_next(&self.next, own_address);
     }
@@ -667,6 +677,7 @@ impl OutputId {
 impl AstNode for OutputId {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.var_name, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.var_name, own_address);
         print_dependencies_next(&self.next, own_address);
     }
@@ -710,6 +721,7 @@ impl OutputLit {
 impl AstNode for OutputLit {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.lit_value, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.lit_value, own_address);
         print_dependencies_next(&self.next, own_address);
     }
@@ -743,6 +755,7 @@ impl Continue {
 
 impl AstNode for Continue {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -774,6 +787,7 @@ impl Break {
 
 impl AstNode for Break {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -815,6 +829,7 @@ impl Return {
 impl AstNode for Return {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.ret_value, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.ret_value, own_address);
         print_dependencies_next(&self.next, own_address);
     }
@@ -865,13 +880,14 @@ impl FnCall {
 
 impl AstNode for FnCall {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        match &self.args {
-            Some(args) => {
-                print_dependencies_own(&args, own_address);
-                print_dependencies_child(&args, own_address);
-            },
-            None => (),
-        };
+        if let Some(args) = &self.args {
+            print_dependencies_own(&args, own_address);
+        }
+        print_dependencies_own_next(&self.next, own_address);
+        if let Some(args) = &self.args {
+            print_dependencies_child(&args, own_address);
+        }
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -921,6 +937,7 @@ impl AstNode for If {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.condition, own_address);
         print_dependencies_own(&self.consequence, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.condition, own_address);
         print_dependencies_child(&self.consequence, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -974,6 +991,7 @@ impl AstNode for IfElse {
         print_dependencies_own(&self.condition, own_address);
         print_dependencies_own(&self.if_true, own_address);
         print_dependencies_own(&self.if_false, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.condition, own_address);
         print_dependencies_child(&self.if_true, own_address);
         print_dependencies_child(&self.if_false, own_address);
@@ -1033,6 +1051,7 @@ impl AstNode for For {
         print_dependencies_own(&self.count_check, own_address);
         print_dependencies_own(&self.count_iter, own_address);
         print_dependencies_own(&self.actions, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.count_init, own_address);
         print_dependencies_child(&self.count_check, own_address);
         print_dependencies_child(&self.count_iter, own_address);
@@ -1086,6 +1105,7 @@ impl AstNode for While {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.condition, own_address);
         print_dependencies_own(&self.consequence, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.condition, own_address);
         print_dependencies_child(&self.consequence, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -1179,6 +1199,7 @@ impl AstNode for Ternary {
         print_dependencies_own(&self.condition, own_address);
         print_dependencies_own(&self.if_true, own_address);
         print_dependencies_own(&self.if_false, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.condition, own_address);
         print_dependencies_child(&self.if_true, own_address);
         print_dependencies_child(&self.if_false, own_address);
@@ -1233,6 +1254,7 @@ impl AstNode for Binary {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.lhs, own_address);
         print_dependencies_own(&self.rhs, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.lhs, own_address);
         print_dependencies_child(&self.rhs, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -1281,6 +1303,7 @@ impl Unary {
 impl AstNode for Unary {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.operand, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.operand, own_address);
         print_dependencies_next(&self.next, own_address);
     }
@@ -1314,6 +1337,7 @@ impl VarAccess {
 
 impl AstNode for VarAccess {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1363,6 +1387,7 @@ impl AstNode for VecAccess {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(&self.vec_name, own_address);
         print_dependencies_own(&self.vec_index, own_address);
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_child(&self.vec_name, own_address);
         print_dependencies_child(&self.vec_index, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -1398,6 +1423,7 @@ impl LiteralInt {
 
 impl AstNode for LiteralInt {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1429,6 +1455,7 @@ impl LiteralFloat {
 
 impl AstNode for LiteralFloat {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1460,6 +1487,7 @@ impl LiteralBool {
 
 impl AstNode for LiteralBool {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1500,6 +1528,7 @@ impl LiteralChar {
 
 impl AstNode for LiteralChar {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1544,6 +1573,7 @@ impl LiteralString {
 
 impl AstNode for LiteralString {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1641,11 +1671,19 @@ fn print_dependencies_child(child: &Box<dyn AstNode>, own_address: *const c_void
     }
 }
 
-fn print_dependencies_next(next_node: &Option<Box<dyn AstNode>>, own_address: *const c_void) {
+fn print_dependencies_own_next(next_node: &Option<Box<dyn AstNode>>, own_address: *const c_void) {
     if let Some(next) = &next_node {
         if next.is_tree_member() {
             let next_address = addr_of!(*next) as *const c_void;
             println!("{:p}, {:p}", own_address, next_address);
+        }
+    }
+}
+
+fn print_dependencies_next(next_node: &Option<Box<dyn AstNode>>, own_address: *const c_void) {
+    if let Some(next) = &next_node {
+        if next.is_tree_member() {
+            let next_address = addr_of!(*next) as *const c_void;
             next.print_dependencies(next_address, false);
         } else {
             next.print_dependencies(own_address, true);
