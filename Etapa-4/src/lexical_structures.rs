@@ -539,7 +539,11 @@ pub struct OutputId {
 }
 
 impl OutputId {
-    pub fn new(op_name: Span, var_name: Box<dyn AstNode>, next: Option<Box<dyn AstNode>>) -> OutputId {
+    pub fn new(
+        op_name: Span,
+        var_name: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> OutputId {
         OutputId {
             op_name,
             var_name,
@@ -735,11 +739,7 @@ impl FnCall {
         }
     }
 
-    fn print_label_fn_call(
-        &self,
-        lexer: &dyn NonStreamingLexer<u32>,
-        own_address: *const c_void,
-    ) {
+    fn print_label_fn_call(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         println!(
             "{:p} [label=\"call {}\"];",
             own_address,
@@ -1012,34 +1012,6 @@ impl AstNode for EmptyBlock {
 }
 
 #[derive(Debug)]
-pub struct VecAccess {
-    pub name: Box<Span>,
-    pub index: Box<Expression>,
-}
-
-impl AstNode for VecAccess {
-    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        println!("{:p}, {:p}", own_address, addr_of!(*self.name));
-        println!("{:p}, {:p}", own_address, addr_of!(*self.index));
-    }
-    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        println!("{:p} [label=\"[]\"];", own_address);
-        println!(
-            "{:p} [label=\"{}\"];",
-            addr_of!(*self.name),
-            lexer.span_str(*self.name)
-        );
-        self.index
-            .print_labels(lexer, addr_of!(*self.index) as *const c_void);
-    }
-    fn is_tree_member(&self) -> bool {
-        true
-    }
-    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
-}
-
-#[derive(Debug)]
 pub enum Literal {
     Int(Span),
     Float(Span),
@@ -1083,133 +1055,253 @@ impl AstNode for Literal {
         true
     }
     fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
+    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {
+        // WIP: Make this return Option
+    }
 }
 
 #[derive(Debug)]
-pub enum Expression {
-    Ternary {
-        condition: Box<Expression>,
-        if_true: Box<Expression>,
-        if_false: Box<Expression>,
-    },
-    Binary {
-        op_type: BinaryType,
-        lhs: Box<Expression>,
-        rhs: Box<Expression>,
-    },
-    Unary {
-        op_type: UnaryType,
-        operand: Box<Expression>,
-    },
-    VarAccess(Span),
-    VecAccess(VecAccess),
-    Literal(Literal),
-    FnCall(FnCall),
+pub struct Ternary {
+    left_span: Span,
+    right_span: Span,
+    condition: Box<dyn AstNode>,
+    if_true: Box<dyn AstNode>,
+    if_false: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
 }
 
-impl AstNode for Expression {
-    #[allow(unused_variables)]
-    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        match self {
-            Expression::Ternary {
-                condition,
-                if_true,
-                if_false,
-            } => {
-                for other in [condition, if_true, if_false] {
-                    if !other.is_tree_member() {
-                        continue;
-                    }
-                    let other_address = addr_of!(*other) as *const c_void;
-                    println!("{:p}, {:p}", own_address, other_address);
-                    other.print_dependencies(other_address, false);
-                }
-            }
-            Expression::Binary { op_type, lhs, rhs } => {
-                for other in [lhs, rhs] {
-                    if !other.is_tree_member() {
-                        continue;
-                    }
-                    let other_address = addr_of!(*other) as *const c_void;
-                    println!("{:p}, {:p}", own_address, other_address);
-                    other.print_dependencies(other_address, false);
-                }
-            }
-            Expression::Unary { op_type, operand } => {
-                let other_address = addr_of!(*operand) as *const c_void;
-                println!("{:p}, {:p}", own_address, other_address);
-                operand.print_dependencies(other_address, false);
-            }
-            Expression::VarAccess(span) => (),
-            Expression::VecAccess(vec_access) => vec_access.print_dependencies(own_address, false),
-            Expression::Literal(literal) => (),
-            Expression::FnCall(fn_call) => fn_call.print_dependencies(own_address, false),
+impl Ternary {
+    pub fn new(
+        left_span: Span,
+        right_span: Span,
+        condition: Box<dyn AstNode>,
+        if_true: Box<dyn AstNode>,
+        if_false: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> Ternary {
+        Ternary {
+            left_span,
+            right_span,
+            condition,
+            if_true,
+            if_false,
+            next,
         }
     }
-    #[allow(unused_variables)]
+
+    fn print_label_ternary(&self, own_address: *const c_void) {
+        println!("{:p} [label=\"?:\"];", own_address);
+    }
+}
+
+impl AstNode for Ternary {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.condition, own_address);
+        print_dependencies_child(&self.if_true, own_address);
+        print_dependencies_child(&self.if_false, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        match self {
-            Expression::Ternary {
-                condition,
-                if_true,
-                if_false,
-            } => {
-                println!("{:p} [label=\"?:\"];", own_address);
-                condition.print_labels(lexer, addr_of!(*condition) as *const c_void);
-                if_true.print_labels(lexer, addr_of!(*if_true) as *const c_void);
-                if_false.print_labels(lexer, addr_of!(*if_false) as *const c_void);
-            }
-            Expression::Binary { op_type, lhs, rhs } => {
-                let id = match op_type {
-                    BinaryType::BoolOr => "||",
-                    BinaryType::BoolAnd => "&&",
-                    BinaryType::BitOr => "|",
-                    BinaryType::BitXor => "^",
-                    BinaryType::BitAnd => "&",
-                    BinaryType::Equal => "==",
-                    BinaryType::NotEqual => "!=",
-                    BinaryType::Lesser => "<",
-                    BinaryType::Greater => ">",
-                    BinaryType::LesserEqual => "<=",
-                    BinaryType::GreaterEqual => ">=",
-                    BinaryType::Add => "+",
-                    BinaryType::Sub => "-",
-                    BinaryType::Mult => "*",
-                    BinaryType::Div => "/",
-                    BinaryType::Mod => "%",
-                };
-                println!("{:p} [label=\"{}\"];", own_address, id);
-                lhs.print_labels(lexer, addr_of!(*lhs) as *const c_void);
-                rhs.print_labels(lexer, addr_of!(*rhs) as *const c_void);
-            }
-            Expression::Unary { op_type, operand } => {
-                let id = match op_type {
-                    UnaryType::Positive => "+",
-                    UnaryType::Negative => "-",
-                    UnaryType::Not => "!",
-                    UnaryType::Address => "&",
-                    UnaryType::Pointer => "*",
-                    UnaryType::Boolean => "?",
-                    UnaryType::Hash => "#",
-                };
-                println!("{:p} [label=\"{}\"];", own_address, id);
-                operand.print_labels(lexer, addr_of!(*operand) as *const c_void);
-            }
-            Expression::VarAccess(span) => {
-                println!("{:p} [label=\"{}\"];", own_address, lexer.span_str(*span))
-            }
-            Expression::VecAccess(vec_access) => vec_access.print_labels(lexer, own_address),
-            Expression::Literal(literal) => literal.print_labels(lexer, own_address),
-            Expression::FnCall(fn_call) => fn_call.print_labels(lexer, own_address),
-        }
+        self.print_label_ternary(own_address);
+        print_labels_child(&self.condition, lexer);
+        print_labels_child(&self.if_true, lexer);
+        print_labels_child(&self.if_false, lexer);
+        print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
 }
+
+#[derive(Debug)]
+pub struct Binary {
+    op_span: Span,
+    op_type: BinaryType,
+    lhs: Box<dyn AstNode>,
+    rhs: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl Binary {
+    pub fn new(
+        op_span: Span,
+        op_type: BinaryType,
+        lhs: Box<dyn AstNode>,
+        rhs: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> Binary {
+        Binary {
+            op_span,
+            op_type,
+            lhs,
+            rhs,
+            next,
+        }
+    }
+}
+
+impl AstNode for Binary {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.lhs, own_address);
+        print_dependencies_child(&self.rhs, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_span, lexer, own_address);
+        print_labels_child(&self.lhs, lexer);
+        print_labels_child(&self.rhs, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct Unary {
+    op_span: Span,
+    op_type: UnaryType,
+    operand: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl Unary {
+    pub fn new(
+        op_span: Span,
+        op_type: UnaryType,
+        operand: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> Unary {
+        Unary {
+            op_span,
+            op_type,
+            operand,
+            next,
+        }
+    }
+}
+
+impl AstNode for Unary {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.operand, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_span, lexer, own_address);
+        print_labels_child(&self.operand, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VarAccess {
+    var_name: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VarAccess {
+    pub fn new(
+        var_name: Span,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VarAccess {
+        VarAccess {
+            var_name,
+            next,
+        }
+    }
+}
+
+impl AstNode for VarAccess {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.var_name, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VecAccess {
+    expr_span: Span,
+    vec_name: Box<dyn AstNode>,
+    vec_index: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VecAccess {
+    pub fn new(
+        expr_span: Span,
+        vec_name: Box<dyn AstNode>,
+        vec_index: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VecAccess {
+        VecAccess {
+            expr_span,
+            vec_name,
+            vec_index,
+            next
+        }
+    }
+
+    fn print_label_vec_access(&self, own_address: *const c_void) {
+        println!("{:p} [label=\"[]\"];", own_address);
+    }
+}
+
+impl AstNode for VecAccess {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.vec_name, own_address);
+        print_dependencies_child(&self.vec_index, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        self.print_label_vec_access(own_address);
+        print_labels_child(&self.vec_name, lexer);
+        print_labels_child(&self.vec_index, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
 
 #[derive(Debug)]
 pub enum BinaryType {

@@ -121,10 +121,6 @@ identifier_rule -> Result<Span>:
     'TK_IDENTIFICADOR' { Ok($span) }
     ;
 
-literal_int -> Result<Span>:
-    'TK_LIT_INT' { Ok($span) }
-    ;
-
 optionalParamList -> Result<Vec<Parameter>>:
       { /* %empty */ Ok(vec![]) }
     | paramList { $1 }
@@ -228,17 +224,17 @@ localNameDefAssign -> Result<AuxLocalNameDef>:
     }
     ;
 
-lesserEqualTok -> Result<Span>:
-    'TK_OC_LE' { Ok($span) }
+literal -> Result<Box<dyn AstNode>>:
+    literal_int { Ok(Box::new(Literal::Int($1?))) }
+    | 'TK_LIT_FLOAT' { Ok(Box::new(Literal::Float($span))) }
+    | 'TK_LIT_FALSE' { Ok(Box::new(Literal::Bool($span))) }
+    | 'TK_LIT_TRUE' { Ok(Box::new(Literal::Bool($span))) }
+    | 'TK_LIT_CHAR' { Ok(Box::new(Literal::Char($span))) }
+    | 'TK_LIT_STRING' { Ok(Box::new(Literal::String($span))) }
     ;
 
-literal -> Result<Literal>:
-    literal_int { Ok(Literal::Int($1?)) }
-    | 'TK_LIT_FLOAT' { Ok(Literal::Float($span)) }
-    | 'TK_LIT_FALSE' { Ok(Literal::Bool($span)) }
-    | 'TK_LIT_TRUE' { Ok(Literal::Bool($span)) }
-    | 'TK_LIT_CHAR' { Ok(Literal::Char($span)) }
-    | 'TK_LIT_STRING' { Ok(Literal::String($span)) }
+literal_int -> Result<Span>:
+    'TK_LIT_INT' { Ok($span) }
     ;
 
 
@@ -249,7 +245,7 @@ simpleCommand -> Result<Box<dyn AstNode>>:
     | continueTok ';' { Ok(Box::new(Continue::new($1?, None))) }
     | breakTok ';' { Ok(Box::new(Break::new($1?, None))) }
     | returnTok expression ';' { Ok(Box::new(Return::new($1?, Box::new($2?), None))) }
-    | functionCall ';' { Ok(Box::new($1?)) }
+    | functionCall ';' { $1 }
     | conditional ';' { $1 }
     ;
 
@@ -267,16 +263,16 @@ returnTok -> Result<Span>:
 
 varShift -> Result<Box<dyn AstNode>>:
     identifier_rule shiftOperator literal_int {
-        let var_name = $1?;
+        let var_name = Box::new($1?);
         let shift_type = $2?;
-        let shift_amount = $3?;
-        Ok(Box::new(VarShift::new(shift_type, Box::new(var_name), Box::new(shift_amount), None)))
+        let shift_amount = Box::new($3?);
+        Ok(Box::new(VarShift::new(shift_type, var_name, shift_amount, None)))
     }
     | vecAccess shiftOperator literal_int {
         let vec_access = $1?;
         let shift_type = $2?;
-        let shift_amount = $3?;
-        Ok(Box::new(VecShift::new(shift_type, Box::new(vec_access), Box::new(shift_amount), None)))
+        let shift_amount = Box::new($3?);
+        Ok(Box::new(VecShift::new(shift_type, vec_access, shift_amount, None)))
     }
     ;
 
@@ -285,11 +281,12 @@ shiftOperator -> Result<Span>:
     | 'TK_OC_SL' { Ok($span) }
     ;
 
-vecAccess -> Result<VecAccess>:
+vecAccess -> Result<Box<dyn AstNode>>:
     identifier_rule '[' expression ']' {
-        let name = Box::new($1?);
-        let index = Box::new($3?);
-        Ok(VecAccess{name, index})
+        let expr_span = $span;
+        let vec_name = Box::new($1?);
+        let vec_index = Box::new($3?);
+        Ok(Box::new(VecAccess::new(expr_span, vec_name, vec_index, None)))
     }
     ;
 
@@ -302,15 +299,11 @@ varSet -> Result<Box<dyn AstNode>>:
         Ok(Box::new(VarSet::new(op_name, var_name, new_value, None)))
     }
     | vecAccess setTok expression {
-        let vec_access = Box::new($1?);
+        let vec_access = $1?;
         let op_name = $2?;
         let new_value = Box::new($3?);
         Ok(Box::new(VecSet::new(op_name, vec_access, new_value, None)))
     }
-    ;
-
-setTok -> Result<Span>:
-    '=' { Ok($span) }
     ;
 
 IO -> Result<Box<dyn AstNode>>:
@@ -326,7 +319,7 @@ IO -> Result<Box<dyn AstNode>>:
     }
     | outputTok literal {
         let op_name = $1?;
-        let lit_value = Box::new($2?);
+        let lit_value = $2?;
         Ok(Box::new(OutputLit::new(op_name, lit_value, None)))
     }
     ;
@@ -340,11 +333,11 @@ outputTok -> Result<Span>:
     ;
 
 
-functionCall -> Result<FnCall>:
+functionCall -> Result<Box<dyn AstNode>>:
     identifier_rule '(' optionalExpressionList ')' {
         let fn_name = $1?;
         let args = $3?;
-        Ok(FnCall::new(fn_name, args, None))
+        Ok(Box::new(FnCall::new(fn_name, args, None)))
     }
     ;
 
@@ -393,6 +386,261 @@ conditional -> Result<Box<dyn AstNode>>:
     }
     ;
 
+
+expression -> Result<Box<dyn AstNode>>:
+    ternaryOrUniBooleanOrLower { $1 }
+    ;
+
+ternaryOrUniBooleanOrLower -> Result<Box<dyn AstNode>>:
+    logicalOrOrLower questionTok ternaryOrUniBooleanOrLower doubleDotTok ternaryOrUniBooleanOrLower {
+        let left_span = $2?;
+        let right_span = $4?;
+        let condition = Box::new($1?);
+        let if_true = Box::new($3?);
+        let if_false = Box::new($5?);
+        Ok(Box::new(Ternary::new(left_span, right_span, condition, if_true, if_false, None)))
+    }
+    | logicalOrOrLower { $1 }
+    ;
+
+logicalOrOrLower -> Result<Box<dyn AstNode>>:
+    logicalOrOrLower orTok logicalAndOrLower {
+        let op_type = BinaryType::BoolOr;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | logicalAndOrLower { $1 }
+    ;
+
+logicalAndOrLower -> Result<Box<dyn AstNode>>:
+    logicalAndOrLower andTok bitwiseOrOrLower {
+        let op_type = BinaryType::BoolAnd;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | bitwiseOrOrLower { $1 }
+    ;
+
+bitwiseOrOrLower -> Result<Box<dyn AstNode>>:
+    bitwiseOrOrLower pipeTok bitwiseXorOrLower {
+        let op_type = BinaryType::BitOr;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | bitwiseXorOrLower { $1 }
+    ;
+
+bitwiseXorOrLower -> Result<Box<dyn AstNode>>:
+    bitwiseXorOrLower circumflexTok bitwiseAndOrLower {
+        let op_type = BinaryType::BitXor;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | bitwiseAndOrLower { $1 }
+    ;
+
+bitwiseAndOrLower -> Result<Box<dyn AstNode>>:
+    bitwiseAndOrLower ampersandTok relationalEqualityOrLower {
+        let op_type = BinaryType::BitAnd;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | relationalEqualityOrLower { $1 }
+    ;
+
+relationalEqualityOrLower -> Result<Box<dyn AstNode>>:
+    relationalEqualityOrLower equalTok relationalSizeOrLower {
+        let op_type = BinaryType::Equal;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | relationalEqualityOrLower notEqualTok relationalSizeOrLower {
+        let op_type = BinaryType::NotEqual;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | relationalSizeOrLower { $1 }
+    ;
+
+relationalSizeOrLower -> Result<Box<dyn AstNode>>:
+    relationalSizeOrLower lesserTok addSubOrLower {
+        let op_type = BinaryType::Lesser;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | relationalSizeOrLower greaterTok addSubOrLower {
+        let op_type = BinaryType::Greater;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | relationalSizeOrLower lesserEqualTok addSubOrLower {
+        let op_type = BinaryType::LesserEqual;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | relationalSizeOrLower greaterEqualTok addSubOrLower {
+        let op_type = BinaryType::GreaterEqual;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | addSubOrLower { $1 }
+    ;
+
+addSubOrLower -> Result<Box<dyn AstNode>>:
+    addSubOrLower plusTok multDivRemainderOrLower {
+        let op_type = BinaryType::Add;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | addSubOrLower minusTok multDivRemainderOrLower {
+        let op_type = BinaryType::Sub;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | multDivRemainderOrLower { $1 }
+    ;
+
+multDivRemainderOrLower -> Result<Box<dyn AstNode>>:
+    multDivRemainderOrLower multTok unaryOperationOrOperand {
+        let op_type = BinaryType::Mult;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | multDivRemainderOrLower divTok unaryOperationOrOperand {
+        let op_type = BinaryType::Div;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | multDivRemainderOrLower modTok unaryOperationOrOperand {
+        let op_type = BinaryType::Mod;
+        let op_span = $2?;
+        let lhs = Box::new($1?);
+        let rhs = Box::new($3?);
+        Ok(Box::new(Binary::new(op_span, op_type, lhs, rhs, None)))
+    }
+    | unaryOperationOrOperand { $1 }
+    ;
+
+unaryOperationOrOperand -> Result<Box<dyn AstNode>>:
+    expressionOperand { $1 }
+    | unaryOperatorList expressionOperand {
+        let expr = Box::new($2?);
+        let mut op_list = $1?;
+        if op_list.len() < 1 {
+            bail!("unaryOperatorList returned vector with zero elements")
+        };
+        let (last_span, last_type) = op_list.pop().unwrap();
+        let mut unary_box: Box<Unary> = Box::new(Unary::new(last_span, last_type, expr, None));
+        loop {
+            match op_list.pop() {
+                Some((next_span, next_type)) => {
+                    unary_box = Box::new(Unary::new(next_span, next_type, unary_box, None));
+                },
+                None => { break }
+            }
+        }
+        let unary_node: Box<dyn AstNode> = unary_box;
+        Ok(unary_node)
+    }
+    ;
+
+unaryOperatorList -> Result<Vec<(Span, UnaryType)>>:
+    unaryOperator { Ok(vec![$1?]) }
+    | unaryOperatorList unaryOperator {
+        let mut list = $1?;
+        list.push($2?);
+        Ok(list)
+    }
+    ;
+
+unaryOperator -> Result<(Span, UnaryType)>:
+    plusTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Positive;
+        Ok((op_span, unary_type))
+        }
+    | minusTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Negative;
+        Ok((op_span, unary_type))
+        }
+    | exclamationTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Not;
+        Ok((op_span, unary_type))
+        }
+    | ampersandTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Address;
+        Ok((op_span, unary_type))
+        }
+    | multTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Pointer;
+        Ok((op_span, unary_type))
+        }
+    | questionTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Boolean;
+        Ok((op_span, unary_type))
+        }
+    | hashTok {
+        let op_span = $span;
+        let unary_type = UnaryType::Hash;
+        Ok((op_span, unary_type))
+        }
+    ;
+
+expressionOperand -> Result<Box<dyn AstNode>>:
+    literal { $1 }
+    | accessOrFnCall { $1 }
+    | grouping { $1 }
+    ;
+
+accessOrFnCall -> Result<Box<dyn AstNode>>:
+    identifier_rule { Ok(Box::new(VarAccess::new($1?, None))) }
+    | vecAccess { $1 }
+    | functionCall { $1 }
+    ;
+
+grouping -> Result<Box<dyn AstNode>>:
+    '(' expression ')' { $2 }
+    ;
+
+setTok -> Result<Span>:
+    '=' { Ok($span) }
+    ;
+
 ifTok -> Result<Span>:
     'TK_PR_IF' { Ok($span) }
     ;
@@ -405,212 +653,89 @@ whileTok -> Result<Span>:
     'TK_PR_WHILE' { Ok($span) }
     ;
 
-
-expression -> Result<Expression>:
-    ternaryOrUniBooleanOrLower { $1 }
+orTok -> Result<Span>:
+    'TK_OC_OR' { Ok($span) }
     ;
 
-ternaryOrUniBooleanOrLower -> Result<Expression>:
-    logicalOrOrLower '?' ternaryOrUniBooleanOrLower ':' ternaryOrUniBooleanOrLower {
-        let condition = Box::new($1?);
-        let if_true = Box::new($3?);
-        let if_false = Box::new($5?);
-        Ok(Expression::Ternary{condition, if_true, if_false})
-    }
-    | logicalOrOrLower { $1 }
+andTok -> Result<Span>:
+    'TK_OC_AND' { Ok($span) }
     ;
 
-logicalOrOrLower -> Result<Expression>:
-    logicalOrOrLower 'TK_OC_OR' logicalAndOrLower {
-        let op_type = BinaryType::BoolOr;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | logicalAndOrLower { $1 }
+lesserTok -> Result<Span>:
+    '<' { Ok($span) }
     ;
 
-logicalAndOrLower -> Result<Expression>:
-    logicalAndOrLower 'TK_OC_AND' bitwiseOrOrLower {
-        let op_type = BinaryType::BoolAnd;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | bitwiseOrOrLower { $1 }
+lesserEqualTok -> Result<Span>:
+    'TK_OC_LE' { Ok($span) }
     ;
 
-bitwiseOrOrLower -> Result<Expression>:
-    bitwiseOrOrLower '|' bitwiseXorOrLower {
-        let op_type = BinaryType::BitOr;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | bitwiseXorOrLower { $1 }
+equalTok -> Result<Span>:
+    'TK_OC_EQ' { Ok( $span ) }
     ;
 
-bitwiseXorOrLower -> Result<Expression>:
-    bitwiseXorOrLower '^' bitwiseAndOrLower {
-        let op_type = BinaryType::BitXor;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | bitwiseAndOrLower { $1 }
+notEqualTok -> Result<Span>:
+    'TK_OC_NE' { Ok( $span ) }
     ;
 
-bitwiseAndOrLower -> Result<Expression>:
-    bitwiseAndOrLower '&' relationalEqualityOrLower {
-        let op_type = BinaryType::BitAnd;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | relationalEqualityOrLower { $1 }
+greaterTok -> Result<Span>:
+    '>' { Ok( $span ) }
     ;
 
-relationalEqualityOrLower -> Result<Expression>:
-    relationalEqualityOrLower 'TK_OC_EQ' relationalSizeOrLower {
-        let op_type = BinaryType::Equal;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | relationalEqualityOrLower 'TK_OC_NE' relationalSizeOrLower {
-        let op_type = BinaryType::NotEqual;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | relationalSizeOrLower { $1 }
+greaterEqualTok -> Result<Span>:
+    'TK_OC_GE' { Ok( $span ) }
     ;
 
-relationalSizeOrLower -> Result<Expression>:
-    relationalSizeOrLower '<' addSubOrLower {
-        let op_type = BinaryType::Lesser;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | relationalSizeOrLower '>' addSubOrLower {
-        let op_type = BinaryType::Greater;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | relationalSizeOrLower lesserEqualTok addSubOrLower {
-        let op_type = BinaryType::LesserEqual;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | relationalSizeOrLower 'TK_OC_GE' addSubOrLower {
-        let op_type = BinaryType::GreaterEqual;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | addSubOrLower { $1 }
+doubleDotTok -> Result<Span>:
+    ':' { Ok( $span ) }
     ;
 
-addSubOrLower -> Result<Expression>:
-    addSubOrLower '+' multDivRemainderOrLower {
-        let op_type = BinaryType::Add;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | addSubOrLower '-' multDivRemainderOrLower {
-        let op_type = BinaryType::Sub;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | multDivRemainderOrLower { $1 }
+minusTok -> Result<Span>:
+    '-' { Ok( $span ) }
     ;
 
-multDivRemainderOrLower -> Result<Expression>:
-    multDivRemainderOrLower '*' unaryOperationOrOperand {
-        let op_type = BinaryType::Mult;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | multDivRemainderOrLower '/' unaryOperationOrOperand {
-        let op_type = BinaryType::Div;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | multDivRemainderOrLower '%' unaryOperationOrOperand {
-        let op_type = BinaryType::Mod;
-        let lhs = Box::new($1?);
-        let rhs = Box::new($3?);
-        Ok(Expression::Binary{op_type, lhs, rhs})
-    }
-    | unaryOperationOrOperand { $1 }
+plusTok -> Result<Span>:
+    '+' { Ok( $span ) }
     ;
 
-unaryOperationOrOperand -> Result<Expression>:
-    expressionOperand { $1 }
-    | unaryOperatorList expressionOperand {
-        let mut op_list = $1?;
-        op_list.reverse();
-        let mut wrapping = $2?;
-        loop {
-            match op_list.pop() {
-                Some(op_type) => {
-                    wrapping = Expression::Unary{op_type, operand: Box::new(wrapping)};
-                },
-                None => { break }
-            }
-        }
-        Ok(wrapping)
-    }
+divTok -> Result<Span>:
+    '/' { Ok( $span ) }
     ;
 
-unaryOperatorList -> Result<Vec<UnaryType>>:
-    unaryOperator { Ok(vec![$1?]) }
-    | unaryOperatorList unaryOperator {
-        let mut list = $1?;
-        list.push($2?);
-        Ok(list)
-    }
+multTok -> Result<Span>:
+    '*' { Ok( $span ) }
     ;
 
-unaryOperator -> Result<UnaryType>:
-    '+' { Ok(UnaryType::Positive) }
-    | '-' { Ok(UnaryType::Negative) }
-    | '!' { Ok(UnaryType::Not) }
-    | '&' { Ok(UnaryType::Address) }
-    | '*' { Ok(UnaryType::Pointer) }
-    | '?' { Ok(UnaryType::Boolean) }
-    | '#' { Ok(UnaryType::Hash) }
+modTok -> Result<Span>:
+    '%' { Ok( $span ) }
     ;
 
-expressionOperand -> Result<Expression>:
-    literal { Ok(Expression::Literal($1?)) }
-    | accessOrFnCall { $1 }
-    | grouping { $1 }
+circumflexTok -> Result<Span>:
+    '^' { Ok( $span ) }
     ;
 
-accessOrFnCall -> Result<Expression>:
-    identifier_rule { Ok(Expression::VarAccess($1?)) }
-    | vecAccess {
-        let vec_access = $1?;
-        Ok(Expression::VecAccess(vec_access))
-    }
-    | functionCall { Ok(Expression::FnCall($1?)) }
+pipeTok -> Result<Span>:
+    '|' { Ok( $span ) }
     ;
 
-grouping -> Result<Expression>:
-    '(' expression ')' { $2 }
+ampersandTok -> Result<Span>:
+    '&' { Ok( $span ) }
+    ;
+
+exclamationTok -> Result<Span>:
+    '!' { Ok( $span ) }
+    ;
+
+questionTok -> Result<Span>:
+    '?' { Ok( $span ) }
+    ;
+
+hashTok -> Result<Span>:
+    '#' { Ok( $span ) }
     ;
 
 %%
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use lrpar::Span;
 use super::lexical_structures::*;
 use super::auxiliary_structures::*;
@@ -621,13 +746,6 @@ use super::ast_node::AstNode;
 void exporta(void* arvore) {
     printDependencies((ValorLexico *) arvore);
     printLabels((ValorLexico *) arvore);
-}
-
-void libera(void* arvore) {
-    if(arvore == NULL) {
-        return;
-    }
-    freeValorLexico((ValorLexico*) arvore);
 }
 
 void yyerror(char const *s) {

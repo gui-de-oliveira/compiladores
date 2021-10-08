@@ -1,6 +1,6 @@
 use super::ast_node::AstNode;
 use super::lexical_structures::{
-    GlobalVarDef, GlobalVecDef, Literal, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit,
+    GlobalVarDef, GlobalVecDef, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit,
 };
 use anyhow::{bail, Result};
 use lrpar::Span;
@@ -22,7 +22,7 @@ pub enum AuxLocalNameDef {
     InitWithLit {
         var_name: Span,
         op_name: Span,
-        var_value: Literal,
+        var_value: Box<dyn AstNode>,
     },
 }
 
@@ -107,7 +107,7 @@ pub fn mount_local_def(
             is_const,
             var_type,
             Box::new(var_name),
-            Box::new(var_value),
+            var_value,
             None,
         )),
     }
