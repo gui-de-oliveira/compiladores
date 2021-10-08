@@ -29,27 +29,10 @@ impl GlobalVarDef {
 
 impl AstNode for GlobalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        if let Some(next) = &self.next {
-            if next.is_tree_member() {
-                let next_address = addr_of!(*next) as *const c_void;
-                if ripple {
-                    println!("{:p}, {:p}", own_address, next_address);
-                }
-                next.print_dependencies(next_address, false);
-            } else {
-                next.print_dependencies(own_address, ripple);
-            }
-        }
+        print_dependencies_ripple(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        if let Some(next) = &self.next {
-            if next.is_tree_member() {
-                let next_address = addr_of!(*next) as *const c_void;
-                next.print_labels(lexer, next_address);
-            } else {
-                next.print_labels(lexer, own_address);
-            }
-        }
+        print_labels_ripple(&self.next, lexer, own_address)
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -58,14 +41,7 @@ impl AstNode for GlobalVarDef {
         self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
-        let holder = self.next.take();
-        match holder {
-            Some(mut node) => {
-                node.append_to_next(new_last);
-                self.next = Some(node)
-            }
-            None => self.next = Some(new_last),
-        };
+        self.next = append_node(&mut self.next, new_last)
     }
 }
 
@@ -98,27 +74,10 @@ impl GlobalVecDef {
 
 impl AstNode for GlobalVecDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        if let Some(next) = &self.next {
-            if next.is_tree_member() {
-                let next_address = addr_of!(*next) as *const c_void;
-                if ripple {
-                    println!("{:p}, {:p}", own_address, next_address);
-                }
-                next.print_dependencies(next_address, false);
-            } else {
-                next.print_dependencies(own_address, ripple);
-            }
-        }
+        print_dependencies_ripple(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        if let Some(next) = &self.next {
-            if next.is_tree_member() {
-                let next_address = addr_of!(*next) as *const c_void;
-                next.print_labels(lexer, next_address);
-            } else {
-                next.print_labels(lexer, own_address);
-            }
-        }
+        print_labels_ripple(&self.next, lexer, own_address)
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -127,14 +86,7 @@ impl AstNode for GlobalVecDef {
         self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
-        let holder = self.next.take();
-        match holder {
-            Some(mut node) => {
-                node.append_to_next(new_last);
-                self.next = Some(node)
-            }
-            None => self.next = Some(new_last),
-        };
+        self.next = append_node(&mut self.next, new_last)
     }
 }
 
@@ -144,7 +96,7 @@ pub struct FnDef {
     return_type: Span,
     fn_name: Span,
     params: Vec<Parameter>,
-    commands: Vec<SimpleCommand>,
+    commands: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -154,7 +106,7 @@ impl FnDef {
         return_type: Span,
         fn_name: Span,
         params: Vec<Parameter>,
-        commands: Vec<SimpleCommand>,
+        commands: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> FnDef {
         FnDef {
@@ -170,46 +122,13 @@ impl FnDef {
 
 impl AstNode for FnDef {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        let mut parent = own_address;
-        for command in &self.commands {
-            if !command.is_tree_member() {
-                continue;
-            }
-            let command_address = addr_of!(command) as *const c_void;
-            println!("{:p}, {:p}", parent, command_address);
-            command.print_dependencies(command_address, false);
-            parent = command_address;
-        }
-        if let Some(next) = &self.next {
-            if next.is_tree_member() {
-                let next_address = addr_of!(*next) as *const c_void;
-                println!("{:p}, {:p}", own_address, next_address);
-                next.print_dependencies(next_address, false);
-            } else {
-                next.print_dependencies(own_address, true);
-            }
-        }
+        print_dependencies_child(&self.commands, own_address);
+        print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        println!(
-            "{:p} [label=\"{}\"];",
-            own_address,
-            lexer.span_str(self.fn_name)
-        );
-        for command in &self.commands {
-            if !command.is_tree_member() {
-                continue;
-            }
-            command.print_labels(lexer, addr_of!(command) as *const c_void);
-        }
-        if let Some(next) = &self.next {
-            if next.is_tree_member() {
-                let next_address = addr_of!(*next) as *const c_void;
-                next.print_labels(lexer, next_address);
-            } else {
-                next.print_labels(lexer, own_address);
-            }
-        }
+        print_label_self(self.fn_name, lexer, own_address);
+        print_labels_child(&self.commands, lexer);
+        print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -218,14 +137,7 @@ impl AstNode for FnDef {
         self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
-        let holder = self.next.take();
-        match holder {
-            Some(mut node) => {
-                node.append_to_next(new_last);
-                self.next = Some(node)
-            }
-            None => self.next = Some(new_last),
-        };
+        self.next = append_node(&mut self.next, new_last)
     }
 }
 
@@ -237,495 +149,866 @@ pub struct Parameter {
 }
 
 #[derive(Debug)]
-pub enum SimpleCommand {
-    VarDef {
-        is_static: bool,
-        is_const: bool,
-        var_type: Span,
-        var_name: Span,
-    },
-    VarDefInitId {
-        is_static: bool,
-        is_const: bool,
-        var_type: Span,
-        var_name: Span,
-        var_value: Span,
-    },
-    VarDefInitLit {
-        is_static: bool,
-        is_const: bool,
-        var_type: Span,
-        var_name: Span,
-        var_value: Literal,
-    },
-    VarShift {
-        var_name: Span,
-        shift_type: Span,
-        shift_amount: Span,
-    },
-    VecShift {
-        shift_type: Span,
-        vec_access: VecAccess,
-        shift_amount: Span,
-    },
-    VarSet {
-        var_name: Span,
-        new_value: Expression,
-    },
-    VecSet {
-        vec_access: VecAccess,
-        new_value: Expression,
-    },
-    Input {
-        var_name: Span,
-    },
-    OutputId {
-        var_name: Span,
-    },
-    OutputLit {
-        lit_value: Literal,
-    },
-    Continue,
-    Break,
-    Return {
-        ret_value: Expression,
-    },
-    FnCall(FnCall),
-    If {
-        condition: Expression,
-        consequence: Vec<SimpleCommand>,
-    },
-    IfElse {
-        condition: Expression,
-        if_true: Vec<SimpleCommand>,
-        if_false: Vec<SimpleCommand>,
-    },
-    For {
-        count_init: Box<SimpleCommand>,
-        count_check: Expression,
-        count_iter: Box<SimpleCommand>,
-        actions: Vec<SimpleCommand>,
-    },
-    While {
-        condition: Expression,
-        consequence: Vec<SimpleCommand>,
-    },
+pub struct LocalVarDef {
+    is_static: bool,
+    is_const: bool,
+    var_type: Span,
+    var_name: Span,
+    next: Option<Box<dyn AstNode>>,
 }
 
-impl AstNode for SimpleCommand {
-    #[allow(unused_variables)]
-    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        match self {
-            SimpleCommand::VarDef {
-                is_static,
-                is_const,
-                var_type,
-                var_name,
-            } => (),
-            SimpleCommand::VarDefInitId {
-                is_static,
-                is_const,
-                var_type,
-                var_name,
-                var_value,
-            } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*var_name));
-                println!("{:p}, {:p}", own_address, addr_of!(*var_value));
-            }
-            SimpleCommand::VarDefInitLit {
-                is_static,
-                is_const,
-                var_type,
-                var_name,
-                var_value,
-            } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*var_name));
-                println!("{:p}, {:p}", own_address, addr_of!(*var_value));
-            }
-            SimpleCommand::VarShift {
-                shift_type,
-                var_name,
-                shift_amount,
-            } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*var_name));
-                println!("{:p}, {:p}", own_address, addr_of!(*shift_amount));
-            }
-            SimpleCommand::VecShift {
-                shift_type,
-                vec_access,
-                shift_amount,
-            } => {
-                let vec_address = addr_of!(*vec_access) as *const c_void;
-                println!("{:p}, {:p}", own_address, vec_address);
-                println!("{:p}, {:p}", own_address, addr_of!(*shift_amount));
-                vec_access.print_dependencies(vec_address, false);
-            }
-            SimpleCommand::VarSet {
-                var_name,
-                new_value,
-            } => {
-                let vec_address = addr_of!(*var_name) as *const c_void;
-                let val_address = addr_of!(*new_value) as *const c_void;
-                println!("{:p}, {:p}", own_address, vec_address);
-                println!("{:p}, {:p}", own_address, val_address);
-                new_value.print_dependencies(val_address, false);
-            }
-            SimpleCommand::VecSet {
-                vec_access,
-                new_value,
-            } => {
-                let vec_address = addr_of!(*vec_access) as *const c_void;
-                let val_address = addr_of!(*new_value) as *const c_void;
-                println!("{:p}, {:p}", own_address, vec_address);
-                println!("{:p}, {:p}", own_address, val_address);
-                vec_access.print_dependencies(vec_address, false);
-                new_value.print_dependencies(val_address, false);
-            }
-            SimpleCommand::Input { var_name } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*var_name));
-            }
-            SimpleCommand::OutputId { var_name } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*var_name));
-            }
-            SimpleCommand::OutputLit { lit_value } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*lit_value));
-            }
-            SimpleCommand::Continue => (),
-            SimpleCommand::Break => (),
-            SimpleCommand::Return { ret_value } => {
-                println!("{:p}, {:p}", own_address, addr_of!(*ret_value));
-            }
-            SimpleCommand::FnCall(fn_call) => fn_call.print_dependencies(own_address, false),
-            SimpleCommand::If {
-                condition,
-                consequence,
-            } => {
-                let condition_address = addr_of!(*condition) as *const c_void;
-                println!("{:p}, {:p}", own_address, condition_address);
-                condition.print_dependencies(condition_address, false);
-                let mut previous_pointer = own_address;
-                for command in consequence {
-                    if !command.is_tree_member() {
-                        continue;
-                    }
-                    let command_address = addr_of!(*command) as *const c_void;
-                    println!("{:p}, {:p}", previous_pointer, command_address);
-                    command.print_dependencies(command_address, false);
-                    previous_pointer = command_address;
-                }
-            }
-            SimpleCommand::IfElse {
-                condition,
-                if_true,
-                if_false,
-            } => {
-                let condition_address = addr_of!(*condition) as *const c_void;
-                println!("{:p}, {:p}", own_address, condition_address);
-                condition.print_dependencies(condition_address, false);
-                let mut previous_pointer = own_address;
-                for command in if_true {
-                    if !command.is_tree_member() {
-                        continue;
-                    }
-                    let command_address = addr_of!(*command) as *const c_void;
-                    println!("{:p}, {:p}", previous_pointer, command_address);
-                    command.print_dependencies(command_address, false);
-                    previous_pointer = command_address;
-                }
-                previous_pointer = own_address;
-                for command in if_false {
-                    if !command.is_tree_member() {
-                        continue;
-                    }
-                    let command_address = addr_of!(*command) as *const c_void;
-                    println!("{:p}, {:p}", previous_pointer, command_address);
-                    command.print_dependencies(command_address, false);
-                    previous_pointer = command_address;
-                }
-            }
-            SimpleCommand::For {
-                count_init,
-                count_check,
-                count_iter,
-                actions,
-            } => {
-                let init_address = addr_of!(*count_init) as *const c_void;
-                let check_address = addr_of!(*count_check) as *const c_void;
-                let iter_address = addr_of!(*count_iter) as *const c_void;
-                println!("{:p}, {:p}", own_address, init_address);
-                println!("{:p}, {:p}", own_address, check_address);
-                println!("{:p}, {:p}", own_address, iter_address);
-
-                let mut previous_pointer = own_address;
-                for first_command in actions {
-                    if !first_command.is_tree_member() {
-                        continue;
-                    }
-                    previous_pointer = addr_of!(*first_command) as *const c_void;
-                    println!("{:p}, {:p}", own_address, previous_pointer);
-                    break;
-                }
-
-                count_init.print_dependencies(init_address, false);
-                count_check.print_dependencies(check_address, false);
-                count_iter.print_dependencies(iter_address, false);
-
-                let mut first_passed = false;
-                for command in actions {
-                    if !command.is_tree_member() {
-                        continue;
-                    }
-                    if !first_passed {
-                        first_passed = true;
-                        command.print_dependencies(previous_pointer, false);
-                        continue;
-                    }
-                    let command_address = addr_of!(*command) as *const c_void;
-                    println!("{:p}, {:p}", previous_pointer, command_address);
-                    command.print_dependencies(command_address, false);
-                    previous_pointer = command_address;
-                }
-            }
-            SimpleCommand::While {
-                condition,
-                consequence,
-            } => {
-                let condition_address = addr_of!(*condition) as *const c_void;
-                println!("{:p}, {:p}", own_address, condition_address);
-                condition.print_dependencies(condition_address, false);
-                let mut previous_pointer = own_address;
-                for command in consequence {
-                    if !command.is_tree_member() {
-                        continue;
-                    }
-                    let command_address = addr_of!(*command) as *const c_void;
-                    println!("{:p}, {:p}", previous_pointer, command_address);
-                    command.print_dependencies(command_address, false);
-                    previous_pointer = command_address;
-                }
-            }
+impl LocalVarDef {
+    pub fn new(
+        is_static: bool,
+        is_const: bool,
+        var_type: Span,
+        var_name: Span,
+        next: Option<Box<dyn AstNode>>,
+    ) -> LocalVarDef {
+        LocalVarDef {
+            is_static,
+            is_const,
+            var_type,
+            var_name,
+            next,
         }
     }
+}
 
-    #[allow(unused_variables)]
+impl AstNode for LocalVarDef {
+    fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
+        print_dependencies_ripple(&self.next, own_address, ripple)
+    }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        match self {
-            SimpleCommand::VarDef {
-                is_static,
-                is_const,
-                var_type,
-                var_name,
-            } => (),
-            SimpleCommand::VarDefInitId {
-                is_static,
-                is_const,
-                var_type,
-                var_name,
-                var_value,
-            } => {
-                println!("{:p} [label=\"<=\"];", own_address);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_name),
-                    lexer.span_str(*var_name)
-                );
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_value),
-                    lexer.span_str(*var_value)
-                );
-            }
-            SimpleCommand::VarDefInitLit {
-                is_static,
-                is_const,
-                var_type,
-                var_name,
-                var_value,
-            } => {
-                println!("{:p} [label=\"<=\"];", own_address);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_name),
-                    lexer.span_str(*var_name)
-                );
-                var_value.print_labels(lexer, addr_of!(*var_value) as *const c_void);
-            }
-            SimpleCommand::VarShift {
-                var_name,
-                shift_type,
-                shift_amount,
-            } => {
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    own_address,
-                    lexer.span_str(*shift_type)
-                );
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_name),
-                    lexer.span_str(*var_name)
-                );
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*shift_amount),
-                    lexer.span_str(*shift_amount)
-                );
-            }
-            SimpleCommand::VecShift {
-                shift_type,
-                vec_access,
-                shift_amount,
-            } => {
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    own_address,
-                    lexer.span_str(*shift_type)
-                );
-                vec_access.print_labels(lexer, addr_of!(*vec_access) as *const c_void);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*shift_amount),
-                    lexer.span_str(*shift_amount)
-                );
-            }
-            SimpleCommand::VarSet {
-                var_name,
-                new_value,
-            } => {
-                println!("{:p} [label=\"=\"];", own_address);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_name),
-                    lexer.span_str(*var_name)
-                );
-                new_value.print_labels(lexer, addr_of!(*new_value) as *const c_void);
-            }
-            SimpleCommand::VecSet {
-                vec_access,
-                new_value,
-            } => {
-                println!("{:p} [label=\"=\"];", own_address);
-                vec_access.print_labels(lexer, addr_of!(*vec_access) as *const c_void);
-                new_value.print_labels(lexer, addr_of!(*new_value) as *const c_void);
-            }
-            SimpleCommand::Input { var_name } => {
-                println!("{:p} [label=\"input\"];", own_address);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_name),
-                    lexer.span_str(*var_name)
-                );
-            }
-            SimpleCommand::OutputId { var_name } => {
-                println!("{:p} [label=\"output\"];", own_address);
-                println!(
-                    "{:p} [label=\"{}\"];",
-                    addr_of!(*var_name),
-                    lexer.span_str(*var_name)
-                );
-            }
-            SimpleCommand::OutputLit { lit_value } => {
-                println!("{:p} [label=\"output\"];", own_address);
-                lit_value.print_labels(lexer, addr_of!(*lit_value) as *const c_void);
-            }
-            SimpleCommand::Continue => println!("{:p} [label=\"continue\"];", own_address),
-            SimpleCommand::Break => println!("{:p} [label=\"break\"];", own_address),
-            SimpleCommand::Return { ret_value } => {
-                println!("{:p} [label=\"return\"];", own_address);
-                ret_value.print_labels(lexer, addr_of!(*ret_value) as *const c_void);
-            }
-            SimpleCommand::FnCall(fn_call) => fn_call.print_labels(lexer, own_address),
-            SimpleCommand::If {
-                condition,
-                consequence,
-            } => {
-                println!("{:p} [label=\"if\"];", own_address);
-                condition.print_labels(lexer, addr_of!(*condition) as *const c_void);
-                for command in consequence {
-                    command.print_labels(lexer, addr_of!(*command) as *const c_void);
-                }
-            }
-            SimpleCommand::IfElse {
-                condition,
-                if_true,
-                if_false,
-            } => {
-                println!("{:p} [label=\"if\"];", own_address);
-                condition.print_labels(lexer, addr_of!(*condition) as *const c_void);
-                for command in if_true {
-                    command.print_labels(lexer, addr_of!(*command) as *const c_void);
-                }
-                for command in if_false {
-                    command.print_labels(lexer, addr_of!(*command) as *const c_void);
-                }
-            }
-            SimpleCommand::For {
-                count_init,
-                count_check,
-                count_iter,
-                actions,
-            } => {
-                println!("{:p} [label=\"for\"];", own_address);
-                count_init.print_labels(lexer, addr_of!(*count_init) as *const c_void);
-                count_check.print_labels(lexer, addr_of!(*count_check) as *const c_void);
-                count_iter.print_labels(lexer, addr_of!(*count_iter) as *const c_void);
-                for command in actions {
-                    command.print_labels(lexer, addr_of!(*command) as *const c_void);
-                }
-            }
-            SimpleCommand::While {
-                condition,
-                consequence,
-            } => {
-                println!("{:p} [label=\"while\"];", own_address);
-                condition.print_labels(lexer, addr_of!(*condition) as *const c_void);
-                for command in consequence {
-                    command.print_labels(lexer, addr_of!(*command) as *const c_void);
-                }
-            }
-        }
+        print_labels_ripple(&self.next, lexer, own_address)
     }
     fn is_tree_member(&self) -> bool {
-        match self {
-            SimpleCommand::VarDef { .. } => false,
-            _ => true,
-        }
+        false
     }
-    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
 }
 
 #[derive(Debug)]
-pub struct FnCall {
-    pub fn_name: Span,
-    pub args: Vec<Expression>,
+pub struct VarDefInitId {
+    op_name: Span,
+    is_static: bool,
+    is_const: bool,
+    var_type: Span,
+    var_name: Box<dyn AstNode>,
+    var_value: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
 }
 
-impl AstNode for FnCall {
-    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        let mut parent = own_address;
-        for expression in &self.args {
-            if !expression.is_tree_member() {
-                continue;
-            }
-            let address = addr_of!(*expression) as *const c_void;
-            println!("{:p}, {:p}", parent, address);
-            expression.print_dependencies(parent, false);
-            parent = address;
+impl VarDefInitId {
+    pub fn new(
+        op_name: Span,
+        is_static: bool,
+        is_const: bool,
+        var_type: Span,
+        var_name: Box<dyn AstNode>,
+        var_value: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VarDefInitId {
+        VarDefInitId {
+            op_name,
+            is_static,
+            is_const,
+            var_type,
+            var_name,
+            var_value,
+            next,
         }
     }
+}
+
+impl AstNode for VarDefInitId {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_child(&self.var_value, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print!("{:p} [label=\"call ", own_address);
-        println!("{}\"];", lexer.span_str(self.fn_name));
-        for expression in &self.args {
-            expression.print_labels(lexer, addr_of!(*expression) as *const c_void)
-        }
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.var_name, lexer);
+        print_labels_child(&self.var_value, lexer);
+        print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VarDefInitLit {
+    op_name: Span,
+    is_static: bool,
+    is_const: bool,
+    var_type: Span,
+    var_name: Box<dyn AstNode>,
+    var_value: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VarDefInitLit {
+    pub fn new(
+        op_name: Span,
+        is_static: bool,
+        is_const: bool,
+        var_type: Span,
+        var_name: Box<dyn AstNode>,
+        var_value: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VarDefInitLit {
+        VarDefInitLit {
+            op_name,
+            is_static,
+            is_const,
+            var_type,
+            var_name,
+            var_value,
+            next,
+        }
+    }
+}
+
+impl AstNode for VarDefInitLit {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_child(&self.var_value, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.var_name, lexer);
+        print_labels_child(&self.var_value, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VarShift {
+    shift_type: Span,
+    var_name: Box<dyn AstNode>,
+    shift_amount: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VarShift {
+    pub fn new(
+        shift_type: Span,
+        var_name: Box<dyn AstNode>,
+        shift_amount: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VarShift {
+        VarShift {
+            shift_type,
+            var_name,
+            shift_amount,
+            next,
+        }
+    }
+}
+
+impl AstNode for VarShift {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_child(&self.shift_amount, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.shift_type, lexer, own_address);
+        print_labels_child(&self.var_name, lexer);
+        print_labels_child(&self.shift_amount, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VecShift {
+    shift_type: Span,
+    vec_access: Box<dyn AstNode>,
+    shift_amount: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VecShift {
+    pub fn new(
+        shift_type: Span,
+        vec_access: Box<dyn AstNode>,
+        shift_amount: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VecShift {
+        VecShift {
+            shift_type,
+            vec_access,
+            shift_amount,
+            next,
+        }
+    }
+}
+
+impl AstNode for VecShift {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.vec_access, own_address);
+        print_dependencies_child(&self.shift_amount, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.shift_type, lexer, own_address);
+        print_labels_child(&self.vec_access, lexer);
+        print_labels_child(&self.shift_amount, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VarSet {
+    op_name: Span,
+    var_name: Box<dyn AstNode>,
+    new_value: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VarSet {
+    pub fn new(
+        op_name: Span,
+        var_name: Box<dyn AstNode>,
+        new_value: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VarSet {
+        VarSet {
+            op_name,
+            var_name,
+            new_value,
+            next,
+        }
+    }
+}
+
+impl AstNode for VarSet {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_child(&self.new_value, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.var_name, lexer);
+        print_labels_child(&self.new_value, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct VecSet {
+    op_name: Span,
+    vec_access: Box<dyn AstNode>,
+    new_value: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VecSet {
+    pub fn new(
+        op_name: Span,
+        vec_access: Box<dyn AstNode>,
+        new_value: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> VecSet {
+        VecSet {
+            op_name,
+            vec_access,
+            new_value,
+            next,
+        }
+    }
+}
+
+impl AstNode for VecSet {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.vec_access, own_address);
+        print_dependencies_child(&self.new_value, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.vec_access, lexer);
+        print_labels_child(&self.new_value, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct Input {
+    op_name: Span,
+    var_name: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl Input {
+    pub fn new(op_name: Span, var_name: Box<dyn AstNode>, next: Option<Box<dyn AstNode>>) -> Input {
+        Input {
+            op_name,
+            var_name,
+            next,
+        }
+    }
+}
+
+impl AstNode for Input {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.var_name, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct OutputId {
+    op_name: Span,
+    var_name: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl OutputId {
+    pub fn new(op_name: Span, var_name: Box<dyn AstNode>, next: Option<Box<dyn AstNode>>) -> OutputId {
+        OutputId {
+            op_name,
+            var_name,
+            next,
+        }
+    }
+}
+
+impl AstNode for OutputId {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.var_name, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct OutputLit {
+    op_name: Span,
+    lit_value: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl OutputLit {
+    pub fn new(
+        op_name: Span,
+        lit_value: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> OutputLit {
+        OutputLit {
+            op_name,
+            lit_value,
+            next,
+        }
+    }
+}
+
+impl AstNode for OutputLit {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.lit_value, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.lit_value, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct Continue {
+    op_name: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl Continue {
+    pub fn new(op_name: Span, next: Option<Box<dyn AstNode>>) -> Continue {
+        Continue { op_name, next }
+    }
+}
+
+impl AstNode for Continue {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct Break {
+    op_name: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl Break {
+    pub fn new(op_name: Span, next: Option<Box<dyn AstNode>>) -> Break {
+        Break { op_name, next }
+    }
+}
+
+impl AstNode for Break {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct Return {
+    op_name: Span,
+    ret_value: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl Return {
+    pub fn new(
+        op_name: Span,
+        ret_value: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> Return {
+        Return {
+            op_name,
+            ret_value,
+            next,
+        }
+    }
+}
+
+impl AstNode for Return {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.ret_value, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.ret_value, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct FnCall {
+    fn_name: Span,
+    args: Option<Box<dyn AstNode>>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl FnCall {
+    pub fn new(
+        fn_name: Span,
+        args: Option<Box<dyn AstNode>>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> FnCall {
+        FnCall {
+            fn_name,
+            args,
+            next,
+        }
+    }
+
+    fn print_label_fn_call(
+        &self,
+        lexer: &dyn NonStreamingLexer<u32>,
+        own_address: *const c_void,
+    ) {
+        println!(
+            "{:p} [label=\"call {}\"];",
+            own_address,
+            lexer.span_str(self.fn_name)
+        );
+    }
+}
+
+impl AstNode for FnCall {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        match &self.args {
+            Some(args) => print_dependencies_child(&args, own_address),
+            None => (),
+        };
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        self.print_label_fn_call(lexer, own_address);
+        match &self.args {
+            Some(args) => print_labels_child(&args, lexer),
+            None => (),
+        };
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct If {
+    op_name: Span,
+    condition: Box<dyn AstNode>,
+    consequence: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl If {
+    pub fn new(
+        op_name: Span,
+        condition: Box<dyn AstNode>,
+        consequence: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> If {
+        If {
+            op_name,
+            condition,
+            consequence,
+            next,
+        }
+    }
+}
+
+impl AstNode for If {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.condition, own_address);
+        print_dependencies_child(&self.consequence, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.condition, lexer);
+        print_labels_child(&self.consequence, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct IfElse {
+    op_name: Span,
+    condition: Box<dyn AstNode>,
+    if_true: Box<dyn AstNode>,
+    if_false: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl IfElse {
+    pub fn new(
+        op_name: Span,
+        condition: Box<dyn AstNode>,
+        if_true: Box<dyn AstNode>,
+        if_false: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> IfElse {
+        IfElse {
+            op_name,
+            condition,
+            if_true,
+            if_false,
+            next,
+        }
+    }
+}
+
+impl AstNode for IfElse {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.condition, own_address);
+        print_dependencies_child(&self.if_true, own_address);
+        print_dependencies_child(&self.if_false, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.condition, lexer);
+        print_labels_child(&self.if_true, lexer);
+        print_labels_child(&self.if_false, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct For {
+    op_name: Span,
+    count_init: Box<dyn AstNode>,
+    count_check: Box<dyn AstNode>,
+    count_iter: Box<dyn AstNode>,
+    actions: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl For {
+    pub fn new(
+        op_name: Span,
+        count_init: Box<dyn AstNode>,
+        count_check: Box<dyn AstNode>,
+        count_iter: Box<dyn AstNode>,
+        actions: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> For {
+        For {
+            op_name,
+            count_init,
+            count_check,
+            count_iter,
+            actions,
+            next,
+        }
+    }
+}
+
+impl AstNode for For {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.count_init, own_address);
+        print_dependencies_child(&self.count_check, own_address);
+        print_dependencies_child(&self.count_iter, own_address);
+        print_dependencies_child(&self.actions, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.count_init, lexer);
+        print_labels_child(&self.count_check, lexer);
+        print_labels_child(&self.count_iter, lexer);
+        print_labels_child(&self.actions, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct While {
+    op_name: Span,
+    condition: Box<dyn AstNode>,
+    consequence: Box<dyn AstNode>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl While {
+    pub fn new(
+        op_name: Span,
+        condition: Box<dyn AstNode>,
+        consequence: Box<dyn AstNode>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> While {
+        While {
+            op_name,
+            condition,
+            consequence,
+            next,
+        }
+    }
+}
+
+impl AstNode for While {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_child(&self.condition, own_address);
+        print_dependencies_child(&self.consequence, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.op_name, lexer, own_address);
+        print_labels_child(&self.condition, lexer);
+        print_labels_child(&self.consequence, lexer);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+}
+
+#[derive(Debug)]
+pub struct EmptyBlock {
+    op_occurrence: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl EmptyBlock {
+    pub fn new(op_occurrence: Span, next: Option<Box<dyn AstNode>>) -> EmptyBlock {
+        EmptyBlock {
+            op_occurrence,
+            next,
+        }
+    }
+}
+
+impl AstNode for EmptyBlock {
+    fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
+        print_dependencies_ripple(&self.next, own_address, ripple)
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_labels_ripple(&self.next, lexer, own_address)
+    }
+    fn is_tree_member(&self) -> bool {
+        false
+    }
+    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
+        self.next = Some(new_next);
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
 }
 
 #[derive(Debug)]
@@ -957,4 +1240,103 @@ pub enum UnaryType {
     Pointer,
     Boolean,
     Hash,
+}
+
+fn print_dependencies_ripple(
+    next_node: &Option<Box<dyn AstNode>>,
+    own_address: *const c_void,
+    ripple: bool,
+) {
+    if let Some(next) = &next_node {
+        if next.is_tree_member() {
+            let next_address = addr_of!(*next) as *const c_void;
+            if ripple {
+                println!("{:p}, {:p}", own_address, next_address);
+            }
+            next.print_dependencies(next_address, false);
+        } else {
+            next.print_dependencies(own_address, ripple);
+        }
+    }
+}
+
+fn print_labels_ripple(
+    next_node: &Option<Box<dyn AstNode>>,
+    lexer: &dyn NonStreamingLexer<u32>,
+    own_address: *const c_void,
+) {
+    if let Some(next) = next_node {
+        if next.is_tree_member() {
+            let next_address = addr_of!(*next) as *const c_void;
+            next.print_labels(lexer, next_address);
+        } else {
+            next.print_labels(lexer, own_address);
+        }
+    }
+}
+
+fn print_dependencies_child(child: &Box<dyn AstNode>, own_address: *const c_void) {
+    if child.is_tree_member() {
+        let child_address = addr_of!(*child) as *const c_void;
+        println!("{:p}, {:p}", own_address, child_address);
+        child.print_dependencies(child_address, false);
+    } else {
+        child.print_dependencies(own_address, true);
+    }
+}
+
+fn print_dependencies_next(next_node: &Option<Box<dyn AstNode>>, own_address: *const c_void) {
+    if let Some(next) = &next_node {
+        if next.is_tree_member() {
+            let next_address = addr_of!(*next) as *const c_void;
+            println!("{:p}, {:p}", own_address, next_address);
+            next.print_dependencies(next_address, false);
+        } else {
+            next.print_dependencies(own_address, true);
+        }
+    }
+}
+
+fn print_label_self(
+    self_span: Span,
+    lexer: &dyn NonStreamingLexer<u32>,
+    own_address: *const c_void,
+) {
+    println!(
+        "{:p} [label=\"{}\"];",
+        own_address,
+        lexer.span_str(self_span)
+    );
+}
+
+fn print_labels_child(child: &Box<dyn AstNode>, lexer: &dyn NonStreamingLexer<u32>) {
+    child.print_labels(lexer, addr_of!(*child) as *const c_void);
+}
+
+fn print_labels_next(
+    next_node: &Option<Box<dyn AstNode>>,
+    lexer: &dyn NonStreamingLexer<u32>,
+    own_address: *const c_void,
+) {
+    if let Some(next) = &next_node {
+        if next.is_tree_member() {
+            let next_address = addr_of!(*next) as *const c_void;
+            next.print_labels(lexer, next_address);
+        } else {
+            next.print_labels(lexer, own_address);
+        }
+    }
+}
+
+fn append_node(
+    current_next: &mut Option<Box<dyn AstNode>>,
+    new_last: Box<dyn AstNode>,
+) -> Option<Box<dyn AstNode>> {
+    match current_next.take() {
+        Some(mut node) => {
+            node.append_to_next(new_last);
+            Some(node)
+        }
+        None => Some(new_last),
+    }
 }

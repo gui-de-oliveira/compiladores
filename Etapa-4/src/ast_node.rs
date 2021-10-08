@@ -1,4 +1,5 @@
 use lrpar::NonStreamingLexer;
+use lrpar::Span;
 use std::ffi::c_void;
 use std::fmt::Debug;
 
@@ -26,4 +27,16 @@ impl AstNode for Box<dyn AstNode> {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.as_mut().append_to_next(new_last)
     }
+}
+
+impl AstNode for Span {
+    fn print_dependencies(&self, _own_address: *const c_void, _ripple: bool) {}
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        println!("{:p} [label=\"{}\"];", own_address, lexer.span_str(*self))
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
+    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
 }

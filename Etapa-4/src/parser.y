@@ -154,52 +154,47 @@ optionalConst -> Result<bool>:
     ;
 
 
-commandBlock -> Result<Vec<SimpleCommand>>:
-    '{' optionalSimpleCommandList '}' { $2 }
-    ;
-
-optionalSimpleCommandList -> Result<Vec<SimpleCommand>>:
-      { /* %empty */ Ok(vec![]) }
-    | simpleCommandList { $1 }
-    ;
-
-simpleCommandList -> Result<Vec<SimpleCommand>>:
-    simpleCommandSequence { $1 }
-    | simpleCommandList simpleCommandSequence {
-        let mut list = $1?;
-        list.extend($2?);
-        Ok(list)
+commandBlock -> Result<Box<dyn AstNode>>:
+    '{' optionalSimpleCommandList '}' { 
+        match $2? {
+            Some(node) => Ok(node),
+            None => Ok(Box::new(EmptyBlock::new($span, None))),
+        }
     }
     ;
 
-simpleCommandSequence -> Result<Vec<SimpleCommand>>:
-    commandBlock ';' { $1 }
-    | localDefList ';' { $1 }
-    | simpleCommand { Ok(vec![$1?]) }
+optionalSimpleCommandList -> Result<Option<Box<dyn AstNode>>>:
+      { /* %empty */ Ok(None) }
+    | simpleCommandList { Ok(Some($1?)) }
     ;
 
-localDefList -> Result<Vec<SimpleCommand>>:
+simpleCommandList -> Result<Box<dyn AstNode>>:
+    simpleCommandSequence { $1 }
+    | simpleCommandList simpleCommandSequence {
+        let mut left_node = $1?;
+        let right_node = $2?;
+        left_node.append_to_next(right_node);
+        Ok(left_node)
+    }
+    ;
+
+simpleCommandSequence -> Result<Box<dyn AstNode>>:
+    commandBlock ';' { $1 }
+    | localDefList ';' { $1 }
+    | simpleCommand { $1 }
+    ;
+
+localDefList -> Result<Box<dyn AstNode>>:
     optionalStatic optionalConst type_rule localNameDefList {
-        let mut simple_commands = vec![];
         let is_static = $1?;
         let is_const = $2?;
         let var_type = $3?;
-        for name_def in $4?.into_iter() {
-            simple_commands.push(
-                match name_def {
-                    AuxLocalNameDef::Def(var_name) => {
-                        SimpleCommand::VarDef{is_static, is_const, var_type, var_name}
-                    },
-                    AuxLocalNameDef::InitWithVar{var_name, var_value} => {
-                        SimpleCommand::VarDefInitId{is_static, is_const, var_type, var_name, var_value}
-                    },
-                    AuxLocalNameDef::InitWithLit{var_name, var_value} => {
-                        SimpleCommand::VarDefInitLit{is_static, is_const, var_type, var_name, var_value}
-                    },
-                }
-            )
-        }
-        Ok(simple_commands)
+        let mut name_def_vec = $4?;
+        let mut top_name_def = mount_local_def(is_static, is_const, var_type, name_def_vec.pop().unwrap());
+        for name_def in name_def_vec {
+            top_name_def.append_to_next(mount_local_def(is_static, is_const, var_type, name_def))
+        };
+        Ok(Box::new(top_name_def))
     }
     ;
 
@@ -219,16 +214,22 @@ localNameDefList -> Result<Vec<AuxLocalNameDef>>:
     ;
 
 localNameDefAssign -> Result<AuxLocalNameDef>:
-    identifier_rule 'TK_OC_LE' identifier_rule {
+    identifier_rule lesserEqualTok identifier_rule {
         let var_name = $1?;
+        let op_name = $2?;
         let var_value = $3?;
-        Ok(AuxLocalNameDef::InitWithVar{var_name, var_value})
+        Ok(AuxLocalNameDef::InitWithVar{var_name, op_name, var_value})
     }
-    | identifier_rule 'TK_OC_LE' literal {
+    | identifier_rule lesserEqualTok literal {
         let var_name = $1?;
+        let op_name = $2?;
         let var_value = $3?;
-        Ok(AuxLocalNameDef::InitWithLit{var_name, var_value})
+        Ok(AuxLocalNameDef::InitWithLit{var_name, op_name, var_value})
     }
+    ;
+
+lesserEqualTok -> Result<Span>:
+    'TK_OC_LE' { Ok($span) }
     ;
 
 literal -> Result<Literal>:
@@ -241,30 +242,41 @@ literal -> Result<Literal>:
     ;
 
 
-simpleCommand -> Result<SimpleCommand>:
+simpleCommand -> Result<Box<dyn AstNode>>:
     varShift ';' { $1 }
     | varSet ';' { $1 }
     | IO ';' { $1 }
-    | 'TK_PR_CONTINUE' ';' { Ok(SimpleCommand::Continue) }
-    | 'TK_PR_BREAK' ';' { Ok(SimpleCommand::Break) }
-    | 'TK_PR_RETURN' expression ';' { Ok(SimpleCommand::Return{ret_value: $2?}) }
-    | functionCall ';' { Ok(SimpleCommand::FnCall($1?)) }
+    | continueTok ';' { Ok(Box::new(Continue::new($1?, None))) }
+    | breakTok ';' { Ok(Box::new(Break::new($1?, None))) }
+    | returnTok expression ';' { Ok(Box::new(Return::new($1?, Box::new($2?), None))) }
+    | functionCall ';' { Ok(Box::new($1?)) }
     | conditional ';' { $1 }
     ;
 
+continueTok -> Result<Span>:
+    'TK_PR_CONTINUE' { Ok($span) }
+    ;
 
-varShift -> Result<SimpleCommand>:
+breakTok -> Result<Span>:
+    'TK_PR_BREAK' { Ok($span) }
+    ;
+
+returnTok -> Result<Span>:
+    'TK_PR_RETURN' { Ok($span) }
+    ;
+
+varShift -> Result<Box<dyn AstNode>>:
     identifier_rule shiftOperator literal_int {
         let var_name = $1?;
         let shift_type = $2?;
         let shift_amount = $3?;
-        Ok(SimpleCommand::VarShift{var_name, shift_type, shift_amount})
+        Ok(Box::new(VarShift::new(shift_type, Box::new(var_name), Box::new(shift_amount), None)))
     }
     | vecAccess shiftOperator literal_int {
         let vec_access = $1?;
         let shift_type = $2?;
         let shift_amount = $3?;
-        Ok(SimpleCommand::VecShift{shift_type, vec_access, shift_amount})
+        Ok(Box::new(VecShift::new(shift_type, Box::new(vec_access), Box::new(shift_amount), None)))
     }
     ;
 
@@ -282,33 +294,49 @@ vecAccess -> Result<VecAccess>:
     ;
 
 
-varSet -> Result<SimpleCommand>:
-    identifier_rule '=' expression {
-        let var_name = $1?;
-        let new_value = $3?;
-        Ok(SimpleCommand::VarSet{var_name, new_value})
+varSet -> Result<Box<dyn AstNode>>:
+    identifier_rule setTok expression {
+        let var_name = Box::new($1?);
+        let op_name = $2?;
+        let new_value = Box::new($3?);
+        Ok(Box::new(VarSet::new(op_name, var_name, new_value, None)))
     }
-    | vecAccess '=' expression {
-        let vec_access = $1?;
-        let new_value = $3?;
-        Ok(SimpleCommand::VecSet{vec_access, new_value})
+    | vecAccess setTok expression {
+        let vec_access = Box::new($1?);
+        let op_name = $2?;
+        let new_value = Box::new($3?);
+        Ok(Box::new(VecSet::new(op_name, vec_access, new_value, None)))
     }
     ;
 
+setTok -> Result<Span>:
+    '=' { Ok($span) }
+    ;
 
-IO -> Result<SimpleCommand>:
-    'TK_PR_INPUT' identifier_rule { 
-        let var_name = $2?;
-        Ok(SimpleCommand::Input{var_name})
+IO -> Result<Box<dyn AstNode>>:
+    inputTok identifier_rule {
+        let op_name = $1?;
+        let var_name = Box::new($2?);
+        Ok(Box::new(Input::new(op_name, var_name, None)))
     }
-    | 'TK_PR_OUTPUT' identifier_rule {
-        let var_name = $2?;
-        Ok(SimpleCommand::OutputId{var_name})
+    | outputTok identifier_rule {
+        let op_name = $1?;
+        let var_name = Box::new($2?);
+        Ok(Box::new(OutputId::new(op_name, var_name, None)))
     }
-    | 'TK_PR_OUTPUT' literal {
-        let lit_value = $2?;
-        Ok(SimpleCommand::OutputLit{lit_value})
+    | outputTok literal {
+        let op_name = $1?;
+        let lit_value = Box::new($2?);
+        Ok(Box::new(OutputLit::new(op_name, lit_value, None)))
     }
+    ;
+
+inputTok -> Result<Span>:
+    'TK_PR_INPUT' { Ok($span) }
+    ;
+
+outputTok -> Result<Span>:
+    'TK_PR_OUTPUT' { Ok($span) }
     ;
 
 
@@ -316,49 +344,65 @@ functionCall -> Result<FnCall>:
     identifier_rule '(' optionalExpressionList ')' {
         let fn_name = $1?;
         let args = $3?;
-        Ok(FnCall{fn_name, args})
+        Ok(FnCall::new(fn_name, args, None))
     }
     ;
 
-optionalExpressionList -> Result<Vec<Expression>>:
-      { /* %empty */ Ok(vec![]) }
-    | expressionList { $1 } 
+optionalExpressionList -> Result<Option<Box<dyn AstNode>>>:
+      { /* %empty */ Ok(None) }
+    | expressionList { Ok(Some($1?)) } 
     ;
 
-expressionList -> Result<Vec<Expression>>:
-    expression { Ok(vec![$1?]) }
+expressionList -> Result<Box<dyn AstNode>>:
+    expression { Ok(Box::new($1?)) }
     | expressionList ',' expression {
-        let mut list = $1?;
-        list.push($3?);
-        Ok(list)
+        let mut expr = $1?;
+        expr.append_to_next(Box::new($3?));
+        Ok(expr)
     }
     ;
 
 
-conditional -> Result<SimpleCommand>:
-    'TK_PR_IF' '(' expression ')' commandBlock {
-        let condition = $3?;
-        let consequence =  $5?;
-        Ok(SimpleCommand::If{condition, consequence})
+conditional -> Result<Box<dyn AstNode>>:
+    ifTok '(' expression ')' commandBlock {
+        let op_name = $1?;
+        let condition = Box::new($3?);
+        let consequence =  Box::new($5?);
+        Ok(Box::new(If::new(op_name, condition, consequence, None)))
     }
-    | 'TK_PR_IF' '(' expression ')' commandBlock 'TK_PR_ELSE' commandBlock {
-        let condition = $3?;
-        let if_true =  $5?;
-        let if_false =  $7?;
-        Ok(SimpleCommand::IfElse{condition, if_true, if_false})
+    | ifTok '(' expression ')' commandBlock 'TK_PR_ELSE' commandBlock {
+        let op_name = $1?;
+        let condition = Box::new($3?);
+        let if_true = Box::new($5?);
+        let if_false = Box::new($7?);
+        Ok(Box::new(IfElse::new(op_name, condition, if_true, if_false, None)))
     }
-    | 'TK_PR_FOR' '(' varSet ':' expression ':' varSet ')' commandBlock {
+    | forTok '(' varSet ':' expression ':' varSet ')' commandBlock {
+        let op_name = $1?;
         let count_init = Box::new($3?);
-        let count_check = $5?;
+        let count_check = Box::new($5?);
         let count_iter = Box::new($7?);
-        let actions = $9?;
-        Ok(SimpleCommand::For{count_init, count_check, count_iter, actions})
+        let actions = Box::new($9?);
+        Ok(Box::new(For::new(op_name, count_init, count_check, count_iter, actions, None)))
     }
-    | 'TK_PR_WHILE' '(' expression ')' 'TK_PR_DO' commandBlock {
-        let condition = $3?;
-        let consequence =  $6?;
-        Ok(SimpleCommand::While{condition, consequence})
+    | whileTok '(' expression ')' 'TK_PR_DO' commandBlock {
+        let op_name = $1?;
+        let condition = Box::new($3?);
+        let consequence =  Box::new($6?);
+        Ok(Box::new(While::new(op_name, condition, consequence, None)))
     }
+    ;
+
+ifTok -> Result<Span>:
+    'TK_PR_IF' { Ok($span) }
+    ;
+
+forTok -> Result<Span>:
+    'TK_PR_FOR' { Ok($span) }
+    ;
+
+whileTok -> Result<Span>:
+    'TK_PR_WHILE' { Ok($span) }
     ;
 
 
@@ -455,7 +499,7 @@ relationalSizeOrLower -> Result<Expression>:
         let rhs = Box::new($3?);
         Ok(Expression::Binary{op_type, lhs, rhs})
     }
-    | relationalSizeOrLower 'TK_OC_LE' addSubOrLower {
+    | relationalSizeOrLower lesserEqualTok addSubOrLower {
         let op_type = BinaryType::LesserEqual;
         let lhs = Box::new($1?);
         let rhs = Box::new($3?);
