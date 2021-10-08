@@ -49,7 +49,9 @@ topLevelDef -> Result<Box<dyn AstNode>>:
                 },
                 AuxTopDefEnd::VecAndGlobList(vec_size, var_or_vec) => {
                     let mut upper_def = GlobalVecDef::new(is_static, var_type, name, vec_size, None);
-                    upper_def.append_to_next(top_level_def_assembler(is_static, var_type, var_or_vec)?);
+                    if var_or_vec.len() > 0 {
+                        upper_def.append_to_next(top_level_def_assembler(is_static, var_type, var_or_vec)?);
+                    }
                     Box::new(upper_def)
                 },
             }
@@ -262,23 +264,30 @@ returnTok -> Result<Span>:
     ;
 
 varShift -> Result<Box<dyn AstNode>>:
-    identifier_rule shiftOperator literal_int {
+    identifier_rule leftShiftTok literal_int {
         let var_name = Box::new($1?);
         let shift_type = $2?;
         let shift_amount = Box::new($3?);
-        Ok(Box::new(VarShift::new(shift_type, var_name, shift_amount, None)))
+        Ok(Box::new(VarLeftShift::new(shift_type, var_name, shift_amount, None)))
     }
-    | vecAccess shiftOperator literal_int {
+    | identifier_rule rightShiftTok literal_int {
+        let var_name = Box::new($1?);
+        let shift_type = $2?;
+        let shift_amount = Box::new($3?);
+        Ok(Box::new(VarRightShift::new(shift_type, var_name, shift_amount, None)))
+    }
+    | vecAccess leftShiftTok literal_int {
         let vec_access = $1?;
         let shift_type = $2?;
         let shift_amount = Box::new($3?);
-        Ok(Box::new(VecShift::new(shift_type, vec_access, shift_amount, None)))
+        Ok(Box::new(VecLeftShift::new(shift_type, vec_access, shift_amount, None)))
     }
-    ;
-
-shiftOperator -> Result<Span>:
-    'TK_OC_SR' { Ok($span) }
-    | 'TK_OC_SL' { Ok($span) }
+    | vecAccess rightShiftTok literal_int {
+        let vec_access = $1?;
+        let shift_type = $2?;
+        let shift_amount = Box::new($3?);
+        Ok(Box::new(VecRightShift::new(shift_type, vec_access, shift_amount, None)))
+    }
     ;
 
 vecAccess -> Result<Box<dyn AstNode>>:
@@ -659,6 +668,14 @@ orTok -> Result<Span>:
 
 andTok -> Result<Span>:
     'TK_OC_AND' { Ok($span) }
+    ;
+
+leftShiftTok -> Result<Span>:
+    'TK_OC_SL' { Ok($span) }
+    ;
+
+rightShiftTok -> Result<Span>:
+    'TK_OC_SR' { Ok($span) }
     ;
 
 lesserTok -> Result<Span>:
