@@ -10,6 +10,8 @@ use std::ffi::c_void;
 use std::io::{self, Read, Write};
 use std::ptr::addr_of;
 
+use anyhow::{bail, Result};
+
 use lrlex::lrlex_mod;
 use lrpar::lrpar_mod;
 
@@ -20,7 +22,7 @@ lrlex_mod!("scanner.l");
 // Using `lrpar_mod!` brings the lexer for `parser.y` into scope.
 lrpar_mod!("parser.y");
 
-fn main() {
+fn run_app() -> Result<()> {
     // We need to get a `LexerDef` for the `calc` language in order that we can lex input.
     let lexerdef = scanner_l::lexerdef();
     let stdin = io::stdin();
@@ -40,14 +42,14 @@ fn main() {
 
     match parsed {
         Some(Ok(maybe_top_node)) => {
-        let top_node: Box<dyn AstNode> = match maybe_top_node {
-            Some(node) => node,
-            None => return,
-        };
-        let address = addr_of!(*top_node) as *const c_void;
-        top_node.print_dependencies(address, false);
-        top_node.print_labels(&lexer, address);
-        },
+            let top_node: Box<dyn AstNode> = match maybe_top_node {
+                Some(node) => node,
+                None => return Ok(()),
+            };
+            let address = addr_of!(*top_node) as *const c_void;
+            top_node.print_dependencies(address, false);
+            top_node.print_labels(&lexer, address);
+        }
         Some(Err(error)) => {
             println!("Error: Unable to evaluate expression.");
             println!(">>> Failed input start!!");
@@ -59,6 +61,7 @@ fn main() {
             println!(">>> Error message start!!");
             println!("{:?}", error);
             println!(">>> Error message end!!");
+            return Err(error);
         }
         None => {
             println!("Error: Unable to evaluate expression.");
@@ -68,6 +71,18 @@ fn main() {
             println!(">>> Debug start!!");
             println!("{:?}", buffer);
             println!(">>> Debug end!!");
-        },
-    }
+            bail!("Failed to evaluate expression");
+        }
+    };
+    Ok(())
+}
+
+fn main() {
+    std::process::exit(match run_app() {
+        Ok(_) => 0,
+        Err(err) => {
+            eprintln!("error: {:?}", err);
+            1
+        }
+    });
 }
