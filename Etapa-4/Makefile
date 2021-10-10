@@ -21,3 +21,4 @@ test:
 	make
 	node aslTests.js
 	node runSpecialTests.js
+	python runSyntaxTests.py
