@@ -28,22 +28,22 @@ failed = []
 errors_code = [10, 11, 20, 21, 22, 30, 31, 32, 33, 34, 40, 41, 42, 43, 50, 51, 52, ]
 
 def execute(fileName):
-    print("FileName = ", fileName)
+    print("FileName = " + fileName)
     f = open(fileName, "r")
     line = f.readline().strip()
     shouldReturnError = line.startswith("//")
     errorName = line[2:]
     command = "./etapa4 < " + fileName + " > saida.txt"
     exitCode = subprocess.call(command, shell=True)
-    print("ExitCode", str(exitCode))
     
     if shouldReturnError and errorDic[errorName] == exitCode:
-        print("PASSOU!")
+        print("PASSOU!\n")
     elif exitCode == 0 and not shouldReturnError:
-        print("PASSOU!")
+        print("PASSOU!\n")
     else:
         failed.append(fileName)
         print("FALHOU!")
+        print("ExitCode: " + str(exitCode) + '\n')
 
 for i in range(0,100):
     fileName = "TestsE4/kal"
