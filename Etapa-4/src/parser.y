@@ -17,9 +17,9 @@
 
 %%
 
-program -> Result<Option<Box<dyn AstNode>>>:
-     { /* %empty */ Ok(None) }
-    | topLevelDefList { Ok(Some($1?)) }
+program -> Result<AbstractSyntaxTree>:
+     { /* %empty */ Ok(AbstractSyntaxTree::new(None)) }
+    | topLevelDefList { Ok(AbstractSyntaxTree::new(Some($1?))) }
     ;
 
 topLevelDefList -> Result<Box<dyn AstNode>>:
@@ -760,6 +760,7 @@ use lrpar::Span;
 use super::lexical_structures::*;
 use super::auxiliary_structures::*;
 use super::ast_node::AstNode;
+use super::abstract_syntax_tree::AbstractSyntaxTree;
 
 
 /*

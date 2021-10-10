@@ -2,27 +2,25 @@
 // Guilherme de Oliveira (00278301)
 // Jean Pierre Comerlatto Darricarrere (00182408)
 
+mod abstract_syntax_tree;
 mod ast_node;
 mod auxiliary_structures;
+mod error;
 mod lexical_structures;
 
-use std::ffi::c_void;
 use std::io::{self, Read, Write};
-use std::ptr::addr_of;
-
-use anyhow::{bail, Result};
 
 use lrlex::lrlex_mod;
 use lrpar::lrpar_mod;
 
-use ast_node::AstNode;
+use error::CompilerError;
 
 // Using `lrlex_mod!` brings the lexer for `scanner.l` into scope.
 lrlex_mod!("scanner.l");
 // Using `lrpar_mod!` brings the lexer for `parser.y` into scope.
 lrpar_mod!("parser.y");
 
-fn run_app() -> Result<()> {
+fn run_app() -> Result<(), CompilerError> {
     // We need to get a `LexerDef` for the `calc` language in order that we can lex input.
     let lexerdef = scanner_l::lexerdef();
     let stdin = io::stdin();
@@ -30,10 +28,8 @@ fn run_app() -> Result<()> {
     io::stdout().flush().ok();
     let mut handle = stdin.lock();
 
-    match handle.read_to_string(&mut buffer) {
-        Ok(_) => (),
-        Err(_) => (),
-    };
+    handle.read_to_string(&mut buffer)?;
+
     let lexer = lexerdef.lexer(&buffer);
     let (parsed, errors) = parser_y::parse(&lexer);
     for error in errors {
@@ -41,14 +37,10 @@ fn run_app() -> Result<()> {
     }
 
     match parsed {
-        Some(Ok(maybe_top_node)) => {
-            let top_node: Box<dyn AstNode> = match maybe_top_node {
-                Some(node) => node,
-                None => return Ok(()),
-            };
-            let address = addr_of!(*top_node) as *const c_void;
-            top_node.print_dependencies(address, false);
-            top_node.print_labels(&lexer, address);
+        Some(Ok(abstract_syntax_tree)) => {
+            abstract_syntax_tree.print_tree(&lexer);
+
+            abstract_syntax_tree.evaluate()?;
         }
         Some(Err(error)) => {
             println!("Error: Unable to evaluate expression.");
@@ -61,7 +53,7 @@ fn run_app() -> Result<()> {
             println!(">>> Error message start!!");
             println!("{:?}", error);
             println!(">>> Error message end!!");
-            return Err(error);
+            return Err(CompilerError::ParsingError);
         }
         None => {
             println!("Error: Unable to evaluate expression.");
@@ -71,18 +63,22 @@ fn run_app() -> Result<()> {
             println!(">>> Debug start!!");
             println!("{:?}", buffer);
             println!(">>> Debug end!!");
-            bail!("Failed to evaluate expression");
+            return Err(CompilerError::EvalFailure);
         }
     };
     Ok(())
 }
 
-fn main() {
-    std::process::exit(match run_app() {
-        Ok(_) => 0,
-        Err(err) => {
-            eprintln!("error: {:?}", err);
-            1
+fn app_entry_point() -> i32 {
+    match run_app() {
+        Ok(()) => 0,
+        Err(error) => {
+            eprintln!("{:?}", error);
+            error.error_code()
         }
-    });
+    }
+}
+
+fn main() {
+    std::process::exit(app_entry_point())
 }
