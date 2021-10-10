@@ -13,7 +13,6 @@ edition = "2018"
 cfgrammar = "0.10"
 lrlex = "0.10"
 lrpar = "0.10"
-anyhow = "1.0"
 
 [dependencies]
 cfgrammar = "0.10"
