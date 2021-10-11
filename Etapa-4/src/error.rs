@@ -18,8 +18,11 @@ pub enum CompilerError {
     #[error("lexical error: {0}")]
     LexicalError(String),
 
-    #[error("failure to parse input")]
-    ParsingError,
+    #[error("parsing errors: {0}")]
+    ParsingErrors(String),
+
+    #[error("tree building error: {0}")]
+    TreeBuildingError(String),
 
     #[error("parser failed to evaluate expression")]
     EvalParserFailure,
@@ -30,7 +33,7 @@ pub enum CompilerError {
     #[error("usage of undeclared identifier")]
     SemanticErrorUndeclared,
 
-    #[error("Same-scope identifier redeclaration: {id}\nFirst occurrence at line {first_line}, column {first_col}\nAnd again at line {second_line}, column {second_col}")]
+    #[error("Same-scope identifier redeclaration: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}\nAnd again at line {second_line}, column {second_col}")]
     SemanticErrorDeclared {
         id: String,
         first_line: usize,
@@ -97,7 +100,8 @@ impl CompilerError {
         match *self {
             CompilerError::IoReadFailure(_)
             | CompilerError::LexicalError(_)
-            | CompilerError::ParsingError
+            | CompilerError::ParsingErrors(_)
+            | CompilerError::TreeBuildingError(_)
             | CompilerError::EvalParserFailure
             | CompilerError::FailedScoping => 1,
             CompilerError::SemanticErrorUndeclared => 10,
