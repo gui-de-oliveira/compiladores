@@ -38,7 +38,6 @@ fn run_app() -> Result<(), CompilerError> {
         let first_error = errors.remove(0);
         let mut report = first_error.pp(&lexer, &parser_y::token_epp);
         for error in errors {
-            report.push('\n');
             report.push_str(&error.pp(&lexer, &parser_y::token_epp));
         }
         return Err(CompilerError::ParsingErrors(report));
