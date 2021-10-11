@@ -108,9 +108,23 @@ impl AstNode for GlobalVecDef {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
+        let id = lexer.span_str(self.var_name).to_string();
+        let span = self.var_name;
+        let ((line, col), (_, _)) = lexer.line_col(self.var_name);
+        let our_symbol = Symbol::new(id, span, line, col, var_type);
+
+        stack.check_duplicate(&our_symbol, lexer)?;
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
