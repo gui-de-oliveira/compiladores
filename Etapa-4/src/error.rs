@@ -30,18 +30,23 @@ pub enum CompilerError {
     #[error("error in scope, this should not happen")]
     FailedScoping,
 
-    #[error("usage of undeclared identifier")]
-    SemanticErrorUndeclared,
+    #[error("Usage of undeclared identifier: \"{id}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorUndeclared {
+        id: String,
+        line: usize,
+        col: usize,
+        highlight: String,
+    },
 
-    #[error("Same-scope identifier redeclaration: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}:\n{first_string}\nAnd again at line {second_line}, column {second_col}:\n{second_string}")]
+    #[error("Same-scope identifier redeclaration: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
     SemanticErrorDeclared {
         id: String,
         first_line: usize,
         first_col: usize,
-        first_string: String,
+        first_highlight: String,
         second_line: usize,
         second_col: usize,
-        second_string: String,
+        second_highlight: String,
     },
 
     #[error("variable identifier used as vector or function")]
@@ -106,7 +111,7 @@ impl CompilerError {
             | CompilerError::TreeBuildingError(_)
             | CompilerError::EvalParserFailure
             | CompilerError::FailedScoping => 1,
-            CompilerError::SemanticErrorUndeclared => 10,
+            CompilerError::SemanticErrorUndeclared { .. } => 10,
             CompilerError::SemanticErrorDeclared { .. } => 11,
             CompilerError::SemanticErrorVariable => 20,
             CompilerError::SemanticErrorVector => 21,

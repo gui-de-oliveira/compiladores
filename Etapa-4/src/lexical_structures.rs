@@ -48,13 +48,13 @@ impl AstNode for GlobalVarDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let span = self.var_name;
+        stack.check_duplicate(span, lexer)?;
+
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
-        let span = self.var_name;
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
         let our_symbol = Symbol::new(id, span, line, col, var_type);
-
-        stack.check_duplicate(&our_symbol, lexer)?;
 
         stack.add_symbol(our_symbol)?;
 
@@ -111,13 +111,13 @@ impl AstNode for GlobalVecDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let span = self.var_name;
+        stack.check_duplicate(span, lexer)?;
+
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
-        let span = self.var_name;
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
         let our_symbol = Symbol::new(id, span, line, col, var_type);
-
-        stack.check_duplicate(&our_symbol, lexer)?;
 
         stack.add_symbol(our_symbol)?;
 
@@ -182,13 +182,13 @@ impl AstNode for FnDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let span = self.fn_name;
+        stack.check_duplicate(span, lexer)?;
+
         let var_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
         let id = lexer.span_str(self.fn_name).to_string();
-        let span = self.fn_name;
         let ((line, col), (_, _)) = lexer.line_col(self.fn_name);
         let our_symbol = Symbol::new(id, span, line, col, var_type);
-
-        stack.check_duplicate(&our_symbol, lexer)?;
 
         stack.add_symbol(our_symbol)?;
 
@@ -256,13 +256,13 @@ impl AstNode for LocalVarDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let span = self.var_name;
+        stack.check_duplicate(span, lexer)?;
+
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
-        let span = self.var_name;
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
         let our_symbol = Symbol::new(id, span, line, col, var_type);
-
-        stack.check_duplicate(&our_symbol, lexer)?;
 
         stack.add_symbol(our_symbol)?;
 
@@ -1582,6 +1582,58 @@ impl AstNode for VecAccess {
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct IdentifierInvoke {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl IdentifierInvoke {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> IdentifierInvoke {
+        IdentifierInvoke { expr_span, next }
+    }
+}
+
+impl AstNode for IdentifierInvoke {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.expr_span, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        let span = self.expr_span;
+        stack.check_duplicate(span, lexer)?;
+        let previous_def = stack.get_previous_def(span, lexer)?;
+
+        let id = lexer.span_str(span).to_string();
+
+        let var_type = previous_def.type_value.clone();
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type);
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }

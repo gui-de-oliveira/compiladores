@@ -25,7 +25,7 @@ impl Symbol {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SymbolType {
     Undefined,
     Int(Option<i32>),
@@ -75,24 +75,56 @@ impl ScopeStack {
 
     pub fn check_duplicate(
         &self,
-        checked: &Symbol,
+        span: Span,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         match self.stack.last() {
-            Some(scope) => match scope.get(&checked.id) {
-                Some(older_symbol) => Err(CompilerError::SemanticErrorDeclared {
-                    id: checked.id.clone(),
-                    first_line: older_symbol.line,
-                    first_col: older_symbol.col,
-                    first_string: ScopeStack::form_string_highlight(older_symbol.span, lexer),
-                    second_line: checked.line,
-                    second_col: checked.col,
-                    second_string: ScopeStack::form_string_highlight(checked.span, lexer),
-                }),
-                None => Ok(()),
-            },
+            Some(scope) => {
+                let id = lexer.span_str(span).to_string();
+                match scope.get(&id) {
+                    Some(older_symbol) => {
+                        let first_line = older_symbol.line;
+                        let first_col = older_symbol.col;
+                        let first_highlight =
+                            ScopeStack::form_string_highlight(older_symbol.span, lexer);
+                        let ((second_line, second_col), (_, _)) = lexer.line_col(span);
+                        let second_highlight = ScopeStack::form_string_highlight(span, lexer);
+                        Err(CompilerError::SemanticErrorDeclared {
+                            id,
+                            first_line,
+                            first_col,
+                            first_highlight,
+                            second_line,
+                            second_col,
+                            second_highlight,
+                        })
+                    }
+                    None => Ok(()),
+                }
+            }
             None => Err(CompilerError::FailedScoping),
         }
+    }
+
+    pub fn get_previous_def(
+        &self,
+        span: Span,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<&Symbol, CompilerError> {
+        let id = lexer.span_str(span).to_string();
+        for scope in self.stack.iter().rev() {
+            if let Some(symbol) = scope.get(&id) {
+                return Ok(&symbol);
+            }
+        }
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let highlight = ScopeStack::form_string_highlight(span, lexer);
+        Err(CompilerError::SemanticErrorUndeclared {
+            id,
+            line,
+            col,
+            highlight,
+        })
     }
 
     pub fn add_symbol(&mut self, addition: Symbol) -> Result<(), CompilerError> {
@@ -115,14 +147,14 @@ impl ScopeStack {
         output.push_str(&first_line);
         output.push('\n');
 
-        for i in 0..start_column - 1 {
+        for _i in 0..start_column - 1 {
             output.push(' ');
         }
         let end_of_first_line = match lines.peek() {
             Some(_) => first_line.len() + 1,
             None => end_column,
         };
-        for i in start_column..end_of_first_line {
+        for _i in start_column..end_of_first_line {
             output.push('^');
         }
 
@@ -137,7 +169,7 @@ impl ScopeStack {
                 Some(_) => next_line.len() + 1,
                 None => end_column,
             };
-            for i in 0..end_of_next_line {
+            for _i in 0..end_of_next_line {
                 output.push('^');
             }
         }

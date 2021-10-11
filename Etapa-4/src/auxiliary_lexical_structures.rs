@@ -3,7 +3,8 @@ use lrpar::Span;
 use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::lexical_structures::{
-    GlobalVarDef, GlobalVecDef, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit,
+    GlobalVarDef, GlobalVecDef, IdentifierInvoke, LocalVarDef, Parameter, VarDefInitId,
+    VarDefInitLit,
 };
 
 #[derive(Debug)]
@@ -94,7 +95,7 @@ pub fn mount_local_def(
             Box::new(LocalVarDef::new(
                 is_static, is_const, var_type, var_name, None,
             )),
-            Box::new(var_value),
+            Box::new(IdentifierInvoke::new(var_value, None)),
             None,
         )),
         AuxLocalNameDef::InitWithLit {
