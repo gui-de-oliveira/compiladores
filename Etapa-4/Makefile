@@ -17,8 +17,13 @@ clean:
 zip:
 	tar cvzf etapa4.tgz Makefile Cargo.toml build.rs src/parser.y src/scanner.l src/lexical_structures.rs src/lexical_structures.rs src/ast_node.rs src/main.rs
 
-test:
+allTests:
 	make
+	node semanticTests.js
 	node aslTests.js
 	node runSpecialTests.js
 	python runSyntaxTests.py
+
+test:
+	make
+	node semanticTests.js
