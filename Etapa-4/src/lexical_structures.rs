@@ -4,7 +4,7 @@ use std::ptr::addr_of;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::syntactic_structures::{ScopeStack, Symbol, SymbolType};
+use super::syntactic_structures::{ScopeStack, Symbol, SymbolClass, SymbolType};
 
 #[derive(Debug)]
 pub struct GlobalVarDef {
@@ -54,7 +54,8 @@ impl AstNode for GlobalVarDef {
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
-        let our_symbol = Symbol::new(id, span, line, col, var_type);
+        let class = SymbolClass::Var;
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
         stack.add_symbol(our_symbol)?;
 
@@ -117,7 +118,8 @@ impl AstNode for GlobalVecDef {
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
-        let our_symbol = Symbol::new(id, span, line, col, var_type);
+        let class = SymbolClass::Vec;
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
         stack.add_symbol(our_symbol)?;
 
@@ -188,7 +190,8 @@ impl AstNode for FnDef {
         let var_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
         let id = lexer.span_str(self.fn_name).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.fn_name);
-        let our_symbol = Symbol::new(id, span, line, col, var_type);
+        let class = SymbolClass::Fn;
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
         stack.add_symbol(our_symbol)?;
 
@@ -217,6 +220,7 @@ pub struct LocalVarDef {
     is_const: bool,
     var_type: Span,
     var_name: Span,
+    is_tree_node: bool,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -226,6 +230,7 @@ impl LocalVarDef {
         is_const: bool,
         var_type: Span,
         var_name: Span,
+        is_tree_node: bool,
         next: Option<Box<dyn AstNode>>,
     ) -> LocalVarDef {
         LocalVarDef {
@@ -233,6 +238,7 @@ impl LocalVarDef {
             is_const,
             var_type,
             var_name,
+            is_tree_node,
             next,
         }
     }
@@ -240,13 +246,20 @@ impl LocalVarDef {
 
 impl AstNode for LocalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        if !self.is_tree_node {
+            print_dependencies_ripple(&self.next, own_address, ripple)
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        if self.is_tree_node {
+            print_label_self(self.var_name, lexer, own_address);
+            print_labels_next(&self.next, lexer, own_address);
+        } else {
+            print_labels_ripple(&self.next, lexer, own_address)
+        }
     }
     fn is_tree_member(&self) -> bool {
-        false
+        self.is_tree_node
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -262,7 +275,8 @@ impl AstNode for LocalVarDef {
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
-        let our_symbol = Symbol::new(id, span, line, col, var_type);
+        let class = SymbolClass::Var;
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
         stack.add_symbol(our_symbol)?;
 
@@ -1587,18 +1601,18 @@ impl AstNode for VecAccess {
 }
 
 #[derive(Debug)]
-pub struct IdentifierInvoke {
+pub struct VarInvoke {
     expr_span: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
-impl IdentifierInvoke {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> IdentifierInvoke {
-        IdentifierInvoke { expr_span, next }
+impl VarInvoke {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> VarInvoke {
+        VarInvoke { expr_span, next }
     }
 }
 
-impl AstNode for IdentifierInvoke {
+impl AstNode for VarInvoke {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own_next(&self.next, own_address);
         print_dependencies_next(&self.next, own_address);
@@ -1619,14 +1633,13 @@ impl AstNode for IdentifierInvoke {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         let span = self.expr_span;
-        stack.check_duplicate(span, lexer)?;
-        let previous_def = stack.get_previous_def(span, lexer)?;
-
-        let id = lexer.span_str(span).to_string();
+        let class = SymbolClass::Var;
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
 
         let var_type = previous_def.type_value.clone();
+        let id = lexer.span_str(span).to_string();
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
         stack.add_symbol(our_symbol)?;
 
