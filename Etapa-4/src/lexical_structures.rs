@@ -57,6 +57,10 @@ impl AstNode for GlobalVarDef {
 
         stack.add_symbol(our_symbol)?;
 
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
