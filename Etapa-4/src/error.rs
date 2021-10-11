@@ -33,13 +33,15 @@ pub enum CompilerError {
     #[error("usage of undeclared identifier")]
     SemanticErrorUndeclared,
 
-    #[error("Same-scope identifier redeclaration: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}\nAnd again at line {second_line}, column {second_col}")]
+    #[error("Same-scope identifier redeclaration: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}:\n{first_string}\nAnd again at line {second_line}, column {second_col}:\n{second_string}")]
     SemanticErrorDeclared {
         id: String,
         first_line: usize,
-        second_line: usize,
         first_col: usize,
+        first_string: String,
+        second_line: usize,
         second_col: usize,
+        second_string: String,
     },
 
     #[error("variable identifier used as vector or function")]
