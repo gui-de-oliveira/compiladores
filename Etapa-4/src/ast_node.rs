@@ -1,7 +1,11 @@
 use lrpar::NonStreamingLexer;
 use lrpar::Span;
+use std::collections::HashMap;
 use std::ffi::c_void;
 use std::fmt::Debug;
+
+use super::error::CompilerError;
+use super::syntactic_structures::Symbol;
 
 pub trait AstNode: Debug {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool);
@@ -9,6 +13,11 @@ pub trait AstNode: Debug {
     fn is_tree_member(&self) -> bool;
     fn set_next(&mut self, new_next: Box<dyn AstNode>);
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>);
+    fn evaluate_node(
+        &self,
+        stack: &mut Vec<HashMap<String, Symbol>>,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError>;
 }
 
 impl AstNode for Box<dyn AstNode> {
@@ -27,6 +36,13 @@ impl AstNode for Box<dyn AstNode> {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.as_mut().append_to_next(new_last)
     }
+    fn evaluate_node(
+        &self,
+        stack: &mut Vec<HashMap<String, Symbol>>,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        self.as_ref().evaluate_node(stack, lexer)
+    }
 }
 
 impl AstNode for Span {
@@ -39,4 +55,12 @@ impl AstNode for Span {
     }
     fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
     fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
+    //TO DO: remove Span from tree
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }

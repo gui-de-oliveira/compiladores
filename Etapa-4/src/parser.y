@@ -758,7 +758,7 @@ hashTok -> Result<Span>:
 use anyhow::{bail, Result};
 use lrpar::Span;
 use super::lexical_structures::*;
-use super::auxiliary_structures::*;
+use super::auxiliary_lexical_structures::*;
 use super::ast_node::AstNode;
 use super::abstract_syntax_tree::AbstractSyntaxTree;
 
