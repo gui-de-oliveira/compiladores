@@ -158,6 +158,23 @@ And again at line 3, column 12:
            ^^^
 `
   );
+
+  // One global vec and one global function, both with same name, in same scope.
+  await testInvalidInput(
+    `
+      int abc[3];
+      bool abc() {}
+    `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "abc"
+First occurrence at line 2, column 11:
+      int abc[3];
+          ^^^
+And again at line 3, column 12:
+      bool abc() {}
+           ^^^
+`
+  );
 }
 
 main();

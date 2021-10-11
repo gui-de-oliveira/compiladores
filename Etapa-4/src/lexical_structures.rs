@@ -179,9 +179,23 @@ impl AstNode for FnDef {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let var_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
+        let id = lexer.span_str(self.fn_name).to_string();
+        let span = self.fn_name;
+        let ((line, col), (_, _)) = lexer.line_col(self.fn_name);
+        let our_symbol = Symbol::new(id, span, line, col, var_type);
+
+        stack.check_duplicate(&our_symbol, lexer)?;
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
