@@ -40,9 +40,6 @@ impl AstNode for GlobalVarDef {
     fn is_tree_member(&self) -> bool {
         false
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -101,9 +98,6 @@ impl AstNode for GlobalVecDef {
     fn is_tree_member(&self) -> bool {
         false
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -161,9 +155,6 @@ impl AstNode for FnDef {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -219,9 +210,6 @@ impl AstNode for LocalVarDef {
     }
     fn is_tree_member(&self) -> bool {
         false
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -286,9 +274,6 @@ impl AstNode for VarDefInitId {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -352,9 +337,6 @@ impl AstNode for VarDefInitLit {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -408,9 +390,6 @@ impl AstNode for VarLeftShift {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -466,9 +445,6 @@ impl AstNode for VarRightShift {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -522,9 +498,6 @@ impl AstNode for VecLeftShift {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -580,9 +553,6 @@ impl AstNode for VecRightShift {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -636,9 +606,6 @@ impl AstNode for VarSet {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -694,9 +661,6 @@ impl AstNode for VecSet {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -740,9 +704,6 @@ impl AstNode for Input {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -792,9 +753,6 @@ impl AstNode for OutputId {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -843,9 +801,6 @@ impl AstNode for OutputLit {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -882,9 +837,6 @@ impl AstNode for Continue {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -920,9 +872,6 @@ impl AstNode for Break {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -971,9 +920,6 @@ impl AstNode for Return {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1039,9 +985,6 @@ impl AstNode for FnCall {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1095,9 +1038,6 @@ impl AstNode for If {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1158,9 +1098,6 @@ impl AstNode for IfElse {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1228,9 +1165,6 @@ impl AstNode for For {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1285,9 +1219,6 @@ impl AstNode for While {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1324,9 +1255,6 @@ impl AstNode for EmptyBlock {
     }
     fn is_tree_member(&self) -> bool {
         false
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1395,9 +1323,6 @@ impl AstNode for Ternary {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1455,9 +1380,6 @@ impl AstNode for Binary {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1509,9 +1431,6 @@ impl AstNode for Unary {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1547,9 +1466,6 @@ impl AstNode for VarAccess {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1609,9 +1525,6 @@ impl AstNode for VecAccess {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1647,9 +1560,6 @@ impl AstNode for LiteralInt {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1687,9 +1597,6 @@ impl AstNode for LiteralFloat {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
-    }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
@@ -1725,9 +1632,6 @@ impl AstNode for LiteralBool {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1773,9 +1677,6 @@ impl AstNode for LiteralChar {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
@@ -1825,9 +1726,6 @@ impl AstNode for LiteralString {
     }
     fn is_tree_member(&self) -> bool {
         true
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.next = Some(new_next);
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)

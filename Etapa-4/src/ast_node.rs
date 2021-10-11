@@ -10,7 +10,6 @@ pub trait AstNode: Debug {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool);
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void);
     fn is_tree_member(&self) -> bool;
-    fn set_next(&mut self, new_next: Box<dyn AstNode>);
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>);
     fn evaluate_node(
         &self,
@@ -28,9 +27,6 @@ impl AstNode for Box<dyn AstNode> {
     }
     fn is_tree_member(&self) -> bool {
         self.as_ref().is_tree_member()
-    }
-    fn set_next(&mut self, new_next: Box<dyn AstNode>) {
-        self.as_mut().set_next(new_next)
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.as_mut().append_to_next(new_last)
@@ -52,7 +48,6 @@ impl AstNode for Span {
     fn is_tree_member(&self) -> bool {
         true
     }
-    fn set_next(&mut self, _new_next: Box<dyn AstNode>) {}
     fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
     //TO DO: remove Span from tree
     fn evaluate_node(
