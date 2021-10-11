@@ -50,10 +50,11 @@ impl AstNode for GlobalVarDef {
     ) -> Result<(), CompilerError> {
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
+        let span = self.var_name;
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
-        let our_symbol = Symbol::new(id, line, col, var_type);
+        let our_symbol = Symbol::new(id, span, line, col, var_type);
 
-        stack.check_duplicate(&our_symbol)?;
+        stack.check_duplicate(&our_symbol, lexer)?;
 
         stack.add_symbol(our_symbol)?;
 

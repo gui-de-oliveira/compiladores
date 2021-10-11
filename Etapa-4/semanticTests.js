@@ -52,9 +52,11 @@ async function testInvalidInput(input, expectedReturnCode, expectedOutput) {
     const receivedOutput = value.stdout;
 
     if (!receivedOutput.startsWith(expectedOutput)) {
-      logError(
-        `Wrong output! expected:"${expectedOutput}" received:"${receivedOutput}"`
-      );
+      logError(`Wrong output!`);
+      logError(`Expected:`);
+      logError(expectedOutput);
+      logError(`Received:`);
+      logError(receivedOutput);
     }
 
     rejectTest(" by succeeding")
@@ -65,16 +67,20 @@ async function testInvalidInput(input, expectedReturnCode, expectedOutput) {
     let failedTest = false;
 
     if (expectedReturnCode !== receivedReturnCode) {
-      logError(
-        `Wrong ReturnCode! expected:"${expectedReturnCode}" received:"${receivedReturnCode}"`
-      );
+      logError(`Wrong ReturnCode!`);
+      logError(`Expected:`);
+      logError(expectedReturnCode);
+      logError(`Received:`);
+      logError(receivedReturnCode);
       failedTest = true;
     }
 
     if (!receivedOutput.startsWith(expectedOutput)) {
-      logError(
-        `Wrong output! expected:"${expectedOutput}" received:"${receivedOutput}"`
-      );
+      logError(`Wrong output!`);
+      logError(`Expected:`);
+      logError(expectedOutput);
+      logError(`Received:`);
+      logError(receivedOutput);
       failedTest = true;
     }
 
@@ -118,13 +124,17 @@ async function main() {
 
   await testInvalidInput(
     `
-      int a;
-      bool a;
+      int abc;
+      bool abc;
     `,
     ERROR_CODE.ERR_DECLARED,
-    `Same-scope identifier redeclaration: "a"
-First occurrence at line 2, column 11
-And again at line 3, column 12
+    `Same-scope identifier redeclaration: "abc"
+First occurrence at line 2, column 11:
+      int abc;
+          ^^^
+And again at line 3, column 12:
+      bool abc;
+           ^^^
 `
   );
 }
