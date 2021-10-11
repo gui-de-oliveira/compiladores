@@ -12,22 +12,25 @@ pub enum CompilerError {
         found: String,
     },
     */
-    #[error("reading input file failure")]
+    #[error("Sanity error: {0}")]
+    SanityError(String),
+
+    #[error("Reading input file failure.")]
     IoReadFailure(#[from] std::io::Error),
 
-    #[error("lexical error: {0}")]
+    #[error("Lexical error: {0}")]
     LexicalError(String),
 
-    #[error("parsing errors: {0}")]
+    #[error("Parsing errors: {0}")]
     ParsingErrors(String),
 
-    #[error("tree building error: {0}")]
+    #[error("Tree building error: {0}")]
     TreeBuildingError(String),
 
-    #[error("parser failed to evaluate expression")]
+    #[error("Parser failed to evaluate expression")]
     EvalParserFailure,
 
-    #[error("error in scope, this should not happen")]
+    #[error("Error in scope, this should not happen")]
     FailedScoping,
 
     #[error("Usage of undeclared identifier: \"{id}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
@@ -132,7 +135,8 @@ pub enum CompilerError {
 impl CompilerError {
     pub fn error_code(&self) -> i32 {
         match *self {
-            CompilerError::IoReadFailure(_)
+            CompilerError::SanityError(_)
+            | CompilerError::IoReadFailure(_)
             | CompilerError::LexicalError(_)
             | CompilerError::ParsingErrors(_)
             | CompilerError::TreeBuildingError(_)

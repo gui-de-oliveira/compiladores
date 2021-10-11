@@ -64,6 +64,7 @@ pub enum SymbolClass {
     Fn,
     Var,
     Vec,
+    Lit,
 }
 
 impl SymbolClass {
@@ -72,6 +73,7 @@ impl SymbolClass {
             SymbolClass::Fn => "function",
             SymbolClass::Var => "variable",
             SymbolClass::Vec => "vector",
+            SymbolClass::Lit => "literal",
         }
     }
 }
@@ -181,6 +183,19 @@ impl ScopeStack {
                             second_col,
                             second_highlight,
                         },
+                        SymbolClass::Lit => CompilerError::SanityError(
+                            format!(
+                                "get_previous_def() with \"{}\" matched a a literal: ({}, {}, {}) => ({}, {}, {}, {})",
+                                id,
+                                first_line,
+                                first_col,
+                                first_highlight,
+                                second_class,
+                                second_line,
+                                second_col,
+                                second_highlight
+                            )
+                        ),
                     });
                 }
             }

@@ -404,6 +404,8 @@ impl AstNode for VarDefInitLit {
 
         self.var_value.evaluate_node(stack, lexer)?;
 
+        // TO DO: Add symbol.
+
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
@@ -675,9 +677,19 @@ impl AstNode for VarSet {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.var_name.evaluate_node(stack, lexer)?;
+
+        self.new_value.evaluate_node(stack, lexer)?;
+
+        // TO DO: Add symbol and check type.
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
@@ -1053,9 +1065,25 @@ impl AstNode for FnCall {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let span = self.fn_name;
+        let class = SymbolClass::Fn;
+        //TO DO: Add args-checking.
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
+
+        let var_type = previous_def.type_value.clone();
+        let id = lexer.span_str(span).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
@@ -1680,9 +1708,34 @@ impl AstNode for LiteralInt {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let class = SymbolClass::Lit;
+
+        let span = self.expr_span;
+        let id = lexer.span_str(span).to_string();
+
+        let var_value = match id.parse::<i32>() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(CompilerError::LexicalError(format!(
+                    "Unable to parse {} into i32.",
+                    id
+                )))
+            }
+        };
+        let var_type = SymbolType::Int(Some(var_value));
+
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }

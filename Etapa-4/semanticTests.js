@@ -122,7 +122,7 @@ async function main() {
       bool a a;
     `,
     ERROR_CODE.ERR_LEX_PAR,
-    `parsing errors: Parsing error at line 2 column 13. No repair sequences found.\n`
+    `Parsing errors: Parsing error at line 2 column 13. No repair sequences found.\n`
   );
 
   // Test 3: Two same-name global vars, in same scope.
@@ -227,6 +227,26 @@ First occurrence at line 2, column 11:
 And again at line 4, column 22:
         float ccc <= aaa;
                      ^^^
+`
+  );
+
+  // Test 8: Expected variable, found function.
+  await testInvalidInput(
+    `
+      int aaa;
+      bool bbb() {
+        float ccc <= aaa;
+        ccc = aaa();
+      }
+    `,
+    ERROR_CODE.ERR_VARIABLE,
+    `Variable identifier used as function: "aaa"
+First occurrence at line 4, column 22:
+        float ccc <= aaa;
+                     ^^^
+And again at line 5, column 15:
+        ccc = aaa();
+              ^^^
 `
   );
 
