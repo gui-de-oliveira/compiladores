@@ -1,7 +1,11 @@
-use super::ast_node::AstNode;
 use lrpar::{NonStreamingLexer, Span};
+use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr::addr_of;
+
+use super::ast_node::AstNode;
+use super::error::CompilerError;
+use super::syntactic_structures::Symbol;
 
 #[derive(Debug)]
 pub struct GlobalVarDef {
@@ -42,6 +46,35 @@ impl AstNode for GlobalVarDef {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        stack: &mut Vec<HashMap<String, Symbol>>,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        let id = lexer.span_str(self.var_name).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(self.var_name);
+        let our_symbol = Symbol::new(id, line, col);
+
+        let mut current_scope = match stack.pop() {
+            Some(scope) => scope,
+            None => return Err(CompilerError::FailedScoping(our_symbol)),
+        };
+
+        if current_scope.contains_key(&our_symbol.id) {
+            let previous_symbol = current_scope.remove(&our_symbol.id).unwrap();
+            return Err(CompilerError::SemanticErrorDeclared {
+                id: our_symbol.id.clone(),
+                first_line: previous_symbol.line,
+                first_col: previous_symbol.col,
+                second_line: line,
+                second_col: col,
+            });
+        };
+
+        current_scope.insert(our_symbol.id.clone(), our_symbol);
+
+        Ok(())
     }
 }
 
@@ -87,6 +120,13 @@ impl AstNode for GlobalVecDef {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -141,6 +181,13 @@ impl AstNode for FnDef {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -192,6 +239,13 @@ impl AstNode for LocalVarDef {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -252,6 +306,13 @@ impl AstNode for VarDefInitId {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -311,6 +372,13 @@ impl AstNode for VarDefInitLit {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -360,6 +428,13 @@ impl AstNode for VarLeftShift {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -411,6 +486,13 @@ impl AstNode for VarRightShift {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -460,6 +542,13 @@ impl AstNode for VecLeftShift {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -511,6 +600,13 @@ impl AstNode for VecRightShift {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -560,6 +656,13 @@ impl AstNode for VarSet {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -611,6 +714,13 @@ impl AstNode for VecSet {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -650,6 +760,13 @@ impl AstNode for Input {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -695,6 +812,13 @@ impl AstNode for OutputId {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -739,6 +863,13 @@ impl AstNode for OutputLit {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -771,6 +902,13 @@ impl AstNode for Continue {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -802,6 +940,13 @@ impl AstNode for Break {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -846,6 +991,13 @@ impl AstNode for Return {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -907,6 +1059,13 @@ impl AstNode for FnCall {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -956,6 +1115,13 @@ impl AstNode for If {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1012,6 +1178,13 @@ impl AstNode for IfElse {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1075,6 +1248,13 @@ impl AstNode for For {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1125,6 +1305,13 @@ impl AstNode for While {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1157,6 +1344,13 @@ impl AstNode for EmptyBlock {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1221,6 +1415,13 @@ impl AstNode for Ternary {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1274,6 +1475,13 @@ impl AstNode for Binary {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1321,6 +1529,13 @@ impl AstNode for Unary {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1352,6 +1567,13 @@ impl AstNode for VarAccess {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1407,6 +1629,13 @@ impl AstNode for VecAccess {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1438,6 +1667,13 @@ impl AstNode for LiteralInt {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1471,6 +1707,13 @@ impl AstNode for LiteralFloat {
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
     }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -1502,6 +1745,13 @@ impl AstNode for LiteralBool {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1543,6 +1793,13 @@ impl AstNode for LiteralChar {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 
@@ -1588,6 +1845,13 @@ impl AstNode for LiteralString {
     }
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
         self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        Ok(())
     }
 }
 

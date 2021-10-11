@@ -4,9 +4,10 @@
 
 mod abstract_syntax_tree;
 mod ast_node;
-mod auxiliary_structures;
+mod auxiliary_lexical_structures;
 mod error;
 mod lexical_structures;
+mod syntactic_structures;
 
 use std::io::{self, Read, Write};
 
@@ -40,7 +41,7 @@ fn run_app() -> Result<(), CompilerError> {
         Some(Ok(abstract_syntax_tree)) => {
             abstract_syntax_tree.print_tree(&lexer);
 
-            abstract_syntax_tree.evaluate()?;
+            abstract_syntax_tree.evaluate(&lexer)?;
         }
         Some(Err(error)) => {
             println!("Error: Unable to evaluate expression.");
@@ -63,7 +64,7 @@ fn run_app() -> Result<(), CompilerError> {
             println!(">>> Debug start!!");
             println!("{:?}", buffer);
             println!(">>> Debug end!!");
-            return Err(CompilerError::EvalFailure);
+            return Err(CompilerError::EvalParserFailure);
         }
     };
     Ok(())
