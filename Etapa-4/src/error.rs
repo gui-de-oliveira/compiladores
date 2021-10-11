@@ -1,7 +1,5 @@
 use thiserror::Error;
 
-use super::syntactic_structures::Symbol;
-
 #[derive(Error, Debug)]
 pub enum CompilerError {
     /*
@@ -17,20 +15,29 @@ pub enum CompilerError {
     #[error("reading input file failure")]
     IoReadFailure(#[from] std::io::Error),
 
+    #[error("lexical error: {0}")]
+    LexicalError(String),
+
     #[error("failure to parse input")]
     ParsingError,
 
     #[error("parser failed to evaluate expression")]
     EvalParserFailure,
 
-    #[error("error in scope forming symbol, this should not happen")]
-    FailedScoping(Symbol),
+    #[error("error in scope, this should not happen")]
+    FailedScoping,
 
     #[error("usage of undeclared identifier")]
     SemanticErrorUndeclared,
 
     #[error("Same-scope identifier redeclaration: {id}\nFirst occurrence at line {first_line}, column {first_col}\nAnd again at line {second_line}, column {second_col}")]
-    SemanticErrorDeclared { id: String, first_line: usize, second_line: usize, first_col: usize, second_col: usize },
+    SemanticErrorDeclared {
+        id: String,
+        first_line: usize,
+        second_line: usize,
+        first_col: usize,
+        second_col: usize,
+    },
 
     #[error("variable identifier used as vector or function")]
     SemanticErrorVariable,
@@ -89,9 +96,10 @@ impl CompilerError {
     pub fn error_code(&self) -> i32 {
         match *self {
             CompilerError::IoReadFailure(_)
+            | CompilerError::LexicalError(_)
             | CompilerError::ParsingError
             | CompilerError::EvalParserFailure
-            | CompilerError::FailedScoping(_) => 1,
+            | CompilerError::FailedScoping => 1,
             CompilerError::SemanticErrorUndeclared => 10,
             CompilerError::SemanticErrorDeclared { .. } => 11,
             CompilerError::SemanticErrorVariable => 20,
