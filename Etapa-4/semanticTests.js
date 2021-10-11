@@ -115,6 +115,18 @@ async function main() {
     ERROR_CODE.ERR_LEX_PAR,
     `parsing errors: Parsing error at line 2 column 13. No repair sequences found.\n`
   );
+
+  await testInvalidInput(
+    `
+      int a;
+      bool a;
+    `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "a"
+First occurrence at line 2, column 11
+And again at line 3, column 12
+`
+  );
 }
 
 main();
