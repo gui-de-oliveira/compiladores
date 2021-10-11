@@ -1,11 +1,10 @@
 use lrpar::{NonStreamingLexer, Span};
-use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr::addr_of;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::syntactic_structures::Symbol;
+use super::syntactic_structures::{ScopeStack, Symbol, SymbolType};
 
 #[derive(Debug)]
 pub struct GlobalVarDef {
@@ -49,30 +48,17 @@ impl AstNode for GlobalVarDef {
     }
     fn evaluate_node(
         &self,
-        stack: &mut Vec<HashMap<String, Symbol>>,
+        stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.var_name).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.var_name);
-        let our_symbol = Symbol::new(id, line, col);
+        let our_symbol = Symbol::new(id, line, col, var_type);
 
-        let mut current_scope = match stack.pop() {
-            Some(scope) => scope,
-            None => return Err(CompilerError::FailedScoping(our_symbol)),
-        };
+        stack.check_duplicate(&our_symbol)?;
 
-        if current_scope.contains_key(&our_symbol.id) {
-            let previous_symbol = current_scope.remove(&our_symbol.id).unwrap();
-            return Err(CompilerError::SemanticErrorDeclared {
-                id: our_symbol.id.clone(),
-                first_line: previous_symbol.line,
-                first_col: previous_symbol.col,
-                second_line: line,
-                second_col: col,
-            });
-        };
-
-        current_scope.insert(our_symbol.id.clone(), our_symbol);
+        stack.add_symbol(our_symbol)?;
 
         Ok(())
     }
@@ -123,7 +109,7 @@ impl AstNode for GlobalVecDef {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -183,7 +169,7 @@ impl AstNode for FnDef {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -242,7 +228,7 @@ impl AstNode for LocalVarDef {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -308,7 +294,7 @@ impl AstNode for VarDefInitId {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -374,7 +360,7 @@ impl AstNode for VarDefInitLit {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -431,7 +417,7 @@ impl AstNode for VarLeftShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -488,7 +474,7 @@ impl AstNode for VarRightShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -545,7 +531,7 @@ impl AstNode for VecLeftShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -602,7 +588,7 @@ impl AstNode for VecRightShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -659,7 +645,7 @@ impl AstNode for VarSet {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -716,7 +702,7 @@ impl AstNode for VecSet {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -763,7 +749,7 @@ impl AstNode for Input {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -814,7 +800,7 @@ impl AstNode for OutputId {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -865,7 +851,7 @@ impl AstNode for OutputLit {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -904,7 +890,7 @@ impl AstNode for Continue {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -943,7 +929,7 @@ impl AstNode for Break {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -994,7 +980,7 @@ impl AstNode for Return {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1061,7 +1047,7 @@ impl AstNode for FnCall {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1118,7 +1104,7 @@ impl AstNode for If {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1181,7 +1167,7 @@ impl AstNode for IfElse {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1250,7 +1236,7 @@ impl AstNode for For {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1307,7 +1293,7 @@ impl AstNode for While {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1347,7 +1333,7 @@ impl AstNode for EmptyBlock {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1417,7 +1403,7 @@ impl AstNode for Ternary {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1477,7 +1463,7 @@ impl AstNode for Binary {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1531,7 +1517,7 @@ impl AstNode for Unary {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1570,7 +1556,7 @@ impl AstNode for VarAccess {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1631,7 +1617,7 @@ impl AstNode for VecAccess {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1670,7 +1656,7 @@ impl AstNode for LiteralInt {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1709,7 +1695,7 @@ impl AstNode for LiteralFloat {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1748,7 +1734,7 @@ impl AstNode for LiteralBool {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1796,7 +1782,7 @@ impl AstNode for LiteralChar {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
@@ -1848,7 +1834,7 @@ impl AstNode for LiteralString {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut Vec<HashMap<String, Symbol>>,
+        _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr::addr_of;
 
@@ -6,7 +5,7 @@ use lrpar::NonStreamingLexer;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::syntactic_structures::Symbol;
+use super::syntactic_structures::ScopeStack;
 
 pub struct AbstractSyntaxTree {
     top_node: Option<Box<dyn AstNode>>,
@@ -27,8 +26,7 @@ impl AbstractSyntaxTree {
 
     pub fn evaluate(&self, lexer: &dyn NonStreamingLexer<u32>) -> Result<(), CompilerError> {
         if let Some(node) = &self.top_node {
-            let top_scope: HashMap<String, Symbol> = HashMap::new();
-            let mut stack = vec![top_scope];
+            let mut stack = ScopeStack::new();
             node.evaluate_node(&mut stack, lexer)?;
         };
         Ok(())
