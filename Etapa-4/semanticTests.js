@@ -194,6 +194,23 @@ And again at line 4, column 16:
                ^^
 `
   );
+
+  // Uninitialized variable.
+  await testInvalidInput(
+    `
+      int aaa;
+      bool bbb() {
+        float ccc <= ddd;
+      }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "ddd"
+Occurrence at line 4, column 22:
+        float ccc <= ddd;
+                     ^^^
+`
+  );
+
 }
 
 main();
