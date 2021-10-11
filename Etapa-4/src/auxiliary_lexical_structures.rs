@@ -91,10 +91,9 @@ pub fn mount_local_def(
             var_value,
         } => Box::new(VarDefInitId::new(
             op_name,
-            is_static,
-            is_const,
-            var_type,
-            Box::new(var_name),
+            Box::new(LocalVarDef::new(
+                is_static, is_const, var_type, var_name, None,
+            )),
             Box::new(var_value),
             None,
         )),
@@ -104,10 +103,9 @@ pub fn mount_local_def(
             var_value,
         } => Box::new(VarDefInitLit::new(
             op_name,
-            is_static,
-            is_const,
-            var_type,
-            Box::new(var_name),
+            Box::new(LocalVarDef::new(
+                is_static, is_const, var_type, var_name, None,
+            )),
             var_value,
             None,
         )),

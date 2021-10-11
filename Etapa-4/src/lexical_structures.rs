@@ -192,6 +192,10 @@ impl AstNode for FnDef {
 
         stack.add_symbol(our_symbol)?;
 
+        stack.add_scope();
+        self.commands.evaluate_node(stack, lexer)?;
+        stack.remove_scope()?;
+
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
@@ -249,9 +253,23 @@ impl AstNode for LocalVarDef {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
+        let id = lexer.span_str(self.var_name).to_string();
+        let span = self.var_name;
+        let ((line, col), (_, _)) = lexer.line_col(self.var_name);
+        let our_symbol = Symbol::new(id, span, line, col, var_type);
+
+        stack.check_duplicate(&our_symbol, lexer)?;
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
@@ -259,10 +277,7 @@ impl AstNode for LocalVarDef {
 #[derive(Debug)]
 pub struct VarDefInitId {
     op_name: Span,
-    is_static: bool,
-    is_const: bool,
-    var_type: Span,
-    var_name: Box<dyn AstNode>,
+    var_def: Box<dyn AstNode>,
     var_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -270,19 +285,13 @@ pub struct VarDefInitId {
 impl VarDefInitId {
     pub fn new(
         op_name: Span,
-        is_static: bool,
-        is_const: bool,
-        var_type: Span,
-        var_name: Box<dyn AstNode>,
+        var_def: Box<dyn AstNode>,
         var_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarDefInitId {
         VarDefInitId {
             op_name,
-            is_static,
-            is_const,
-            var_type,
-            var_name,
+            var_def,
             var_value,
             next,
         }
@@ -291,16 +300,16 @@ impl VarDefInitId {
 
 impl AstNode for VarDefInitId {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
+        print_dependencies_own(&self.var_def, own_address);
         print_dependencies_own(&self.var_value, own_address);
         print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_child(&self.var_def, own_address);
         print_dependencies_child(&self.var_value, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.op_name, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
+        print_labels_child(&self.var_def, lexer);
         print_labels_child(&self.var_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -312,9 +321,17 @@ impl AstNode for VarDefInitId {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.var_def.evaluate_node(stack, lexer)?;
+
+        self.var_value.evaluate_node(stack, lexer)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
@@ -322,10 +339,7 @@ impl AstNode for VarDefInitId {
 #[derive(Debug)]
 pub struct VarDefInitLit {
     op_name: Span,
-    is_static: bool,
-    is_const: bool,
-    var_type: Span,
-    var_name: Box<dyn AstNode>,
+    var_def: Box<dyn AstNode>,
     var_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -333,19 +347,13 @@ pub struct VarDefInitLit {
 impl VarDefInitLit {
     pub fn new(
         op_name: Span,
-        is_static: bool,
-        is_const: bool,
-        var_type: Span,
-        var_name: Box<dyn AstNode>,
+        var_def: Box<dyn AstNode>,
         var_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarDefInitLit {
         VarDefInitLit {
             op_name,
-            is_static,
-            is_const,
-            var_type,
-            var_name,
+            var_def,
             var_value,
             next,
         }
@@ -354,16 +362,16 @@ impl VarDefInitLit {
 
 impl AstNode for VarDefInitLit {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
+        print_dependencies_own(&self.var_def, own_address);
         print_dependencies_own(&self.var_value, own_address);
         print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
+        print_dependencies_child(&self.var_def, own_address);
         print_dependencies_child(&self.var_value, own_address);
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.op_name, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
+        print_labels_child(&self.var_def, lexer);
         print_labels_child(&self.var_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -375,9 +383,17 @@ impl AstNode for VarDefInitLit {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.var_def.evaluate_node(stack, lexer)?;
+
+        self.var_value.evaluate_node(stack, lexer)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }

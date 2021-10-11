@@ -175,6 +175,25 @@ And again at line 3, column 12:
            ^^^
 `
   );
+
+  // Two local variables, both with same name, in same scope.
+  await testInvalidInput(
+    `
+      bool abc() {
+        float aa <= 1;
+        string aa <= "aa";
+      }
+    `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "aa"
+First occurrence at line 3, column 15:
+        float aa <= 1;
+              ^^
+And again at line 4, column 16:
+        string aa <= "aa";
+               ^^
+`
+  );
 }
 
 main();
