@@ -17,12 +17,12 @@
 
 %%
 
-program -> Result<AbstractSyntaxTree>:
+program -> Result<AbstractSyntaxTree, CompilerError>:
      { /* %empty */ Ok(AbstractSyntaxTree::new(None)) }
     | topLevelDefList { Ok(AbstractSyntaxTree::new(Some($1?))) }
     ;
 
-topLevelDefList -> Result<Box<dyn AstNode>>:
+topLevelDefList -> Result<Box<dyn AstNode>, CompilerError>:
     topLevelDef { $1 }
     | topLevelDefList topLevelDef {
         let mut upper_def = $1?;
@@ -31,7 +31,7 @@ topLevelDefList -> Result<Box<dyn AstNode>>:
     }
     ;
 
-topLevelDef -> Result<Box<dyn AstNode>>:
+topLevelDef -> Result<Box<dyn AstNode>, CompilerError>:
     optionalStatic type_rule identifier_rule topDefEnd {
         let is_static = $1?;
         let var_type = $2?;
@@ -59,23 +59,23 @@ topLevelDef -> Result<Box<dyn AstNode>>:
     }
     ;
 
-topDefEnd -> Result<AuxTopDefEnd>:
+topDefEnd -> Result<AuxTopDefEnd, CompilerError>:
     '(' optionalParamList ')' commandBlock { Ok(AuxTopDefEnd::FnDefEnd{params: $2?, commands: $4?}) }
     | ';' { Ok(AuxTopDefEnd::SingleGlob) }
     | ',' globDefEndList ';' { Ok(AuxTopDefEnd::GlobList($2?)) }
     | '[' literal_int ']' endOrGlobDefEndList { Ok(AuxTopDefEnd::VecAndGlobList($2?, $4?)) }
     ;
 
-endOrGlobDefEndList -> Result<Vec<AuxVarOrVecName>>:
+endOrGlobDefEndList -> Result<Vec<AuxVarOrVecName>, CompilerError>:
     ';' { Ok(vec![]) }
     | ',' globDefEndList ';' { $2 }
     ;
 
-globDefEndList -> Result<Vec<AuxVarOrVecName>>:
+globDefEndList -> Result<Vec<AuxVarOrVecName>, CompilerError>:
     varOrVecNameList { $1 }
     ;
 
-varOrVecNameList -> Result<Vec<AuxVarOrVecName>>:
+varOrVecNameList -> Result<Vec<AuxVarOrVecName>, CompilerError>:
     varOrVecName { Ok(vec![$1?]) }
     | varOrVecNameList ',' varOrVecName {
         let mut list = $1?;
@@ -84,7 +84,7 @@ varOrVecNameList -> Result<Vec<AuxVarOrVecName>>:
     }
     ;
 
-varOrVecName -> Result<AuxVarOrVecName>:
+varOrVecName -> Result<AuxVarOrVecName, CompilerError>:
     identifier_rule optionalArray {
         Ok(
             match $2? {
@@ -101,17 +101,17 @@ varOrVecName -> Result<AuxVarOrVecName>:
     }
     ;
 
-optionalArray -> Result<Option<Span>>:
+optionalArray -> Result<Option<Span>, CompilerError>:
       { /* %empty */ Ok(None) }
     | '[' literal_int ']' { Ok(Some($2?)) }
     ;
 
-optionalStatic -> Result<bool>:
+optionalStatic -> Result<bool, CompilerError>:
       { /* %empty */ Ok(false) }
     | 'TK_PR_STATIC' { Ok(true) }
     ;
 
-type_rule -> Result<Span>:
+type_rule -> Result<Span, CompilerError>:
     'TK_PR_INT' { Ok($span) }
     | 'TK_PR_FLOAT' { Ok($span) }
     | 'TK_PR_BOOL' { Ok($span) }
@@ -119,16 +119,16 @@ type_rule -> Result<Span>:
     | 'TK_PR_STRING' { Ok($span) }
     ;
 
-identifier_rule -> Result<Span>:
+identifier_rule -> Result<Span, CompilerError>:
     'TK_IDENTIFICADOR' { Ok($span) }
     ;
 
-optionalParamList -> Result<Vec<Parameter>>:
+optionalParamList -> Result<Vec<Parameter>, CompilerError>:
       { /* %empty */ Ok(vec![]) }
     | paramList { $1 }
     ;
 
-paramList -> Result<Vec<Parameter>>:
+paramList -> Result<Vec<Parameter>, CompilerError>:
     param { Ok(vec![$1?]) }
     | paramList ',' param {
         let mut list = $1?;
@@ -137,7 +137,7 @@ paramList -> Result<Vec<Parameter>>:
     }
     ;
 
-param -> Result<Parameter>:
+param -> Result<Parameter, CompilerError>:
     optionalConst type_rule identifier_rule {
         let is_const = $1?;
         let param_type = $2?;
@@ -146,13 +146,13 @@ param -> Result<Parameter>:
     }
     ;
 
-optionalConst -> Result<bool>:
+optionalConst -> Result<bool, CompilerError>:
      { /* %empty */ Ok(false) }
     | 'TK_PR_CONST' { Ok(true) }
     ;
 
 
-commandBlock -> Result<Box<dyn AstNode>>:
+commandBlock -> Result<Box<dyn AstNode>, CompilerError>:
     '{' optionalSimpleCommandList '}' { 
         match $2? {
             Some(node) => Ok(node),
@@ -161,12 +161,12 @@ commandBlock -> Result<Box<dyn AstNode>>:
     }
     ;
 
-optionalSimpleCommandList -> Result<Option<Box<dyn AstNode>>>:
+optionalSimpleCommandList -> Result<Option<Box<dyn AstNode>>, CompilerError>:
       { /* %empty */ Ok(None) }
     | simpleCommandList { Ok(Some($1?)) }
     ;
 
-simpleCommandList -> Result<Box<dyn AstNode>>:
+simpleCommandList -> Result<Box<dyn AstNode>, CompilerError>:
     simpleCommandSequence { $1 }
     | simpleCommandList simpleCommandSequence {
         let mut left_node = $1?;
@@ -176,20 +176,20 @@ simpleCommandList -> Result<Box<dyn AstNode>>:
     }
     ;
 
-simpleCommandSequence -> Result<Box<dyn AstNode>>:
+simpleCommandSequence -> Result<Box<dyn AstNode>, CompilerError>:
     commandBlock ';' { $1 }
     | localDefList ';' { $1 }
     | simpleCommand { $1 }
     ;
 
-localDefList -> Result<Box<dyn AstNode>>:
+localDefList -> Result<Box<dyn AstNode>, CompilerError>:
     optionalStatic optionalConst type_rule localNameDefList {
         let is_static = $1?;
         let is_const = $2?;
         let var_type = $3?;
         let mut name_def_vec = $4?;
         if name_def_vec.len() < 1 {
-            bail!("localNameDefList returned vector with zero elements")
+            return Err(CompilerError::TreeBuildingError("localNameDefList returned vector with zero elements".to_string()));
         };
         let mut top_name_def = mount_local_def(is_static, is_const, var_type, name_def_vec.remove(0));
         for name_def in name_def_vec {
@@ -199,7 +199,7 @@ localDefList -> Result<Box<dyn AstNode>>:
     }
     ;
 
-localNameDefList -> Result<Vec<AuxLocalNameDef>>:
+localNameDefList -> Result<Vec<AuxLocalNameDef>, CompilerError>:
     identifier_rule { Ok(vec![AuxLocalNameDef::Def($1?)]) }
     | localNameDefAssign { Ok(vec![$1?]) }
     | localNameDefList ',' identifier_rule {
@@ -214,7 +214,7 @@ localNameDefList -> Result<Vec<AuxLocalNameDef>>:
     }
     ;
 
-localNameDefAssign -> Result<AuxLocalNameDef>:
+localNameDefAssign -> Result<AuxLocalNameDef, CompilerError>:
     identifier_rule lesserEqualTok identifier_rule {
         let var_name = $1?;
         let op_name = $2?;
@@ -229,7 +229,7 @@ localNameDefAssign -> Result<AuxLocalNameDef>:
     }
     ;
 
-literal -> Result<Box<dyn AstNode>>:
+literal -> Result<Box<dyn AstNode>, CompilerError>:
     literal_int { Ok(Box::new(LiteralInt::new($1?, None))) }
     | 'TK_LIT_FLOAT' { Ok(Box::new(LiteralFloat::new($span, None))) }
     | 'TK_LIT_FALSE' { Ok(Box::new(LiteralBool::new($span, None))) }
@@ -238,12 +238,12 @@ literal -> Result<Box<dyn AstNode>>:
     | 'TK_LIT_STRING' { Ok(Box::new(LiteralString::new($span, None))) }
     ;
 
-literal_int -> Result<Span>:
+literal_int -> Result<Span, CompilerError>:
     'TK_LIT_INT' { Ok($span) }
     ;
 
 
-simpleCommand -> Result<Box<dyn AstNode>>:
+simpleCommand -> Result<Box<dyn AstNode>, CompilerError>:
     varShift ';' { $1 }
     | varSet ';' { $1 }
     | IO ';' { $1 }
@@ -254,19 +254,19 @@ simpleCommand -> Result<Box<dyn AstNode>>:
     | conditional ';' { $1 }
     ;
 
-continueTok -> Result<Span>:
+continueTok -> Result<Span, CompilerError>:
     'TK_PR_CONTINUE' { Ok($span) }
     ;
 
-breakTok -> Result<Span>:
+breakTok -> Result<Span, CompilerError>:
     'TK_PR_BREAK' { Ok($span) }
     ;
 
-returnTok -> Result<Span>:
+returnTok -> Result<Span, CompilerError>:
     'TK_PR_RETURN' { Ok($span) }
     ;
 
-varShift -> Result<Box<dyn AstNode>>:
+varShift -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule leftShiftTok literal_int {
         let var_name = Box::new($1?);
         let shift_type = $2?;
@@ -293,7 +293,7 @@ varShift -> Result<Box<dyn AstNode>>:
     }
     ;
 
-vecAccess -> Result<Box<dyn AstNode>>:
+vecAccess -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule '[' expression ']' {
         let expr_span = $span;
         let vec_name = Box::new($1?);
@@ -303,7 +303,7 @@ vecAccess -> Result<Box<dyn AstNode>>:
     ;
 
 
-varSet -> Result<Box<dyn AstNode>>:
+varSet -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule setTok expression {
         let var_name = Box::new($1?);
         let op_name = $2?;
@@ -318,7 +318,7 @@ varSet -> Result<Box<dyn AstNode>>:
     }
     ;
 
-IO -> Result<Box<dyn AstNode>>:
+IO -> Result<Box<dyn AstNode>, CompilerError>:
     inputTok identifier_rule {
         let op_name = $1?;
         let var_name = Box::new($2?);
@@ -336,16 +336,16 @@ IO -> Result<Box<dyn AstNode>>:
     }
     ;
 
-inputTok -> Result<Span>:
+inputTok -> Result<Span, CompilerError>:
     'TK_PR_INPUT' { Ok($span) }
     ;
 
-outputTok -> Result<Span>:
+outputTok -> Result<Span, CompilerError>:
     'TK_PR_OUTPUT' { Ok($span) }
     ;
 
 
-functionCall -> Result<Box<dyn AstNode>>:
+functionCall -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule '(' optionalExpressionList ')' {
         let fn_name = $1?;
         let args = $3?;
@@ -353,12 +353,12 @@ functionCall -> Result<Box<dyn AstNode>>:
     }
     ;
 
-optionalExpressionList -> Result<Option<Box<dyn AstNode>>>:
+optionalExpressionList -> Result<Option<Box<dyn AstNode>>, CompilerError>:
       { /* %empty */ Ok(None) }
     | expressionList { Ok(Some($1?)) } 
     ;
 
-expressionList -> Result<Box<dyn AstNode>>:
+expressionList -> Result<Box<dyn AstNode>, CompilerError>:
     expression { Ok(Box::new($1?)) }
     | expressionList ',' expression {
         let mut expr = $1?;
@@ -368,7 +368,7 @@ expressionList -> Result<Box<dyn AstNode>>:
     ;
 
 
-conditional -> Result<Box<dyn AstNode>>:
+conditional -> Result<Box<dyn AstNode>, CompilerError>:
     ifTok '(' expression ')' commandBlock {
         let op_name = $1?;
         let condition = Box::new($3?);
@@ -399,11 +399,11 @@ conditional -> Result<Box<dyn AstNode>>:
     ;
 
 
-expression -> Result<Box<dyn AstNode>>:
+expression -> Result<Box<dyn AstNode>, CompilerError>:
     ternaryOrUniBooleanOrLower { $1 }
     ;
 
-ternaryOrUniBooleanOrLower -> Result<Box<dyn AstNode>>:
+ternaryOrUniBooleanOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     logicalOrOrLower questionTok ternaryOrUniBooleanOrLower doubleDotTok ternaryOrUniBooleanOrLower {
         let left_span = $2?;
         let right_span = $4?;
@@ -415,7 +415,7 @@ ternaryOrUniBooleanOrLower -> Result<Box<dyn AstNode>>:
     | logicalOrOrLower { $1 }
     ;
 
-logicalOrOrLower -> Result<Box<dyn AstNode>>:
+logicalOrOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     logicalOrOrLower orTok logicalAndOrLower {
         let op_type = BinaryType::BoolOr;
         let op_span = $2?;
@@ -426,7 +426,7 @@ logicalOrOrLower -> Result<Box<dyn AstNode>>:
     | logicalAndOrLower { $1 }
     ;
 
-logicalAndOrLower -> Result<Box<dyn AstNode>>:
+logicalAndOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     logicalAndOrLower andTok bitwiseOrOrLower {
         let op_type = BinaryType::BoolAnd;
         let op_span = $2?;
@@ -437,7 +437,7 @@ logicalAndOrLower -> Result<Box<dyn AstNode>>:
     | bitwiseOrOrLower { $1 }
     ;
 
-bitwiseOrOrLower -> Result<Box<dyn AstNode>>:
+bitwiseOrOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     bitwiseOrOrLower pipeTok bitwiseXorOrLower {
         let op_type = BinaryType::BitOr;
         let op_span = $2?;
@@ -448,7 +448,7 @@ bitwiseOrOrLower -> Result<Box<dyn AstNode>>:
     | bitwiseXorOrLower { $1 }
     ;
 
-bitwiseXorOrLower -> Result<Box<dyn AstNode>>:
+bitwiseXorOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     bitwiseXorOrLower circumflexTok bitwiseAndOrLower {
         let op_type = BinaryType::BitXor;
         let op_span = $2?;
@@ -459,7 +459,7 @@ bitwiseXorOrLower -> Result<Box<dyn AstNode>>:
     | bitwiseAndOrLower { $1 }
     ;
 
-bitwiseAndOrLower -> Result<Box<dyn AstNode>>:
+bitwiseAndOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     bitwiseAndOrLower ampersandTok relationalEqualityOrLower {
         let op_type = BinaryType::BitAnd;
         let op_span = $2?;
@@ -470,7 +470,7 @@ bitwiseAndOrLower -> Result<Box<dyn AstNode>>:
     | relationalEqualityOrLower { $1 }
     ;
 
-relationalEqualityOrLower -> Result<Box<dyn AstNode>>:
+relationalEqualityOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     relationalEqualityOrLower equalTok relationalSizeOrLower {
         let op_type = BinaryType::Equal;
         let op_span = $2?;
@@ -488,7 +488,7 @@ relationalEqualityOrLower -> Result<Box<dyn AstNode>>:
     | relationalSizeOrLower { $1 }
     ;
 
-relationalSizeOrLower -> Result<Box<dyn AstNode>>:
+relationalSizeOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     relationalSizeOrLower lesserTok addSubOrLower {
         let op_type = BinaryType::Lesser;
         let op_span = $2?;
@@ -520,7 +520,7 @@ relationalSizeOrLower -> Result<Box<dyn AstNode>>:
     | addSubOrLower { $1 }
     ;
 
-addSubOrLower -> Result<Box<dyn AstNode>>:
+addSubOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     addSubOrLower plusTok multDivRemainderOrLower {
         let op_type = BinaryType::Add;
         let op_span = $2?;
@@ -538,7 +538,7 @@ addSubOrLower -> Result<Box<dyn AstNode>>:
     | multDivRemainderOrLower { $1 }
     ;
 
-multDivRemainderOrLower -> Result<Box<dyn AstNode>>:
+multDivRemainderOrLower -> Result<Box<dyn AstNode>, CompilerError>:
     multDivRemainderOrLower multTok unaryOperationOrOperand {
         let op_type = BinaryType::Mult;
         let op_span = $2?;
@@ -563,13 +563,13 @@ multDivRemainderOrLower -> Result<Box<dyn AstNode>>:
     | unaryOperationOrOperand { $1 }
     ;
 
-unaryOperationOrOperand -> Result<Box<dyn AstNode>>:
+unaryOperationOrOperand -> Result<Box<dyn AstNode>, CompilerError>:
     expressionOperand { $1 }
     | unaryOperatorList expressionOperand {
         let expr = Box::new($2?);
         let mut op_list = $1?;
         if op_list.len() < 1 {
-            bail!("unaryOperatorList returned vector with zero elements")
+            return Err(CompilerError::TreeBuildingError("unaryOperatorList returned vector with zero elements".to_string()));
         };
         let (last_span, last_type) = op_list.pop().unwrap();
         let mut unary_box: Box<Unary> = Box::new(Unary::new(last_span, last_type, expr, None));
@@ -586,7 +586,7 @@ unaryOperationOrOperand -> Result<Box<dyn AstNode>>:
     }
     ;
 
-unaryOperatorList -> Result<Vec<(Span, UnaryType)>>:
+unaryOperatorList -> Result<Vec<(Span, UnaryType)>, CompilerError>:
     unaryOperator { Ok(vec![$1?]) }
     | unaryOperatorList unaryOperator {
         let mut list = $1?;
@@ -595,7 +595,7 @@ unaryOperatorList -> Result<Vec<(Span, UnaryType)>>:
     }
     ;
 
-unaryOperator -> Result<(Span, UnaryType)>:
+unaryOperator -> Result<(Span, UnaryType), CompilerError>:
     plusTok {
         let op_span = $span;
         let unary_type = UnaryType::Positive;
@@ -633,134 +633,134 @@ unaryOperator -> Result<(Span, UnaryType)>:
         }
     ;
 
-expressionOperand -> Result<Box<dyn AstNode>>:
+expressionOperand -> Result<Box<dyn AstNode>, CompilerError>:
     literal { $1 }
     | accessOrFnCall { $1 }
     | grouping { $1 }
     ;
 
-accessOrFnCall -> Result<Box<dyn AstNode>>:
+accessOrFnCall -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule { Ok(Box::new(VarAccess::new($1?, None))) }
     | vecAccess { $1 }
     | functionCall { $1 }
     ;
 
-grouping -> Result<Box<dyn AstNode>>:
+grouping -> Result<Box<dyn AstNode>, CompilerError>:
     '(' expression ')' { $2 }
     ;
 
-setTok -> Result<Span>:
+setTok -> Result<Span, CompilerError>:
     '=' { Ok($span) }
     ;
 
-ifTok -> Result<Span>:
+ifTok -> Result<Span, CompilerError>:
     'TK_PR_IF' { Ok($span) }
     ;
 
-forTok -> Result<Span>:
+forTok -> Result<Span, CompilerError>:
     'TK_PR_FOR' { Ok($span) }
     ;
 
-whileTok -> Result<Span>:
+whileTok -> Result<Span, CompilerError>:
     'TK_PR_WHILE' { Ok($span) }
     ;
 
-orTok -> Result<Span>:
+orTok -> Result<Span, CompilerError>:
     'TK_OC_OR' { Ok($span) }
     ;
 
-andTok -> Result<Span>:
+andTok -> Result<Span, CompilerError>:
     'TK_OC_AND' { Ok($span) }
     ;
 
-leftShiftTok -> Result<Span>:
+leftShiftTok -> Result<Span, CompilerError>:
     'TK_OC_SL' { Ok($span) }
     ;
 
-rightShiftTok -> Result<Span>:
+rightShiftTok -> Result<Span, CompilerError>:
     'TK_OC_SR' { Ok($span) }
     ;
 
-lesserTok -> Result<Span>:
+lesserTok -> Result<Span, CompilerError>:
     '<' { Ok($span) }
     ;
 
-lesserEqualTok -> Result<Span>:
+lesserEqualTok -> Result<Span, CompilerError>:
     'TK_OC_LE' { Ok($span) }
     ;
 
-equalTok -> Result<Span>:
+equalTok -> Result<Span, CompilerError>:
     'TK_OC_EQ' { Ok( $span ) }
     ;
 
-notEqualTok -> Result<Span>:
+notEqualTok -> Result<Span, CompilerError>:
     'TK_OC_NE' { Ok( $span ) }
     ;
 
-greaterTok -> Result<Span>:
+greaterTok -> Result<Span, CompilerError>:
     '>' { Ok( $span ) }
     ;
 
-greaterEqualTok -> Result<Span>:
+greaterEqualTok -> Result<Span, CompilerError>:
     'TK_OC_GE' { Ok( $span ) }
     ;
 
-doubleDotTok -> Result<Span>:
+doubleDotTok -> Result<Span, CompilerError>:
     ':' { Ok( $span ) }
     ;
 
-minusTok -> Result<Span>:
+minusTok -> Result<Span, CompilerError>:
     '-' { Ok( $span ) }
     ;
 
-plusTok -> Result<Span>:
+plusTok -> Result<Span, CompilerError>:
     '+' { Ok( $span ) }
     ;
 
-divTok -> Result<Span>:
+divTok -> Result<Span, CompilerError>:
     '/' { Ok( $span ) }
     ;
 
-multTok -> Result<Span>:
+multTok -> Result<Span, CompilerError>:
     '*' { Ok( $span ) }
     ;
 
-modTok -> Result<Span>:
+modTok -> Result<Span, CompilerError>:
     '%' { Ok( $span ) }
     ;
 
-circumflexTok -> Result<Span>:
+circumflexTok -> Result<Span, CompilerError>:
     '^' { Ok( $span ) }
     ;
 
-pipeTok -> Result<Span>:
+pipeTok -> Result<Span, CompilerError>:
     '|' { Ok( $span ) }
     ;
 
-ampersandTok -> Result<Span>:
+ampersandTok -> Result<Span, CompilerError>:
     '&' { Ok( $span ) }
     ;
 
-exclamationTok -> Result<Span>:
+exclamationTok -> Result<Span, CompilerError>:
     '!' { Ok( $span ) }
     ;
 
-questionTok -> Result<Span>:
+questionTok -> Result<Span, CompilerError>:
     '?' { Ok( $span ) }
     ;
 
-hashTok -> Result<Span>:
+hashTok -> Result<Span, CompilerError>:
     '#' { Ok( $span ) }
     ;
 
 %%
 
-use anyhow::{bail, Result};
 use lrpar::Span;
 use super::lexical_structures::*;
 use super::auxiliary_lexical_structures::*;
 use super::ast_node::AstNode;
 use super::abstract_syntax_tree::AbstractSyntaxTree;
+use super::error::CompilerError;
 
 
 /*

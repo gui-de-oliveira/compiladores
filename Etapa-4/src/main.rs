@@ -32,9 +32,16 @@ fn run_app() -> Result<(), CompilerError> {
     handle.read_to_string(&mut buffer)?;
 
     let lexer = lexerdef.lexer(&buffer);
-    let (parsed, errors) = parser_y::parse(&lexer);
-    for error in errors {
-        println!("{}", error.pp(&lexer, &parser_y::token_epp));
+    let (parsed, mut errors) = parser_y::parse(&lexer);
+
+    if errors.len() > 0 {
+        let first_error = errors.remove(0);
+        let mut report = first_error.pp(&lexer, &parser_y::token_epp);
+        for error in errors {
+            report.push('\n');
+            report.push_str(&error.pp(&lexer, &parser_y::token_epp));
+        }
+        return Err(CompilerError::ParsingErrors(report));
     }
 
     match parsed {
@@ -44,26 +51,9 @@ fn run_app() -> Result<(), CompilerError> {
             abstract_syntax_tree.evaluate(&lexer)?;
         }
         Some(Err(error)) => {
-            println!("Error: Unable to evaluate expression.");
-            println!(">>> Failed input start!!");
-            println!("{}", buffer);
-            println!(">>> Failed input end!!");
-            println!(">>> Debug start!!");
-            println!("{:?}", buffer);
-            println!(">>> Debug end!!");
-            println!(">>> Error message start!!");
-            println!("{:?}", error);
-            println!(">>> Error message end!!");
-            return Err(CompilerError::ParsingError);
+            return Err(error);
         }
         None => {
-            println!("Error: Unable to evaluate expression.");
-            println!(">>> Failed input start!!");
-            println!("{}", buffer);
-            println!(">>> Failed input end!!");
-            println!(">>> Debug start!!");
-            println!("{:?}", buffer);
-            println!(">>> Debug end!!");
             return Err(CompilerError::EvalParserFailure);
         }
     };
@@ -74,7 +64,7 @@ fn app_entry_point() -> i32 {
     match run_app() {
         Ok(()) => 0,
         Err(error) => {
-            eprintln!("{:?}", error);
+            println!("{}", error);
             error.error_code()
         }
     }

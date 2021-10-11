@@ -1,9 +1,10 @@
+use lrpar::Span;
+
 use super::ast_node::AstNode;
+use super::error::CompilerError;
 use super::lexical_structures::{
     GlobalVarDef, GlobalVecDef, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit,
 };
-use anyhow::{bail, Result};
-use lrpar::Span;
 
 #[derive(Debug)]
 pub enum AuxVarOrVecName {
@@ -41,7 +42,7 @@ pub fn top_level_def_assembler(
     is_static: bool,
     var_type: Span,
     mut var_or_vec: Vec<AuxVarOrVecName>,
-) -> Result<Box<dyn AstNode>> {
+) -> Result<Box<dyn AstNode>, CompilerError> {
     var_or_vec.reverse();
 
     let mut last_step: Option<Box<dyn AstNode>> = None;
@@ -65,7 +66,11 @@ pub fn top_level_def_assembler(
             })
         }
     } {
-        None => bail!("top_level_def_assembler() with empty length var_or_vec"),
+        None => {
+            return Err(CompilerError::TreeBuildingError(
+                "top_level_def_assembler() with empty length var_or_vec".to_string(),
+            ))
+        }
         Some(def) => Ok(def),
     }
 }
