@@ -11,23 +11,31 @@ pub struct Symbol {
     pub line: usize,
     pub col: usize,
     pub type_value: SymbolType,
+    pub class: SymbolClass,
 }
 
 impl Symbol {
-    pub fn new(id: String, span: Span, line: usize, col: usize, type_value: SymbolType) -> Symbol {
+    pub fn new(
+        id: String,
+        span: Span,
+        line: usize,
+        col: usize,
+        type_value: SymbolType,
+        class: SymbolClass,
+    ) -> Symbol {
         Symbol {
             id,
             span,
             line,
             col,
             type_value,
+            class,
         }
     }
 }
 
 #[derive(Clone, Debug)]
 pub enum SymbolType {
-    Undefined,
     Int(Option<i32>),
     Float(Option<f32>),
     Char(Option<u8>),
@@ -47,6 +55,23 @@ impl SymbolType {
                 "invalid type declaration: {}",
                 str_type
             ))),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SymbolClass {
+    Fn,
+    Var,
+    Vec,
+}
+
+impl SymbolClass {
+    pub fn to_str(&self) -> &str {
+        match self {
+            SymbolClass::Fn => "function",
+            SymbolClass::Var => "variable",
+            SymbolClass::Vec => "vector",
         }
     }
 }
@@ -110,11 +135,54 @@ impl ScopeStack {
         &self,
         span: Span,
         lexer: &dyn NonStreamingLexer<u32>,
+        expected_class: SymbolClass,
     ) -> Result<&Symbol, CompilerError> {
         let id = lexer.span_str(span).to_string();
         for scope in self.stack.iter().rev() {
-            if let Some(symbol) = scope.get(&id) {
-                return Ok(&symbol);
+            if let Some(older_symbol) = scope.get(&id) {
+                if older_symbol.class == expected_class {
+                    return Ok(&older_symbol);
+                } else {
+                    let first_line = older_symbol.line;
+                    let first_col = older_symbol.col;
+                    let first_highlight =
+                        ScopeStack::form_string_highlight(older_symbol.span, lexer);
+                    let second_class = expected_class.to_str().to_owned();
+                    let ((second_line, second_col), (_, _)) = lexer.line_col(span);
+                    let second_highlight = ScopeStack::form_string_highlight(span, lexer);
+                    return Err(match older_symbol.class {
+                        SymbolClass::Var => CompilerError::SemanticErrorVariable {
+                            id,
+                            first_line,
+                            first_col,
+                            first_highlight,
+                            second_class,
+                            second_line,
+                            second_col,
+                            second_highlight,
+                        },
+                        SymbolClass::Vec => CompilerError::SemanticErrorVector {
+                            id,
+                            first_line,
+                            first_col,
+                            first_highlight,
+                            second_class,
+                            second_line,
+                            second_col,
+                            second_highlight,
+                        },
+                        SymbolClass::Fn => CompilerError::SemanticErrorFunction {
+                            id,
+                            first_line,
+                            first_col,
+                            first_highlight,
+                            second_class,
+                            second_line,
+                            second_col,
+                            second_highlight,
+                        },
+                    });
+                }
             }
         }
         let ((line, col), (_, _)) = lexer.line_col(span);

@@ -49,14 +49,41 @@ pub enum CompilerError {
         second_highlight: String,
     },
 
-    #[error("variable identifier used as vector or function")]
-    SemanticErrorVariable,
+    #[error("Variable identifier used as {second_class}: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorVariable {
+        id: String,
+        first_line: usize,
+        first_col: usize,
+        first_highlight: String,
+        second_class: String,
+        second_line: usize,
+        second_col: usize,
+        second_highlight: String,
+    },
 
-    #[error("vector identifier used as a variable or function")]
-    SemanticErrorVector,
+    #[error("Vector identifier used as {second_class}: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorVector {
+        id: String,
+        first_line: usize,
+        first_col: usize,
+        first_highlight: String,
+        second_class: String,
+        second_line: usize,
+        second_col: usize,
+        second_highlight: String,
+    },
 
-    #[error("function identifier used as a variable or vector")]
-    SemanticErrorFunction,
+    #[error("Function identifier used as {second_class}: \"{id}\"\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorFunction {
+        id: String,
+        first_line: usize,
+        first_col: usize,
+        first_highlight: String,
+        second_class: String,
+        second_line: usize,
+        second_col: usize,
+        second_highlight: String,
+    },
 
     #[error("incompatible type in attribution")]
     SemanticErrorWrongType,
@@ -113,9 +140,9 @@ impl CompilerError {
             | CompilerError::FailedScoping => 1,
             CompilerError::SemanticErrorUndeclared { .. } => 10,
             CompilerError::SemanticErrorDeclared { .. } => 11,
-            CompilerError::SemanticErrorVariable => 20,
-            CompilerError::SemanticErrorVector => 21,
-            CompilerError::SemanticErrorFunction => 22,
+            CompilerError::SemanticErrorVariable { .. } => 20,
+            CompilerError::SemanticErrorVector { .. } => 21,
+            CompilerError::SemanticErrorFunction { .. } => 22,
             CompilerError::SemanticErrorWrongType => 30,
             CompilerError::SemanticErrorStringToX(_) => 31,
             CompilerError::SemanticErrorCharToX(_) => 32,

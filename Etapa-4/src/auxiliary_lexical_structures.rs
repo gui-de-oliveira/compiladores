@@ -3,8 +3,7 @@ use lrpar::Span;
 use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::lexical_structures::{
-    GlobalVarDef, GlobalVecDef, IdentifierInvoke, LocalVarDef, Parameter, VarDefInitId,
-    VarDefInitLit,
+    GlobalVarDef, GlobalVecDef, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit, VarInvoke,
 };
 
 #[derive(Debug)]
@@ -84,7 +83,7 @@ pub fn mount_local_def(
 ) -> Box<dyn AstNode> {
     match name_def {
         AuxLocalNameDef::Def(var_name) => Box::new(LocalVarDef::new(
-            is_static, is_const, var_type, var_name, None,
+            is_static, is_const, var_type, var_name, false, None,
         )),
         AuxLocalNameDef::InitWithVar {
             var_name,
@@ -93,9 +92,9 @@ pub fn mount_local_def(
         } => Box::new(VarDefInitId::new(
             op_name,
             Box::new(LocalVarDef::new(
-                is_static, is_const, var_type, var_name, None,
+                is_static, is_const, var_type, var_name, true, None,
             )),
-            Box::new(IdentifierInvoke::new(var_value, None)),
+            Box::new(VarInvoke::new(var_value, None)),
             None,
         )),
         AuxLocalNameDef::InitWithLit {
@@ -105,7 +104,7 @@ pub fn mount_local_def(
         } => Box::new(VarDefInitLit::new(
             op_name,
             Box::new(LocalVarDef::new(
-                is_static, is_const, var_type, var_name, None,
+                is_static, is_const, var_type, var_name, true, None,
             )),
             var_value,
             None,

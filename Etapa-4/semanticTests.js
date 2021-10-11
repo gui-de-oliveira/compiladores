@@ -112,10 +112,10 @@ async function main() {
   //     `Erro semântico na linha 1, coluna 13. Variável "undeclared" não foi declarada.`
   //   );
 
-  // Valid input.
+  // Test 1: Valid input.
   await testValidInput("int f1() { }");
 
-  // Generic parsing error.
+  // Test 2: Generic parsing error.
   await testInvalidInput(
     `
       int a a;
@@ -125,7 +125,7 @@ async function main() {
     `parsing errors: Parsing error at line 2 column 13. No repair sequences found.\n`
   );
 
-  // Two same-name global vars, in same scope.
+  // Test 3: Two same-name global vars, in same scope.
   await testInvalidInput(
     `
       int abc;
@@ -142,7 +142,7 @@ And again at line 3, column 12:
 `
   );
 
-  // One global vec and one global var, both with same name, in same scope.
+  // Test 4: One global vec and one global var, both with same name, in same scope.
   await testInvalidInput(
     `
       int abc[3];
@@ -159,7 +159,7 @@ And again at line 3, column 12:
 `
   );
 
-  // One global vec and one global function, both with same name, in same scope.
+  // Test 5: One global vec and one global function, both with same name, in same scope.
   await testInvalidInput(
     `
       int abc[3];
@@ -176,7 +176,7 @@ And again at line 3, column 12:
 `
   );
 
-  // Two local variables, both with same name, in same scope.
+  // Test 6: Two local variables, both with same name, in same scope.
   await testInvalidInput(
     `
       bool abc() {
@@ -195,7 +195,7 @@ And again at line 4, column 16:
 `
   );
 
-  // Uninitialized variable.
+  // Test 7: Uninitialized variable.
   await testInvalidInput(
     `
       int aaa;
@@ -207,6 +207,25 @@ And again at line 4, column 16:
     `Usage of undeclared identifier: "ddd"
 Occurrence at line 4, column 22:
         float ccc <= ddd;
+                     ^^^
+`
+  );
+
+  // Test 8: Expected vector, found variable.
+  await testInvalidInput(
+    `
+      int aaa[1];
+      bool bbb() {
+        float ccc <= aaa;
+      }
+    `,
+    ERROR_CODE.ERR_VECTOR,
+    `Vector identifier used as variable: "aaa"
+First occurrence at line 2, column 11:
+      int aaa[1];
+          ^^^
+And again at line 4, column 22:
+        float ccc <= aaa;
                      ^^^
 `
   );
