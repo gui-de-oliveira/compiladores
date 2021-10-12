@@ -230,7 +230,7 @@ And again at line 4, column 22:
 `
   );
 
-  // Test 8: Expected variable, found function.
+  // Test 9: Expected variable, found function.
   await testInvalidInput(
     `
       int aaa;
@@ -247,6 +247,24 @@ First occurrence at line 4, column 22:
 And again at line 5, column 15:
         ccc = aaa();
               ^^^
+`
+  );
+
+  // Test 10: Expected function, found vector.
+  await testInvalidInput(
+    `
+      bool bbb() {
+        bbb[3] = aaa;
+      }
+    `,
+    ERROR_CODE.ERR_FUNCTION,
+    `Function identifier used as vector: "bbb"
+First occurrence at line 2, column 12:
+      bool bbb() {
+           ^^^
+And again at line 3, column 9:
+        bbb[3] = aaa;
+        ^^^
 `
   );
 
