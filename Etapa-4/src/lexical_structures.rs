@@ -912,9 +912,39 @@ impl AstNode for OutputId {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.var_name.evaluate_node(stack, lexer)?;
+
+        let id = self.var_name.get_id();
+        let var_def = stack.get_previous_def(id, lexer, SymbolClass::Var)?;
+
+        match var_def.type_value {
+            SymbolType::Int(_) | SymbolType::Float(_) => (),
+            _ => {
+                let first_highlight = ScopeStack::form_string_highlight(var_def.span, lexer);
+                let ((first_line, first_col), (_, _)) = lexer.line_col(var_def.span);
+
+                let second_highlight = ScopeStack::form_string_highlight(id, lexer);
+                let ((second_line, second_col), (_, _)) = lexer.line_col(id);
+
+                return Err(CompilerError::SemanticErrorWrongParOutputId {
+                    received_type: var_def.type_value.to_str().to_string(),
+                    first_highlight,
+                    first_line,
+                    first_col,
+                    second_highlight,
+                    second_line,
+                    second_col,
+                });
+            }
+        }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
     fn get_id(&self) -> Span {

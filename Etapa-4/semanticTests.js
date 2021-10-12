@@ -382,6 +382,88 @@ And again at line 4, column 15:
       }
     `
   );
+
+  // De maneira analoga, o comando output deve ser seguido por um identificador ou literal do tipo int e float.
+  // Caso contrário, deve ser lançado o erro ERR_WRONG_PAR_OUTPUT.
+
+  // Test 18: expected int or float, received bool
+  await testInvalidInput(
+    `
+      int main() {
+        bool a;
+        output a;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "bool";
+First occurrence at line 3, column 14:
+        bool a;
+             ^
+And again at line 4, column 16:
+        output a;
+               ^`
+  );
+
+  // Test 19: expected int or float, received char
+  await testInvalidInput(
+    `
+      int main() {
+        char a;
+        output a;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "char";
+First occurrence at line 3, column 14:
+        char a;
+             ^
+And again at line 4, column 16:
+        output a;
+               ^`
+  );
+
+  // Test 20: expected int or float, received string
+  await testInvalidInput(
+    `
+      int main() {
+        string a;
+        output a;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "string";
+First occurrence at line 3, column 16:
+        string a;
+               ^
+And again at line 4, column 16:
+        output a;
+               ^`
+  );
+
+  // Test 21: valid int variable
+  await testValidInput(
+    `
+      int main() {
+        int a;
+        output a;
+        return 0;
+      }
+    `
+  );
+
+  // Test 22: valid float variable
+  await testValidInput(
+    `
+      int main() {
+        float a;
+        output a;
+        return 0;
+      }
+    `
+  );
 }
 
 main();

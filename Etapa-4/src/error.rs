@@ -131,6 +131,17 @@ pub enum CompilerError {
     #[error("invalid type for \"output\" command; expected identifier or literal, of type \"int\" or \"float\"")]
     SemanticErrorWrongParOutput,
 
+    #[error("Invalid argument for \"output\" command; expected variable or literal of type \"int\" or \"float\", found \"{received_type}\";\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorWrongParOutputId {
+        received_type: String,
+        first_highlight: String,
+        first_line: usize,
+        first_col: usize,
+        second_highlight: String,
+        second_line: usize,
+        second_col: usize,
+    },
+
     #[error("invalid return for function; expected \"return\" command with compatible type")]
     SemanticErrorWrrongParReturn,
 
@@ -163,7 +174,8 @@ impl CompilerError {
             CompilerError::SemanticErrorWrongTypeArgs => 42,
             CompilerError::SemanticErrorFunctionString => 43,
             CompilerError::SemanticErrorWrongParInput { .. } => 50,
-            CompilerError::SemanticErrorWrongParOutput => 51,
+            CompilerError::SemanticErrorWrongParOutput
+            | CompilerError::SemanticErrorWrongParOutputId { .. } => 51,
             CompilerError::SemanticErrorWrrongParReturn => 52,
             CompilerError::SemanticErrorWrongParShift => 53,
         }
