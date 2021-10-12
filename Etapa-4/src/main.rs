@@ -7,7 +7,7 @@ mod ast_node;
 mod auxiliary_lexical_structures;
 mod error;
 mod lexical_structures;
-mod syntactic_structures;
+mod semantic_structures;
 
 use std::io::{self, Read, Write};
 

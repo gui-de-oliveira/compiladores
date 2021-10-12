@@ -5,7 +5,7 @@ use lrpar::NonStreamingLexer;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::syntactic_structures::ScopeStack;
+use super::semantic_structures::ScopeStack;
 
 pub struct AbstractSyntaxTree {
     top_node: Option<Box<dyn AstNode>>,

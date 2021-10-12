@@ -4,7 +4,7 @@ use std::ptr::addr_of;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::syntactic_structures::{ScopeStack, Symbol, SymbolClass, SymbolType};
+use super::semantic_structures::{ScopeStack, Symbol, SymbolClass, SymbolType};
 
 #[derive(Debug)]
 pub struct GlobalVarDef {
