@@ -268,6 +268,38 @@ And again at line 3, column 9:
 `
   );
 
+  // Test 11: Duplicated function definition.
+  await testInvalidInput(
+    `
+        int f1(int a) { return 0; }
+        int f1(int a) { return 0; }
+      `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "f1"
+First occurrence at line 2, column 13:
+        int f1(int a) { return 0; }
+            ^^
+And again at line 3, column 13:
+        int f1(int a) { return 0; }
+            ^^`
+  );
+
+  // Test 12: Duplicated vector definition.
+  await testInvalidInput(
+    `
+      int vec[10];
+      int vec[10];
+      `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "vec"
+First occurrence at line 2, column 11:
+      int vec[10];
+          ^^^
+And again at line 3, column 11:
+      int vec[10];
+          ^^^`
+  );
+
 }
 
 main();
