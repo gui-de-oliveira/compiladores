@@ -4,7 +4,7 @@ use std::ffi::c_void;
 use std::fmt::Debug;
 
 use super::error::CompilerError;
-use super::syntactic_structures::ScopeStack;
+use super::semantic_structures::ScopeStack;
 
 pub trait AstNode: Debug {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool);
