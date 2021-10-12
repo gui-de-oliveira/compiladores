@@ -1135,14 +1135,7 @@ impl AstNode for FnCall {
         let span = self.node_id;
         let class = SymbolClass::Fn;
         //TO DO: Add args-checking.
-        let previous_def = stack.get_previous_def(span, lexer, class)?;
-
-        let var_type = previous_def.type_value.clone();
-        let id = lexer.span_str(span).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
-
-        stack.add_symbol(our_symbol)?;
+        let _previous_def = stack.get_previous_def(span, lexer, class)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1769,14 +1762,7 @@ impl AstNode for VarInvoke {
     ) -> Result<(), CompilerError> {
         let span = self.node_id;
         let class = SymbolClass::Var;
-        let previous_def = stack.get_previous_def(span, lexer, class)?;
-
-        let var_type = previous_def.type_value.clone();
-        let id = lexer.span_str(span).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
-
-        stack.add_symbol(our_symbol)?;
+        let _previous_def = stack.get_previous_def(span, lexer, class)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1823,14 +1809,7 @@ impl AstNode for VecInvoke {
     ) -> Result<(), CompilerError> {
         let span = self.node_id;
         let class = SymbolClass::Vec;
-        let previous_def = stack.get_previous_def(span, lexer, class)?;
-
-        let var_type = previous_def.type_value.clone();
-        let id = lexer.span_str(span).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
-
-        stack.add_symbol(our_symbol)?;
+        let _previous_def = stack.get_previous_def(span, lexer, class)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1875,27 +1854,6 @@ impl AstNode for LiteralInt {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let class = SymbolClass::Lit;
-
-        let span = self.node_id;
-        let id = lexer.span_str(span).to_string();
-
-        let var_value = match id.parse::<i32>() {
-            Ok(value) => value,
-            Err(_) => {
-                return Err(CompilerError::LexicalError(format!(
-                    "Unable to parse {} into i32.",
-                    id
-                )))
-            }
-        };
-        let var_type = SymbolType::Int(Some(var_value));
-
-        let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
-
-        stack.add_symbol(our_symbol)?;
-
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };

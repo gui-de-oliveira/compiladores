@@ -242,8 +242,8 @@ And again at line 4, column 22:
     `,
     ERROR_CODE.ERR_VARIABLE,
     `Variable identifier used as function: "aaa"
-First occurrence at line 4, column 22:
-        float ccc <= aaa;
+First occurrence at line 2, column 11:
+      int aaa;
                      ^^^
 And again at line 5, column 15:
         ccc = aaa();
