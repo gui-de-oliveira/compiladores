@@ -10,7 +10,7 @@ use super::semantic_structures::{ScopeStack, Symbol, SymbolClass, SymbolType};
 pub struct GlobalVarDef {
     is_static: bool,
     var_type: Span,
-    var_name: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -18,13 +18,13 @@ impl GlobalVarDef {
     pub fn new(
         is_static: bool,
         var_type: Span,
-        var_name: Span,
+        node_id: Span,
         next: Option<Box<dyn AstNode>>,
     ) -> GlobalVarDef {
         GlobalVarDef {
             is_static,
             var_type,
-            var_name,
+            node_id,
             next,
         }
     }
@@ -48,12 +48,12 @@ impl AstNode for GlobalVarDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.var_name;
+        let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
-        let id = lexer.span_str(self.var_name).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(self.var_name);
+        let id = lexer.span_str(self.node_id).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
@@ -65,13 +65,16 @@ impl AstNode for GlobalVarDef {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct GlobalVecDef {
     is_static: bool,
     var_type: Span,
-    var_name: Span,
+    node_id: Span,
     vec_size: Span,
     next: Option<Box<dyn AstNode>>,
 }
@@ -80,14 +83,14 @@ impl GlobalVecDef {
     pub fn new(
         is_static: bool,
         var_type: Span,
-        var_name: Span,
+        node_id: Span,
         vec_size: Span,
         next: Option<Box<dyn AstNode>>,
     ) -> GlobalVecDef {
         GlobalVecDef {
             is_static,
             var_type,
-            var_name,
+            node_id,
             vec_size,
             next,
         }
@@ -112,12 +115,12 @@ impl AstNode for GlobalVecDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.var_name;
+        let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
-        let id = lexer.span_str(self.var_name).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(self.var_name);
+        let id = lexer.span_str(self.node_id).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Vec;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
@@ -129,13 +132,16 @@ impl AstNode for GlobalVecDef {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct FnDef {
     is_static: bool,
     return_type: Span,
-    fn_name: Span,
+    node_id: Span,
     params: Vec<Parameter>,
     commands: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -145,7 +151,7 @@ impl FnDef {
     pub fn new(
         is_static: bool,
         return_type: Span,
-        fn_name: Span,
+        node_id: Span,
         params: Vec<Parameter>,
         commands: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
@@ -153,7 +159,7 @@ impl FnDef {
         FnDef {
             is_static,
             return_type,
-            fn_name,
+            node_id,
             params,
             commands,
             next,
@@ -169,7 +175,7 @@ impl AstNode for FnDef {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.fn_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.commands, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -184,12 +190,12 @@ impl AstNode for FnDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.fn_name;
+        let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
         let var_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
-        let id = lexer.span_str(self.fn_name).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(self.fn_name);
+        let id = lexer.span_str(self.node_id).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Fn;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
@@ -205,12 +211,15 @@ impl AstNode for FnDef {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct Parameter {
     pub is_const: bool,
-    pub param_type: Span,
+    pub node_id: Span,
     pub param_name: Span,
 }
 
@@ -219,7 +228,7 @@ pub struct LocalVarDef {
     is_static: bool,
     is_const: bool,
     var_type: Span,
-    var_name: Span,
+    node_id: Span,
     is_tree_node: bool,
     next: Option<Box<dyn AstNode>>,
 }
@@ -229,7 +238,7 @@ impl LocalVarDef {
         is_static: bool,
         is_const: bool,
         var_type: Span,
-        var_name: Span,
+        node_id: Span,
         is_tree_node: bool,
         next: Option<Box<dyn AstNode>>,
     ) -> LocalVarDef {
@@ -237,7 +246,7 @@ impl LocalVarDef {
             is_static,
             is_const,
             var_type,
-            var_name,
+            node_id,
             is_tree_node,
             next,
         }
@@ -252,7 +261,7 @@ impl AstNode for LocalVarDef {
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         if self.is_tree_node {
-            print_label_self(self.var_name, lexer, own_address);
+            print_label_self(self.node_id, lexer, own_address);
             print_labels_next(&self.next, lexer, own_address);
         } else {
             print_labels_ripple(&self.next, lexer, own_address)
@@ -269,12 +278,12 @@ impl AstNode for LocalVarDef {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.var_name;
+        let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
         let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
-        let id = lexer.span_str(self.var_name).to_string();
-        let ((line, col), (_, _)) = lexer.line_col(self.var_name);
+        let id = lexer.span_str(self.node_id).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
@@ -286,11 +295,14 @@ impl AstNode for LocalVarDef {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarDefInitId {
-    op_name: Span,
+    node_id: Span,
     var_def: Box<dyn AstNode>,
     var_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -298,13 +310,13 @@ pub struct VarDefInitId {
 
 impl VarDefInitId {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         var_def: Box<dyn AstNode>,
         var_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarDefInitId {
         VarDefInitId {
-            op_name,
+            node_id,
             var_def,
             var_value,
             next,
@@ -322,7 +334,7 @@ impl AstNode for VarDefInitId {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_def, lexer);
         print_labels_child(&self.var_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -348,11 +360,14 @@ impl AstNode for VarDefInitId {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarDefInitLit {
-    op_name: Span,
+    node_id: Span,
     var_def: Box<dyn AstNode>,
     var_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -360,13 +375,13 @@ pub struct VarDefInitLit {
 
 impl VarDefInitLit {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         var_def: Box<dyn AstNode>,
         var_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarDefInitLit {
         VarDefInitLit {
-            op_name,
+            node_id,
             var_def,
             var_value,
             next,
@@ -384,7 +399,7 @@ impl AstNode for VarDefInitLit {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_def, lexer);
         print_labels_child(&self.var_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -412,11 +427,14 @@ impl AstNode for VarDefInitLit {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarLeftShift {
-    shift_type: Span,
+    node_id: Span,
     var_name: Box<dyn AstNode>,
     shift_amount: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -424,13 +442,13 @@ pub struct VarLeftShift {
 
 impl VarLeftShift {
     pub fn new(
-        shift_type: Span,
+        node_id: Span,
         var_name: Box<dyn AstNode>,
         shift_amount: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarLeftShift {
         VarLeftShift {
-            shift_type,
+            node_id,
             var_name,
             shift_amount,
             next,
@@ -448,7 +466,7 @@ impl AstNode for VarLeftShift {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.shift_type, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_name, lexer);
         print_labels_child(&self.shift_amount, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -466,11 +484,14 @@ impl AstNode for VarLeftShift {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarRightShift {
-    shift_type: Span,
+    node_id: Span,
     var_name: Box<dyn AstNode>,
     shift_amount: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -478,13 +499,13 @@ pub struct VarRightShift {
 
 impl VarRightShift {
     pub fn new(
-        shift_type: Span,
+        node_id: Span,
         var_name: Box<dyn AstNode>,
         shift_amount: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarRightShift {
         VarRightShift {
-            shift_type,
+            node_id,
             var_name,
             shift_amount,
             next,
@@ -502,7 +523,7 @@ impl AstNode for VarRightShift {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.shift_type, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_name, lexer);
         print_labels_child(&self.shift_amount, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -520,11 +541,14 @@ impl AstNode for VarRightShift {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VecLeftShift {
-    shift_type: Span,
+    node_id: Span,
     vec_access: Box<dyn AstNode>,
     shift_amount: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -532,13 +556,13 @@ pub struct VecLeftShift {
 
 impl VecLeftShift {
     pub fn new(
-        shift_type: Span,
+        node_id: Span,
         vec_access: Box<dyn AstNode>,
         shift_amount: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecLeftShift {
         VecLeftShift {
-            shift_type,
+            node_id,
             vec_access,
             shift_amount,
             next,
@@ -556,7 +580,7 @@ impl AstNode for VecLeftShift {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.shift_type, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.vec_access, lexer);
         print_labels_child(&self.shift_amount, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -574,11 +598,14 @@ impl AstNode for VecLeftShift {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VecRightShift {
-    shift_type: Span,
+    node_id: Span,
     vec_access: Box<dyn AstNode>,
     shift_amount: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -586,13 +613,13 @@ pub struct VecRightShift {
 
 impl VecRightShift {
     pub fn new(
-        shift_type: Span,
+        node_id: Span,
         vec_access: Box<dyn AstNode>,
         shift_amount: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecRightShift {
         VecRightShift {
-            shift_type,
+            node_id,
             vec_access,
             shift_amount,
             next,
@@ -610,7 +637,7 @@ impl AstNode for VecRightShift {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.shift_type, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.vec_access, lexer);
         print_labels_child(&self.shift_amount, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -628,11 +655,14 @@ impl AstNode for VecRightShift {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarSet {
-    op_name: Span,
+    node_id: Span,
     var_name: Box<dyn AstNode>,
     new_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -640,13 +670,13 @@ pub struct VarSet {
 
 impl VarSet {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         var_name: Box<dyn AstNode>,
         new_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarSet {
         VarSet {
-            op_name,
+            node_id,
             var_name,
             new_value,
             next,
@@ -664,7 +694,7 @@ impl AstNode for VarSet {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_name, lexer);
         print_labels_child(&self.new_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -680,7 +710,7 @@ impl AstNode for VarSet {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        self.var_name.evaluate_node(stack, lexer)?;
+        self.node_id.evaluate_node(stack, lexer)?;
 
         self.new_value.evaluate_node(stack, lexer)?;
 
@@ -692,11 +722,14 @@ impl AstNode for VarSet {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VecSet {
-    op_name: Span,
+    node_id: Span,
     vec_access: Box<dyn AstNode>,
     new_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -704,13 +737,13 @@ pub struct VecSet {
 
 impl VecSet {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         vec_access: Box<dyn AstNode>,
         new_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecSet {
         VecSet {
-            op_name,
+            node_id,
             vec_access,
             new_value,
             next,
@@ -728,7 +761,7 @@ impl AstNode for VecSet {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.vec_access, lexer);
         print_labels_child(&self.new_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -756,19 +789,22 @@ impl AstNode for VecSet {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct Input {
-    op_name: Span,
+    node_id: Span,
     var_name: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl Input {
-    pub fn new(op_name: Span, var_name: Box<dyn AstNode>, next: Option<Box<dyn AstNode>>) -> Input {
+    pub fn new(node_id: Span, var_name: Box<dyn AstNode>, next: Option<Box<dyn AstNode>>) -> Input {
         Input {
-            op_name,
+            node_id,
             var_name,
             next,
         }
@@ -783,7 +819,7 @@ impl AstNode for Input {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_name, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -800,23 +836,26 @@ impl AstNode for Input {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct OutputId {
-    op_name: Span,
+    node_id: Span,
     var_name: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl OutputId {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         var_name: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> OutputId {
         OutputId {
-            op_name,
+            node_id,
             var_name,
             next,
         }
@@ -831,7 +870,7 @@ impl AstNode for OutputId {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.var_name, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -848,23 +887,26 @@ impl AstNode for OutputId {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct OutputLit {
-    op_name: Span,
+    node_id: Span,
     lit_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl OutputLit {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         lit_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> OutputLit {
         OutputLit {
-            op_name,
+            node_id,
             lit_value,
             next,
         }
@@ -879,7 +921,7 @@ impl AstNode for OutputLit {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.lit_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -896,17 +938,20 @@ impl AstNode for OutputLit {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct Continue {
-    op_name: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl Continue {
-    pub fn new(op_name: Span, next: Option<Box<dyn AstNode>>) -> Continue {
-        Continue { op_name, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> Continue {
+        Continue { node_id, next }
     }
 }
 
@@ -916,7 +961,7 @@ impl AstNode for Continue {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -932,17 +977,20 @@ impl AstNode for Continue {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct Break {
-    op_name: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl Break {
-    pub fn new(op_name: Span, next: Option<Box<dyn AstNode>>) -> Break {
-        Break { op_name, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> Break {
+        Break { node_id, next }
     }
 }
 
@@ -952,7 +1000,7 @@ impl AstNode for Break {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -968,23 +1016,26 @@ impl AstNode for Break {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct Return {
-    op_name: Span,
+    node_id: Span,
     ret_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl Return {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         ret_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> Return {
         Return {
-            op_name,
+            node_id,
             ret_value,
             next,
         }
@@ -999,7 +1050,7 @@ impl AstNode for Return {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.ret_value, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -1016,23 +1067,26 @@ impl AstNode for Return {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct FnCall {
-    fn_name: Span,
+    node_id: Span,
     args: Option<Box<dyn AstNode>>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl FnCall {
     pub fn new(
-        fn_name: Span,
+        node_id: Span,
         args: Option<Box<dyn AstNode>>,
         next: Option<Box<dyn AstNode>>,
     ) -> FnCall {
         FnCall {
-            fn_name,
+            node_id,
             args,
             next,
         }
@@ -1042,7 +1096,7 @@ impl FnCall {
         println!(
             "{:p} [label=\"call {}\"];",
             own_address,
-            lexer.span_str(self.fn_name)
+            lexer.span_str(self.node_id)
         );
     }
 }
@@ -1078,7 +1132,7 @@ impl AstNode for FnCall {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.fn_name;
+        let span = self.node_id;
         let class = SymbolClass::Fn;
         //TO DO: Add args-checking.
         let previous_def = stack.get_previous_def(span, lexer, class)?;
@@ -1096,11 +1150,14 @@ impl AstNode for FnCall {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct If {
-    op_name: Span,
+    node_id: Span,
     condition: Box<dyn AstNode>,
     consequence: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -1108,13 +1165,13 @@ pub struct If {
 
 impl If {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         condition: Box<dyn AstNode>,
         consequence: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> If {
         If {
-            op_name,
+            node_id,
             condition,
             consequence,
             next,
@@ -1132,7 +1189,7 @@ impl AstNode for If {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.condition, lexer);
         print_labels_child(&self.consequence, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -1150,11 +1207,14 @@ impl AstNode for If {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct IfElse {
-    op_name: Span,
+    node_id: Span,
     condition: Box<dyn AstNode>,
     if_true: Box<dyn AstNode>,
     if_false: Box<dyn AstNode>,
@@ -1163,14 +1223,14 @@ pub struct IfElse {
 
 impl IfElse {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         condition: Box<dyn AstNode>,
         if_true: Box<dyn AstNode>,
         if_false: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> IfElse {
         IfElse {
-            op_name,
+            node_id,
             condition,
             if_true,
             if_false,
@@ -1191,7 +1251,7 @@ impl AstNode for IfElse {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.condition, lexer);
         print_labels_child(&self.if_true, lexer);
         print_labels_child(&self.if_false, lexer);
@@ -1210,11 +1270,14 @@ impl AstNode for IfElse {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct For {
-    op_name: Span,
+    node_id: Span,
     count_init: Box<dyn AstNode>,
     count_check: Box<dyn AstNode>,
     count_iter: Box<dyn AstNode>,
@@ -1224,7 +1287,7 @@ pub struct For {
 
 impl For {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         count_init: Box<dyn AstNode>,
         count_check: Box<dyn AstNode>,
         count_iter: Box<dyn AstNode>,
@@ -1232,7 +1295,7 @@ impl For {
         next: Option<Box<dyn AstNode>>,
     ) -> For {
         For {
-            op_name,
+            node_id,
             count_init,
             count_check,
             count_iter,
@@ -1256,7 +1319,7 @@ impl AstNode for For {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.count_init, lexer);
         print_labels_child(&self.count_check, lexer);
         print_labels_child(&self.count_iter, lexer);
@@ -1276,11 +1339,14 @@ impl AstNode for For {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct While {
-    op_name: Span,
+    node_id: Span,
     condition: Box<dyn AstNode>,
     consequence: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -1288,13 +1354,13 @@ pub struct While {
 
 impl While {
     pub fn new(
-        op_name: Span,
+        node_id: Span,
         condition: Box<dyn AstNode>,
         consequence: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> While {
         While {
-            op_name,
+            node_id,
             condition,
             consequence,
             next,
@@ -1312,7 +1378,7 @@ impl AstNode for While {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.condition, lexer);
         print_labels_child(&self.consequence, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -1330,18 +1396,21 @@ impl AstNode for While {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct EmptyBlock {
-    op_occurrence: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl EmptyBlock {
-    pub fn new(op_occurrence: Span, next: Option<Box<dyn AstNode>>) -> EmptyBlock {
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> EmptyBlock {
         EmptyBlock {
-            op_occurrence,
+            node_id,
             next,
         }
     }
@@ -1366,6 +1435,9 @@ impl AstNode for EmptyBlock {
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
+    }
+    fn get_id(&self) -> Span {
+        self.node_id
     }
 }
 
@@ -1434,11 +1506,14 @@ impl AstNode for Ternary {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.left_span
+    }
 }
 
 #[derive(Debug)]
 pub struct Binary {
-    op_span: Span,
+    node_id: Span,
     op_type: BinaryType,
     lhs: Box<dyn AstNode>,
     rhs: Box<dyn AstNode>,
@@ -1447,14 +1522,14 @@ pub struct Binary {
 
 impl Binary {
     pub fn new(
-        op_span: Span,
+        node_id: Span,
         op_type: BinaryType,
         lhs: Box<dyn AstNode>,
         rhs: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> Binary {
         Binary {
-            op_span,
+            node_id,
             op_type,
             lhs,
             rhs,
@@ -1473,7 +1548,7 @@ impl AstNode for Binary {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.lhs, lexer);
         print_labels_child(&self.rhs, lexer);
         print_labels_next(&self.next, lexer, own_address);
@@ -1491,11 +1566,14 @@ impl AstNode for Binary {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct Unary {
-    op_span: Span,
+    node_id: Span,
     op_type: UnaryType,
     operand: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -1503,13 +1581,13 @@ pub struct Unary {
 
 impl Unary {
     pub fn new(
-        op_span: Span,
+        node_id: Span,
         op_type: UnaryType,
         operand: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> Unary {
         Unary {
-            op_span,
+            node_id,
             op_type,
             operand,
             next,
@@ -1525,7 +1603,7 @@ impl AstNode for Unary {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.op_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_child(&self.operand, lexer);
         print_labels_next(&self.next, lexer, own_address);
     }
@@ -1542,17 +1620,20 @@ impl AstNode for Unary {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarAccess {
-    var_name: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl VarAccess {
-    pub fn new(var_name: Span, next: Option<Box<dyn AstNode>>) -> VarAccess {
-        VarAccess { var_name, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> VarAccess {
+        VarAccess { node_id, next }
     }
 }
 
@@ -1562,7 +1643,7 @@ impl AstNode for VarAccess {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.var_name, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -1578,11 +1659,14 @@ impl AstNode for VarAccess {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VecAccess {
-    expr_span: Span,
+    node_id: Span,
     vec_name: Box<dyn AstNode>,
     vec_index: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
@@ -1590,13 +1674,13 @@ pub struct VecAccess {
 
 impl VecAccess {
     pub fn new(
-        expr_span: Span,
+        node_id: Span,
         vec_name: Box<dyn AstNode>,
         vec_index: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecAccess {
         VecAccess {
-            expr_span,
+            node_id,
             vec_name,
             vec_index,
             next,
@@ -1646,17 +1730,20 @@ impl AstNode for VecAccess {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VarInvoke {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl VarInvoke {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> VarInvoke {
-        VarInvoke { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> VarInvoke {
+        VarInvoke { node_id, next }
     }
 }
 
@@ -1666,7 +1753,7 @@ impl AstNode for VarInvoke {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.expr_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -1680,7 +1767,7 @@ impl AstNode for VarInvoke {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.expr_span;
+        let span = self.node_id;
         let class = SymbolClass::Var;
         let previous_def = stack.get_previous_def(span, lexer, class)?;
 
@@ -1697,17 +1784,20 @@ impl AstNode for VarInvoke {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct VecInvoke {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl VecInvoke {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> VecInvoke {
-        VecInvoke { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> VecInvoke {
+        VecInvoke { node_id, next }
     }
 }
 
@@ -1717,7 +1807,7 @@ impl AstNode for VecInvoke {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.expr_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -1731,7 +1821,7 @@ impl AstNode for VecInvoke {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
-        let span = self.expr_span;
+        let span = self.node_id;
         let class = SymbolClass::Vec;
         let previous_def = stack.get_previous_def(span, lexer, class)?;
 
@@ -1748,17 +1838,20 @@ impl AstNode for VecInvoke {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct LiteralInt {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl LiteralInt {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralInt {
-        LiteralInt { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> LiteralInt {
+        LiteralInt { node_id, next }
     }
 }
 
@@ -1768,7 +1861,7 @@ impl AstNode for LiteralInt {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.expr_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -1784,7 +1877,7 @@ impl AstNode for LiteralInt {
     ) -> Result<(), CompilerError> {
         let class = SymbolClass::Lit;
 
-        let span = self.expr_span;
+        let span = self.node_id;
         let id = lexer.span_str(span).to_string();
 
         let var_value = match id.parse::<i32>() {
@@ -1809,17 +1902,20 @@ impl AstNode for LiteralInt {
 
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct LiteralFloat {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl LiteralFloat {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralFloat {
-        LiteralFloat { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> LiteralFloat {
+        LiteralFloat { node_id, next }
     }
 }
 
@@ -1829,7 +1925,7 @@ impl AstNode for LiteralFloat {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.expr_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -1845,17 +1941,20 @@ impl AstNode for LiteralFloat {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct LiteralBool {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl LiteralBool {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralBool {
-        LiteralBool { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> LiteralBool {
+        LiteralBool { node_id, next }
     }
 }
 
@@ -1865,7 +1964,7 @@ impl AstNode for LiteralBool {
         print_dependencies_next(&self.next, own_address);
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.expr_span, lexer, own_address);
+        print_label_self(self.node_id, lexer, own_address);
         print_labels_next(&self.next, lexer, own_address);
     }
     fn is_tree_member(&self) -> bool {
@@ -1881,21 +1980,24 @@ impl AstNode for LiteralBool {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct LiteralChar {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl LiteralChar {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralChar {
-        LiteralChar { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> LiteralChar {
+        LiteralChar { node_id, next }
     }
 
     fn print_label_lit_char(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        let text = lexer.span_str(self.expr_span);
+        let text = lexer.span_str(self.node_id);
         println!(
             "{:p} [label=\"{}\"];",
             own_address,
@@ -1926,17 +2028,20 @@ impl AstNode for LiteralChar {
     ) -> Result<(), CompilerError> {
         Ok(())
     }
+    fn get_id(&self) -> Span {
+        self.node_id
+    }
 }
 
 #[derive(Debug)]
 pub struct LiteralString {
-    expr_span: Span,
+    node_id: Span,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl LiteralString {
-    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> LiteralString {
-        LiteralString { expr_span, next }
+    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> LiteralString {
+        LiteralString { node_id, next }
     }
 
     fn print_label_lit_string(
@@ -1944,7 +2049,7 @@ impl LiteralString {
         lexer: &dyn NonStreamingLexer<u32>,
         own_address: *const c_void,
     ) {
-        let text = lexer.span_str(self.expr_span);
+        let text = lexer.span_str(self.node_id);
         println!(
             "{:p} [label=\"{}\"];",
             own_address,
@@ -1974,6 +2079,9 @@ impl AstNode for LiteralString {
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
+    }
+    fn get_id(&self) -> Span {
+        self.node_id
     }
 }
 

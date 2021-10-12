@@ -16,6 +16,7 @@ pub trait AstNode: Debug {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError>;
+    fn get_id(&self) -> Span;
 }
 
 impl AstNode for Box<dyn AstNode> {
@@ -38,6 +39,9 @@ impl AstNode for Box<dyn AstNode> {
     ) -> Result<(), CompilerError> {
         self.as_ref().evaluate_node(stack, lexer)
     }
+    fn get_id(&self) -> Span {
+        self.as_ref().get_id()
+    }
 }
 
 impl AstNode for Span {
@@ -56,5 +60,8 @@ impl AstNode for Span {
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         Ok(())
+    }
+    fn get_id(&self) -> Span {
+        self.clone()
     }
 }
