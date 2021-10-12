@@ -40,7 +40,9 @@ function acceptTest() {
 }
 
 function rejectTest(reason = "") {
-  console.log(Color.Red + `Test ${++testsCounter} failed${reason}!` + Color.Reset);
+  console.log(
+    Color.Red + `Test ${++testsCounter} failed${reason}!` + Color.Reset
+  );
   process.exit();
 }
 
@@ -59,9 +61,8 @@ async function testInvalidInput(input, expectedReturnCode, expectedOutput) {
       logError(receivedOutput);
     }
 
-    rejectTest(" by succeeding")
-
-  } catch(error) {
+    rejectTest(" by succeeding");
+  } catch (error) {
     const { code: receivedReturnCode, stdout: receivedOutput } = error;
 
     let failedTest = false;
@@ -84,8 +85,8 @@ async function testInvalidInput(input, expectedReturnCode, expectedOutput) {
       failedTest = true;
     }
 
-    if(failedTest) {
-      rejectTest()
+    if (failedTest) {
+      rejectTest();
     } else {
       acceptTest();
     }
