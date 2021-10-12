@@ -304,12 +304,13 @@ And again at line 3, column 11:
   // O comando input deve ser seguido obrigatoriamente por um identificador do tipo int e float.
   // Caso contrário, o compilador deve lançar o erro ERR_WRONG_PAR_INPUT.
 
-  // Test 13: expected char
+  // Test 13: expected int or float, received char
   await testInvalidInput(
     `
       int main() {
         char a;
         input a;
+        return 0;
       }
     `,
     ERROR_CODE.ERR_WRONG_PAR_INPUT,
@@ -320,6 +321,66 @@ First occurrence at line 3, column 14:
 And again at line 4, column 15:
         input a;
               ^`
+  );
+
+  // Test 14: expected int or float, received string
+  await testInvalidInput(
+    `
+      int main() {
+        string a;
+        input a;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_INPUT,
+    `Invalid argument for "input" command; expected variable of type "int" or "float", found "string";
+First occurrence at line 3, column 16:
+        string a;
+               ^
+And again at line 4, column 15:
+        input a;
+              ^`
+  );
+
+  // Test 15: expected int or float, received bool
+  await testInvalidInput(
+    `
+      int main() {
+        bool a;
+        input a;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_INPUT,
+    `Invalid argument for "input" command; expected variable of type "int" or "float", found "bool";
+First occurrence at line 3, column 14:
+        bool a;
+             ^
+And again at line 4, column 15:
+        input a;
+              ^`
+  );
+
+  // Test 16: valid int variable
+  await testValidInput(
+    `
+      int main() {
+        int a;
+        input a;
+        return 0;
+      }
+    `
+  );
+
+  // Test 17: valid float variable
+  await testValidInput(
+    `
+      int main() {
+        float a;
+        input a;
+        return 0;
+      }
+    `
   );
 }
 
