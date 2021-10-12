@@ -244,7 +244,7 @@ And again at line 4, column 22:
     `Variable identifier used as function: "aaa"
 First occurrence at line 2, column 11:
       int aaa;
-                     ^^^
+          ^^^
 And again at line 5, column 15:
         ccc = aaa();
               ^^^
@@ -301,6 +301,26 @@ And again at line 3, column 11:
           ^^^`
   );
 
+  // O comando input deve ser seguido obrigatoriamente por um identificador do tipo int e float.
+  // Caso contrário, o compilador deve lançar o erro ERR_WRONG_PAR_INPUT.
+
+  // Test 13: expected char
+  await testInvalidInput(
+    `
+      int main() {
+        char a;
+        input a;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_INPUT,
+    `Invalid argument for "input" command; expected variable of type "int" or "float", found "char";
+First occurrence at line 3, column 14:
+        char a;
+             ^
+And again at line 4, column 15:
+        input a;
+              ^`
+  );
 }
 
 main();

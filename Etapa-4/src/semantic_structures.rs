@@ -44,12 +44,21 @@ pub enum SymbolType {
 }
 
 impl SymbolType {
+    pub fn to_str(&self) -> &str {
+        match self {
+            SymbolType::Int(_) => "int",
+            SymbolType::Float(_) => "float",
+            SymbolType::Char(_) => "char",
+            SymbolType::Bool(_) => "bool",
+            SymbolType::String(_) => "string",
+        }
+    }
     pub fn from_str(str_type: &str) -> Result<SymbolType, CompilerError> {
         match str_type {
             "int" => Ok(SymbolType::Int(None)),
             "float" => Ok(SymbolType::Float(None)),
-            "bool" => Ok(SymbolType::Char(None)),
-            "char" => Ok(SymbolType::Bool(None)),
+            "bool" => Ok(SymbolType::Bool(None)),
+            "char" => Ok(SymbolType::Char(None)),
             "string" => Ok(SymbolType::String(None)),
             _ => Err(CompilerError::LexicalError(format!(
                 "invalid type declaration: {}",
@@ -140,6 +149,7 @@ impl ScopeStack {
         expected_class: SymbolClass,
     ) -> Result<&Symbol, CompilerError> {
         let id = lexer.span_str(span).to_string();
+
         for scope in self.stack.iter().rev() {
             if let Some(older_symbol) = scope.get(&id) {
                 if older_symbol.class == expected_class {

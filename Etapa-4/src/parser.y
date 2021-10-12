@@ -321,7 +321,8 @@ varSet -> Result<Box<dyn AstNode>, CompilerError>:
 IO -> Result<Box<dyn AstNode>, CompilerError>:
     inputTok identifier_rule {
         let op_name = $1?;
-        let var_name = Box::new($2?);
+        let id_span = $2?;
+        let var_name = Box::new(VarInvoke::new(id_span, None));
         Ok(Box::new(Input::new(op_name, var_name, None)))
     }
     | outputTok identifier_rule {
