@@ -741,9 +741,19 @@ impl AstNode for VecSet {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.vec_access.evaluate_node(stack, lexer)?;
+
+        self.new_value.evaluate_node(stack, lexer)?;
+
+        // TO DO: Add symbol and check type.
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
@@ -1621,9 +1631,19 @@ impl AstNode for VecAccess {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.vec_name.evaluate_node(stack, lexer)?;
+
+        self.vec_index.evaluate_node(stack, lexer)?;
+
+        // TO DO: Add symbol and check type.
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
 }
@@ -1662,6 +1682,57 @@ impl AstNode for VarInvoke {
     ) -> Result<(), CompilerError> {
         let span = self.expr_span;
         let class = SymbolClass::Var;
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
+
+        let var_type = previous_def.type_value.clone();
+        let id = lexer.span_str(span).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.add_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct VecInvoke {
+    expr_span: Span,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl VecInvoke {
+    pub fn new(expr_span: Span, next: Option<Box<dyn AstNode>>) -> VecInvoke {
+        VecInvoke { expr_span, next }
+    }
+}
+
+impl AstNode for VecInvoke {
+    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
+        print_dependencies_own_next(&self.next, own_address);
+        print_dependencies_next(&self.next, own_address);
+    }
+    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
+        print_label_self(self.expr_span, lexer, own_address);
+        print_labels_next(&self.next, lexer, own_address);
+    }
+    fn is_tree_member(&self) -> bool {
+        true
+    }
+    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
+        self.next = append_node(&mut self.next, new_last)
+    }
+    fn evaluate_node(
+        &self,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        let span = self.expr_span;
+        let class = SymbolClass::Vec;
         let previous_def = stack.get_previous_def(span, lexer, class)?;
 
         let var_type = previous_def.type_value.clone();

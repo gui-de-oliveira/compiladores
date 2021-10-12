@@ -296,7 +296,7 @@ varShift -> Result<Box<dyn AstNode>, CompilerError>:
 vecAccess -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule '[' expression ']' {
         let expr_span = $span;
-        let vec_name = Box::new($1?);
+        let vec_name = Box::new(VecInvoke::new($1?, None));
         let vec_index = Box::new($3?);
         Ok(Box::new(VecAccess::new(expr_span, vec_name, vec_index, None)))
     }

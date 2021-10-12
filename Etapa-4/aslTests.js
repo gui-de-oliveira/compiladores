@@ -303,6 +303,7 @@ async function test() {
 
   await testInput(
     `
+    int v[5];
     int f1() {
       x = v[3];
     }
@@ -324,19 +325,24 @@ async function test() {
 
   await testInput(
     `
+    int g1() {}
     int f1() {
       g1();
     }
     `,
     `
     A, B
-    A [label="f1"];
-    B [label="call g1"];
+    B, C
+    A [label="g1"];
+    B [label="f1"];
+    C [label="call g1"];
     `
   );
 
   await testInput(
     `
+    int x;
+    int g1() {}
     int f1() {
       x = g1();
     }
@@ -344,16 +350,19 @@ async function test() {
     `
     A, B
     B, C
-    B, D
-    A [label="f1"];
-    B [label="="];
-    C [label="x"];
-    D [label="call g1"];
+    C, D
+    C, E
+    A [label="g1"];
+    B [label="f1"];
+    C [label="="];
+    D [label="x"];
+    E [label="call g1"];
     `
   );
 
   await testInput(
     `
+    int g1() {}
     int f1() {
       x = g1(1, 2, 3);
     }
@@ -361,17 +370,19 @@ async function test() {
     `
     A, B
     B, C
-    B, D
-    D, E
+    C, D
+    C, E
     E, F
-    F, G 
-    A [label="f1"];
-    B [label="="];
-    C [label="x"];
-    D [label="call g1"];
-    E [label="1"];
-    F [label="2"];
-    G [label="3"];
+    F, G
+    G, H
+    A [label="g1"];
+    B [label="f1"];
+    C [label="="];
+    D [label="x"];
+    E [label="call g1"];
+    F [label="1"];
+    G [label="2"];
+    H [label="3"];
     `
   );
 
@@ -1189,6 +1200,9 @@ async function test() {
   //w73
   await testInput(
     `
+    int c[6];
+    int a[7];
+    int k;
     int f()
     {
       c[5] = a[2*c+k];
