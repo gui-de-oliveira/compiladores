@@ -114,7 +114,7 @@ async function main() {
   //   );
 
   // Test 1: Valid input.
-  await testValidInput("int f1() { }");
+  await testValidInput("int f1() { return 0; }");
 
   // Test 2: Generic parsing error.
   await testInvalidInput(
@@ -164,7 +164,7 @@ And again at line 3, column 12:
   await testInvalidInput(
     `
       int abc[3];
-      bool abc() {}
+      bool abc() { return true; }
     `,
     ERROR_CODE.ERR_DECLARED,
     `Same-scope identifier redeclaration: "abc"
@@ -172,7 +172,7 @@ First occurrence at line 2, column 11:
       int abc[3];
           ^^^
 And again at line 3, column 12:
-      bool abc() {}
+      bool abc() { return true; }
            ^^^
 `
   );
@@ -183,6 +183,7 @@ And again at line 3, column 12:
       bool abc() {
         float aa <= 1;
         string aa <= "aa";
+        return true;
       }
     `,
     ERROR_CODE.ERR_DECLARED,
@@ -202,6 +203,7 @@ And again at line 4, column 16:
       int aaa;
       bool bbb() {
         float ccc <= ddd;
+        return true;
       }
     `,
     ERROR_CODE.ERR_UNDECLARED,
@@ -218,6 +220,7 @@ Occurrence at line 4, column 22:
       int aaa[1];
       bool bbb() {
         float ccc <= aaa;
+        return true;
       }
     `,
     ERROR_CODE.ERR_VECTOR,
@@ -238,6 +241,7 @@ And again at line 4, column 22:
       bool bbb() {
         float ccc <= aaa;
         ccc = aaa();
+        return true;
       }
     `,
     ERROR_CODE.ERR_VARIABLE,
@@ -256,6 +260,7 @@ And again at line 5, column 15:
     `
       bool bbb() {
         bbb[3] = aaa;
+        return true;
       }
     `,
     ERROR_CODE.ERR_FUNCTION,
