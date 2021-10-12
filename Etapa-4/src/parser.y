@@ -140,9 +140,9 @@ paramList -> Result<Vec<Parameter>, CompilerError>:
 param -> Result<Parameter, CompilerError>:
     optionalConst type_rule identifier_rule {
         let is_const = $1?;
-        let param_type = $2?;
+        let node_id = $2?;
         let param_name = $3?;
-        Ok(Parameter{is_const, param_type, param_name})
+        Ok(Parameter{is_const, node_id, param_name})
     }
     ;
 
@@ -295,10 +295,10 @@ varShift -> Result<Box<dyn AstNode>, CompilerError>:
 
 vecAccess -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule '[' expression ']' {
-        let expr_span = $span;
+        let node_id = $span;
         let vec_name = Box::new(VecInvoke::new($1?, None));
         let vec_index = Box::new($3?);
-        Ok(Box::new(VecAccess::new(expr_span, vec_name, vec_index, None)))
+        Ok(Box::new(VecAccess::new(node_id, vec_name, vec_index, None)))
     }
     ;
 
