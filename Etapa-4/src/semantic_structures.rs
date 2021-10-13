@@ -37,7 +37,7 @@ impl Symbol {
 #[derive(Clone, Debug)]
 pub enum SymbolType {
     Int(Option<i32>),
-    Float(Option<f32>),
+    Float(Option<f64>),
     Char(Option<u8>),
     Bool(Option<bool>),
     String(Option<String>),
@@ -88,23 +88,23 @@ impl SymbolClass {
 }
 
 pub struct ScopeStack {
-    stack: Vec<HashMap<String, Symbol>>,
+    stack: Vec<(HashMap<String, Symbol>, Vec<Symbol>)>,
 }
 
 impl ScopeStack {
     pub fn new() -> ScopeStack {
         ScopeStack {
-            stack: vec![HashMap::new()],
+            stack: vec![(HashMap::new(), vec![])],
         }
     }
 
     pub fn add_scope(&mut self) {
-        self.stack.push(HashMap::new())
+        self.stack.push((HashMap::new(), vec![]))
     }
 
     pub fn remove_scope(&mut self) -> Result<HashMap<String, Symbol>, CompilerError> {
         match self.stack.pop() {
-            Some(scope) => Ok(scope),
+            Some((def_table, _symbols)) => Ok(def_table),
             None => Err(CompilerError::FailedScoping),
         }
     }
@@ -115,7 +115,7 @@ impl ScopeStack {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         match self.stack.last() {
-            Some(scope) => {
+            Some((scope, _symbols)) => {
                 let id = lexer.span_str(span).to_string();
                 match scope.get(&id) {
                     Some(older_symbol) => {
@@ -150,7 +150,7 @@ impl ScopeStack {
     ) -> Result<&Symbol, CompilerError> {
         let id = lexer.span_str(span).to_string();
 
-        for scope in self.stack.iter().rev() {
+        for (scope, _symbols) in self.stack.iter().rev() {
             if let Some(older_symbol) = scope.get(&id) {
                 if older_symbol.class == expected_class {
                     return Ok(&older_symbol);
@@ -220,12 +220,29 @@ impl ScopeStack {
         })
     }
 
-    pub fn add_symbol(&mut self, addition: Symbol) -> Result<(), CompilerError> {
+    pub fn add_def_symbol(&mut self, addition: Symbol) -> Result<(), CompilerError> {
         match self.stack.last_mut() {
-            Some(scope) => {
+            Some((scope, _symbols)) => {
                 scope.insert(addition.id.clone(), addition);
                 Ok(())
             }
+            None => Err(CompilerError::FailedScoping),
+        }
+    }
+
+    pub fn push_symbol(&mut self, addition: Symbol) -> Result<(), CompilerError> {
+        match self.stack.last_mut() {
+            Some((_scope, symbols)) => {
+                symbols.push(addition);
+                Ok(())
+            }
+            None => Err(CompilerError::FailedScoping),
+        }
+    }
+
+    pub fn pop_symbol(&mut self) -> Result<Option<Symbol>, CompilerError> {
+        match self.stack.last_mut() {
+            Some((_scope, symbols)) => Ok(symbols.pop()),
             None => Err(CompilerError::FailedScoping),
         }
     }

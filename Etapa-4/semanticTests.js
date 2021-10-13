@@ -464,6 +464,86 @@ And again at line 4, column 16:
       }
     `
   );
+
+  // Test 23: expected literal int or float, received string
+  await testInvalidInput(
+    `
+      int main() {
+        output \"string\";
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "string";
+Occurrence at line 3, column 16:
+        output "string";
+               ^^^^^^^^`
+  );
+
+  // Test 24: expected literal int or float, received char
+  await testInvalidInput(
+    `
+      int main() {
+        output \'c\';
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "char";
+Occurrence at line 3, column 16:
+        output 'c';
+               ^^^`
+  );
+
+  // Test 25: expected literal int or float, received bool
+  await testInvalidInput(
+    `
+      int main() {
+        output false;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "bool";
+Occurrence at line 3, column 16:
+        output false;
+               ^^^^^`
+  );
+
+  // Test 26: expected literal int or float, received bool
+  await testInvalidInput(
+    `
+      int main() {
+        output true;
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_OUTPUT,
+    `Invalid argument for "output" command; expected variable or literal of type "int" or "float", found "bool";
+Occurrence at line 3, column 16:
+        output true;
+               ^^^^`
+  );
+
+  // Test 27: valid literal int
+  await testValidInput(
+    `
+      int main() {
+        output 0;
+        return 0;
+      }
+    `
+  );
+
+  // Test 28: valid literal float
+  await testValidInput(
+    `
+      int main() {
+        output 0.0;
+        return 0;
+      }
+    `
+  );
 }
 
 main();

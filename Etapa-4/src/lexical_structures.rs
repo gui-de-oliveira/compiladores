@@ -57,7 +57,7 @@ impl AstNode for GlobalVarDef {
         let class = SymbolClass::Var;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
-        stack.add_symbol(our_symbol)?;
+        stack.add_def_symbol(our_symbol)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -124,7 +124,7 @@ impl AstNode for GlobalVecDef {
         let class = SymbolClass::Vec;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
-        stack.add_symbol(our_symbol)?;
+        stack.add_def_symbol(our_symbol)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -199,7 +199,7 @@ impl AstNode for FnDef {
         let class = SymbolClass::Fn;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
-        stack.add_symbol(our_symbol)?;
+        stack.add_def_symbol(our_symbol)?;
 
         stack.add_scope();
         self.commands.evaluate_node(stack, lexer)?;
@@ -287,7 +287,7 @@ impl AstNode for LocalVarDef {
         let class = SymbolClass::Var;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
 
-        stack.add_symbol(our_symbol)?;
+        stack.add_def_symbol(our_symbol)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -993,9 +993,40 @@ impl AstNode for OutputLit {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        self.lit_value.evaluate_node(stack, lexer)?;
+
+        let symbol = match stack.pop_symbol()? {
+            Some(symbol) => symbol,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "evaluate_node() failed to pop symbol (self: {:?})",
+                    &self,
+                )))
+            }
+        };
+
+        match symbol.type_value {
+            SymbolType::Int(_) | SymbolType::Float(_) => (),
+            _ => {
+                let highlight = ScopeStack::form_string_highlight(symbol.span, lexer);
+                let ((line, col), (_, _)) = lexer.line_col(symbol.span);
+
+                return Err(CompilerError::SemanticErrorWrongParOutputLit {
+                    received_type: symbol.type_value.to_str().to_string(),
+                    highlight,
+                    line,
+                    col,
+                });
+            }
+        }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(())
     }
     fn get_id(&self) -> Span {
@@ -1911,6 +1942,27 @@ impl AstNode for LiteralInt {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let class = SymbolClass::Lit;
+
+        let span = self.node_id;
+        let id = lexer.span_str(span).to_string();
+
+        let var_value = match id.parse::<i32>() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(CompilerError::LexicalError(format!(
+                    "Unable to parse {} into i32.",
+                    id
+                )))
+            }
+        };
+        let var_type = SymbolType::Int(Some(var_value));
+
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.push_symbol(our_symbol)?;
+
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
@@ -1951,9 +2003,30 @@ impl AstNode for LiteralFloat {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let class = SymbolClass::Lit;
+
+        let span = self.node_id;
+        let id = lexer.span_str(span).to_string();
+
+        let var_value = match id.parse::<f64>() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(CompilerError::LexicalError(format!(
+                    "Unable to parse {} into f64.",
+                    id
+                )))
+            }
+        };
+        let var_type = SymbolType::Float(Some(var_value));
+
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.push_symbol(our_symbol)?;
+
         Ok(())
     }
     fn get_id(&self) -> Span {
@@ -1990,9 +2063,30 @@ impl AstNode for LiteralBool {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let class = SymbolClass::Lit;
+
+        let span = self.node_id;
+        let id = lexer.span_str(span).to_string();
+
+        let var_value = match id.parse::<bool>() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(CompilerError::LexicalError(format!(
+                    "Unable to parse {} into bool.",
+                    id
+                )))
+            }
+        };
+        let var_type = SymbolType::Bool(Some(var_value));
+
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.push_symbol(our_symbol)?;
+
         Ok(())
     }
     fn get_id(&self) -> Span {
@@ -2038,9 +2132,29 @@ impl AstNode for LiteralChar {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let class = SymbolClass::Lit;
+
+        let span = self.node_id;
+        let id = lexer.span_str(span).to_string();
+
+        let id_chars = id.as_bytes();
+        if id_chars.len() != 3 {
+            return Err(CompilerError::SanityError(
+                "on evaluate_node(), character not 3 characters long ".to_string(),
+            ));
+        }
+
+        let var_value = id_chars[1];
+        let var_type = SymbolType::Char(Some(var_value));
+
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.push_symbol(our_symbol)?;
+
         Ok(())
     }
     fn get_id(&self) -> Span {
@@ -2090,9 +2204,28 @@ impl AstNode for LiteralString {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        let class = SymbolClass::Lit;
+
+        let span = self.node_id;
+        let id = lexer.span_str(span).to_string();
+
+        if id.len() < 2 {
+            return Err(CompilerError::SanityError(
+                "on evaluate_node(), string smaller than 2 characters (no \") ".to_string(),
+            ));
+        }
+        let clean_string = (&id[1..id.len() - 1]).to_string();
+
+        let var_type = SymbolType::String(Some(clean_string));
+
+        let ((line, col), (_, _)) = lexer.line_col(span);
+        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+
+        stack.push_symbol(our_symbol)?;
+
         Ok(())
     }
     fn get_id(&self) -> Span {
