@@ -142,59 +142,75 @@ async function test() {
 
   await testInput(
     `
-    int f1() { }
-    int f2() { }`,
+    int f1() { return 0; }
+    int f2() { return 0; }`,
     `
     A, B
+    A, C
+    B, D
+    C, E
+    E, F
     A [label="f1"];
-    B [label="f2"];
+    B [label="return"];
+    D [label="0"];
+    C [label="f2"];
+    E [label="return"];
+    F [label="0"];
     `
   );
 
   await testInput(
     `
-    int f1() { }
-    int f2() { }
+    int f1() { return 0; }
+    int f2() { return 0; }
+    int f3() { return 0; }
     `,
     `
     A, B
+    A, C
+    B, D
+    C, E
+    C, F
+    E, G
+    F, H
+    H, I
     A [label="f1"];
-    B [label="f2"];
+    B [label="return"];
+    D [label="0"];
+    C [label="f2"];
+    E [label="return"];
+    G [label="0"];
+    F [label="f3"];
+    H [label="return"];
+    I [label="0"];
     `
   );
 
   await testInput(
     `
-    int f1() { }
-    int f2() { }
-    int f3() { }
+    int f1() { return 0; }
+    int x;
     `,
     `
     A, B
     B, C
     A [label="f1"];
-    B [label="f2"];
-    C [label="f3"];
-    `
-  );
-
-  await testInput(
-    `
-    int f1() { }
-    int x;
-    `,
-    `
-    A [label="f1"];
+    B [label="return"];
+    C [label="0"];
     `
   );
 
   await testInput(
     `
     int x;
-    int f1() { }
+    int f1() { return 0; }
     `,
     `
+    A, B
+    B, C
     A [label="f1"];
+    B [label="return"];
+    C [label="0"];
     `
   );
 
@@ -216,16 +232,21 @@ async function test() {
     int f1() {
       int a;
       a = 1;
+      return 0;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
     A [label="f1"];
     B [label="="];
     C [label="a"];
     D [label="1"];
+    E [label="return"];
+    F [label="0"];
     `
   );
 
@@ -234,16 +255,21 @@ async function test() {
     int f1() {
       int b;
       b = 1;
+      return 0;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
     A [label="f1"];
     B [label="="];
     C [label="b"];
     D [label="1"];
+    E [label="return"];
+    F [label="0"];
     `
   );
 
@@ -253,6 +279,7 @@ async function test() {
       int a, b;
       a = 1;
       b = 1;
+      return 0;
     }
     `,
     `
@@ -262,6 +289,8 @@ async function test() {
     B, E
     E, F
     E, G
+    E, H
+    H, I
     A [label="f1"];
     B [label="="];
     C [label="a"];
@@ -269,34 +298,42 @@ async function test() {
     E [label="="];
     F [label="b"];
     G [label="1"];
+    H [label="return"];
+    I [label="0"];
     `
   );
 
   const literalAsserts = [
-    { declaration: 2, expected: 2 },
-    { declaration: "1.0", expected: "1.0" },
-    { declaration: "'a'", expected: "a" },
-    { declaration: '"XXX"', expected: "XXX" },
-    { declaration: "true", expected: "true" },
-    { declaration: "false", expected: "false" },
-    { declaration: "id", expected: "id" },
+    { varType: "int", declaration: 2, expected: 2 },
+    { varType: "float", declaration: "1.0", expected: "1.0" },
+    { varType: "char", declaration: "'a'", expected: "a" },
+    { varType: "bool", declaration: "true", expected: "true" },
+    { varType: "bool", declaration: "false", expected: "false" },
+    { varType: "int", declaration: "id", expected: "id" },
   ];
 
   for (const literal of literalAsserts) {
     await testInput(
       `
       int f1() {
+        ${literal.varType} b;
+        ${literal.varType} a;
         a = ${literal.declaration};
+        return 0;
       }
       `,
       `
       A, B
       B, C
       B, D
+      B, E
+      E, F
       A [label="f1"];
       B [label="="];
       C [label="a"];
       D [label="${literal.expected}"];
+      E [label="return"];
+      F [label="0"];
       `
     );
   }
@@ -305,84 +342,122 @@ async function test() {
     `
     int v[5];
     int f1() {
+      int x;
       x = v[3];
+      return 0;
     }
     `,
     `
     A, B
     B, C
     B, D
-    D, E
+    B, E
     D, F
+    D, G
+    E, H
     A [label="f1"];
     B [label="="];
     C [label="x"];
     D [label="[]"];
-    E [label="v"];
-    F [label="3"];
+    F [label="v"];
+    G [label="3"];
+    E [label="return"];
+    H [label="0"];
     `
   );
 
   await testInput(
     `
-    int g1() {}
+    int g1() { return 0; }
     int f1() {
-      g1();
+      return g1();
     }
     `,
     `
     A, B
-    B, C
+    A, C
+    B, D
+    C, E
+    E, F
     A [label="g1"];
-    B [label="f1"];
-    C [label="call g1"];
+    B [label="return"];
+    D [label="0"];
+    C [label="f1"];
+    E [label="return"];
+    F [label="call g1"];
     `
   );
 
   await testInput(
     `
     int x;
-    int g1() {}
+    int g1() { return 0; }
     int f1() {
       x = g1();
+      return x;
     }
     `,
     `
     A, B
-    B, C
-    C, D
+    A, C
+    B, D
     C, E
+    E, F
+    E, G
+    E, H
+    H, I
     A [label="g1"];
-    B [label="f1"];
-    C [label="="];
-    D [label="x"];
-    E [label="call g1"];
+    B [label="return"];
+    D [label="0"];
+    C [label="f1"];
+    E [label="="];
+    F [label="x"];
+    G [label="call g1"];
+    H [label="return"];
+    I [label="x"];
     `
   );
 
   await testInput(
     `
-    int g1() {}
+    int g1(int a, int b, int c) { return a + b + c; }
     int f1() {
       x = g1(1, 2, 3);
+      return x;
     }
     `,
     `
     A, B
-    B, C
-    C, D
-    C, E
-    E, F
-    F, G
-    G, H
+    A, C
+    B, D
+    D, E
+    D, F
+    E, G
+    E, H
+    C, I
+    I, J
+    I, K
+    I, L
+    K, M
+    M, N
+    N, O
+    L, P
     A [label="g1"];
-    B [label="f1"];
-    C [label="="];
-    D [label="x"];
-    E [label="call g1"];
-    F [label="1"];
-    G [label="2"];
-    H [label="3"];
+    B [label="return"];
+    D [label="+"];
+    E [label="+"];
+    G [label="a"];
+    H [label="b"];
+    F [label="c"];
+    C [label="f1"];
+    I [label="="];
+    J [label="x"];
+    K [label="call g1"];
+    M [label="1"];
+    N [label="2"];
+    O [label="3"];
+    L [label="return"];
+    P [label="x"];
     `
   );
 
@@ -393,12 +468,17 @@ async function test() {
       `
       int f1() {
         ${value};
+        return 0;
       }
       `,
       `
       A, B
+      B, C
+      C, D
       A [label="f1"];
       B [label="${value}"];
+      C [label="return"];
+      D [label="0"];
       `
     );
   }
@@ -421,91 +501,141 @@ async function test() {
   await testInput(
     `
     int f1() {
+      int id;
       input id;
+      return id;
     }
     `,
     `
     A, B
     B, C
+    B, D
+    D, E
     A [label="f1"];
     B [label="input"];
     C [label="id"];
+    D [label="return"];
+    E [label="id"];
     `
   );
 
   await testInput(
     `
     int f1() {
+      int id <= 2;
       id << 1;
+      return id;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
+    E, G
+    E, H
+    H, I
     A [label="f1"];
-    B [label="<<"];
+    B [label="<="];
     C [label="id"];
-    D [label="1"];
+    D [label="2"];
+    E [label="<<"];
+    F [label="id"];
+    G [label="1"];
+    H [label="return"];
+    I [label="id"];
     `
   );
 
   await testInput(
     `
     int f1() {
+      int id <= 2;
       id >> 1;
+      return id;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
+    E, G
+    E, H
+    H, I
     A [label="f1"];
-    B [label=">>"];
+    B [label="<="];
     C [label="id"];
-    D [label="1"];
+    D [label="2"];
+    E [label=">>"];
+    F [label="id"];
+    G [label="1"];
+    H [label="return"];
+    I [label="id"];
     `
   );
 
   await testInput(
     `
+    int id[2];
     int f1() {
       id[1] << 1;
+      return id[1];
     }
     `,
     `
     A, B
     B, C
     B, D
-    C, E
+    B, E
     C, F
+    C, G
+    E, H
+    H, I
+    H, J
     A [label="f1"];
     B [label="<<"];
     C [label="[]"];
-    E [label="id"];
-    F [label="1"];
+    F [label="id"];
+    G [label="1"];
     D [label="1"];
+    E [label="return"];
+    H [label="[]"];
+    I [label="id"];
+    J [label="1"];
     `
   );
 
   await testInput(
     `
+    int id[2];
     int f1() {
       id[1] >> 1;
+      return id[1];
     }
     `,
     `
     A, B
     B, C
     B, D
-    C, E
+    B, E
     C, F
+    C, G
+    E, H
+    H, I
+    H, J
     A [label="f1"];
     B [label=">>"];
     C [label="[]"];
-    E [label="id"];
-    F [label="1"];
+    F [label="id"];
+    G [label="1"];
     D [label="1"];
+    E [label="return"];
+    H [label="[]"];
+    I [label="id"];
+    J [label="1"];
     `
   );
 
@@ -513,16 +643,21 @@ async function test() {
     `
     int f1() {
       int a <= 1;
+      return a;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
     A [label="f1"];
     B [label="<="];
     C [label="a"];
     D [label="1"];
+    E [label="return"];
+    F [label="a"];
     `
   );
 
@@ -530,16 +665,21 @@ async function test() {
     `
     int f1() {
       int b, a <= 1;
+      return a;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
     A [label="f1"];
     B [label="<="];
     C [label="a"];
     D [label="1"];
+    E [label="return"];
+    F [label="a"];
     `
   );
 
@@ -547,16 +687,21 @@ async function test() {
     `
     int f1() {
       int a <= 1, b;
+      return a;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
     A [label="f1"];
     B [label="<="];
     C [label="a"];
     D [label="1"];
+    E [label="return"];
+    F [label="a"];
     `
   );
 
@@ -564,16 +709,21 @@ async function test() {
     `
     int f1() {
       int c, a <= 1, b;
+      return a;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    E, F
     A [label="f1"];
     B [label="<="];
     C [label="a"];
     D [label="1"];
+    E [label="return"];
+    F [label="a"];
     `
   );
 
@@ -581,6 +731,7 @@ async function test() {
     `
     int f1() {
       int a <= 1, b <= 2;
+      return a;
     }
     `,
     `
@@ -590,6 +741,8 @@ async function test() {
     B, E
     E, F
     E, G
+    E, H
+    H, I
     A [label="f1"];
     B [label="<="];
     C [label="a"];
@@ -597,6 +750,8 @@ async function test() {
     E [label="<="];
     F [label="b"];
     G [label="2"];
+    H [label="return"];
+    I [label="a"];
     `
   );
 
@@ -604,6 +759,7 @@ async function test() {
     `
     int f1() {
       int a <= 1, c, b <= 2;
+      return b;
     }
     `,
     `
@@ -613,6 +769,8 @@ async function test() {
     B, E
     E, F
     E, G
+    E, H
+    H, I
     A [label="f1"];
     B [label="<="];
     C [label="a"];
@@ -620,6 +778,8 @@ async function test() {
     E [label="<="];
     F [label="b"];
     G [label="2"];
+    H [label="return"];
+    I [label="b"];
     `
   );
 
@@ -627,6 +787,7 @@ async function test() {
     `
     int f1() {
       int a <= 1, b <= 2, c;
+      return a;
     }
     `,
     `
@@ -636,6 +797,8 @@ async function test() {
     B, E
     E, F
     E, G
+    E, H
+    H, I
     A [label="f1"];
     B [label="<="];
     C [label="a"];
@@ -643,6 +806,8 @@ async function test() {
     E [label="<="];
     F [label="b"];
     G [label="2"];
+    H [label="return"];
+    I [label="a"];
     `
   );
 
@@ -650,6 +815,7 @@ async function test() {
     `
     int f1() {
       int c, a <= 1, b <= 2;
+      return b;
     }
     `,
     `
@@ -659,6 +825,8 @@ async function test() {
     B, E
     E, F
     E, G
+    E, H
+    H, I
     A [label="f1"];
     B [label="<="];
     C [label="a"];
@@ -666,25 +834,38 @@ async function test() {
     E [label="<="];
     F [label="b"];
     G [label="2"];
+    H [label="return"];
+    I [label="b"];
     `
   );
 
   await testInput(
     `
     int f1() {
-      if(true){
-        continue;
+      while(true) do {
+        if(true) {
+          continue;
+        };
       };
+      return 0;
     }
     `,
     `
     A, B
     B, C
     B, D
+    B, E
+    D, F
+    D, G
+    E, H
     A [label="f1"];
-    B [label="if"];
+    B [label="while"];
     C [label="true"];
-    D [label="continue"];
+    D [label="if"];
+    F [label="true"];
+    G [label="continue"];
+    E [label="return"];
+    H [label="0"];
     `
   );
 
@@ -696,29 +877,7 @@ async function test() {
       } else {
         break;
       };
-    }
-    `,
-    `
-    A, B
-    B, C
-    B, D
-    B, E
-    A [label="f1"];
-    B [label="if"];
-    C [label="true"];
-    D [label="continue"];
-    E [label="break"];
-    `
-  );
-
-  await testInput(
-    `
-    int f(){
-      int i;
-      for(i = 0 : i : i = 2) {
-         i = 3;
-         i = 4;
-      };
+      return 0;
     }
     `,
     `
@@ -727,53 +886,109 @@ async function test() {
     B, D
     B, E
     B, F
-    C, G
-    C, H
-    E, I
-    E, J
-    F, K
-    F, L
-    F, M
-    M, N
-    M, O
-    A [label="f"];
-    B [label="for"];
-    C [label="="];
-    G [label="i"];
-    H [label="0"];
-    D [label="i"];
-    E [label="="];
-    I [label="i"];
-    J [label="2"];
-    F [label="="];
-    K [label="i"];
-    L [label="3"];
-    M [label="="];
-    N [label="i"];
-    O [label="4"];
+    F, G
+    A [label="f1"];
+    B [label="if"];
+    C [label="true"];
+    D [label="continue"];
+    E [label="break"];
+    F [label="return"];
+    G [label="0"];
     `
   );
 
   await testInput(
     `
     int f(){
-      while (true) do {
-         i = 3;
+      int i;
+      int j <= 0;
+      for(i = 0 : i < 5 : i = i + 1) {
+         j = 3;
       };
+      return j;
     }
     `,
     `
     A, B
     B, C
     B, D
-    D, E
-    D, F
+    B, E
+    E, F
+    E, G
+    E, H
+    E, I
+    E, J
+    F, K
+    F, L
+    G, M
+    G, N
+    H, O
+    H, P
+    P, Q
+    P, R
+    I, S
+    I, T
+    J, U
     A [label="f"];
-    B [label="while"];
-    C [label="true"];
-    D [label="="];
-    E [label="i"];
-    F [label="3"];
+    B [label="<="];
+    C [label="j"];
+    D [label="0"];
+    E [label="for"];
+    F [label="="];
+    K [label="i"];
+    L [label="0"];
+    G [label="<"];
+    M [label="i"];
+    N [label="5"];
+    H [label="="];
+    O [label="i"];
+    P [label="+"];
+    Q [label="i"];
+    R [label="1"];
+    I [label="="];
+    S [label="j"];
+    T [label="3"];
+    J [label="return"];
+    U [label="j"];
+    `
+  );
+
+  await testInput(
+    `
+    int f(){
+      int i <= 2;
+      while (i != 3) do {
+         i = 3;
+      };
+      return i;
+    }
+    `,
+    `
+    A, B
+    B, C
+    B, D
+    B, E
+    E, F
+    E, G
+    E, H
+    F, I
+    F, J
+    G, K
+    G, L
+    H, M
+    A [label="f"];
+    B [label="<="];
+    C [label="i"];
+    D [label="2"];
+    E [label="while"];
+    F [label="!="];
+    I [label="i"];
+    J [label="3"];
+    G [label="="];
+    K [label="i"];
+    L [label="3"];
+    H [label="return"];
+    M [label="i"];
     `
   );
 
@@ -781,12 +996,12 @@ async function test() {
   await testInput(
     `
     int f(){
-      int a;
-      int x;
-      int b;
-      int c;
-      int y;
-      int d;
+      int a <= 1;
+      int x <= 1;
+      int b <= 1;
+      int c <= 1;
+      int y <= 1;
+      int d <= 1;
       int e;
       int f;
       int z;
@@ -801,6 +1016,7 @@ async function test() {
       y = d / e + f;
       z = (g - h) / i;
       w = j * (k + l);
+      return 0;
    }
     `,
     `
@@ -808,59 +1024,99 @@ async function test() {
     B, C
     B, D
     B, E
-    D, F
-    D, G
-    G, H
-    G, I
-    E, J
-    E, K
-    E, L
+    E, F
+    E, G
+    E, H
+    H, I
+    H, J
+    H, K
+    K, L
     K, M
     K, N
-    M, O
-    M, P
-    L, Q
-    L, R
-    L, S
-    R, T
-    R, U
+    N, O
+    N, P
+    N, Q
+    Q, R
+    Q, S
+    Q, T
+    T, U
     T, V
     T, W
-    S, X
-    S, Y
+    V, X
+    V, Y
     Y, Z
     Y, a
-    a, b
-    a, c
+    W, b
+    W, c
+    W, d
+    c, e
+    c, f
+    e, g
+    e, h
+    d, i
+    d, j
+    d, k
+    j, l
+    j, m
+    l, n
+    l, o
+    k, p
+    k, q
+    k, r
+    q, s
+    q, t
+    t, u
+    t, v
+    r, w
     A [label="f"];
-    B [label="="];
-    C [label="x"];
-    D [label="-"];
-    F [label="a"];
-    G [label="*"];
-    H [label="b"];
-    I [label="c"];
-    E [label="="];
-    J [label="y"];
-    K [label="+"];
-    M [label="/"];
-    O [label="d"];
-    P [label="e"];
-    N [label="f"];
-    L [label="="];
-    Q [label="z"];
-    R [label="/"];
-    T [label="-"];
-    V [label="g"];
-    W [label="h"];
-    U [label="i"];
-    S [label="="];
-    X [label="w"];
+    B [label="<="];
+    C [label="a"];
+    D [label="1"];
+    E [label="<="];
+    F [label="x"];
+    G [label="1"];
+    H [label="<="];
+    I [label="b"];
+    J [label="1"];
+    K [label="<="];
+    L [label="c"];
+    M [label="1"];
+    N [label="<="];
+    O [label="y"];
+    P [label="1"];
+    Q [label="<="];
+    R [label="d"];
+    S [label="1"];
+    T [label="="];
+    U [label="x"];
+    V [label="-"];
+    X [label="a"];
     Y [label="*"];
-    Z [label="j"];
-    a [label="+"];
-    b [label="k"];
-    c [label="l"];
+    Z [label="b"];
+    a [label="c"];
+    W [label="="];
+    b [label="y"];
+    c [label="+"];
+    e [label="/"];
+    g [label="d"];
+    h [label="e"];
+    f [label="f"];
+    d [label="="];
+    i [label="z"];
+    j [label="/"];
+    l [label="-"];
+    n [label="g"];
+    o [label="h"];
+    m [label="i"];
+    k [label="="];
+    p [label="w"];
+    q [label="*"];
+    s [label="j"];
+    t [label="+"];
+    u [label="k"];
+    v [label="l"];
+    r [label="return"];
+    w [label="0"];
     `
   );
 
@@ -889,6 +1145,7 @@ async function test() {
       x = a + b + c - d - e;
       y = f * g * h / i / j;
       z = k * l * m + n + o;
+      return 0;
    }
     `,
     `
@@ -917,14 +1174,16 @@ async function test() {
     U, X
     P, Y
     P, Z
-    Z, a
+    P, a
     Z, b
-    a, c
-    a, d
-    c, e
-    c, f
-    e, g
-    e, h
+    Z, c
+    b, d
+    b, e
+    d, f
+    d, g
+    f, h
+    f, i
+    a, j
     A [label="f"];
     B [label="="];
     C [label="x"];
@@ -951,14 +1210,16 @@ async function test() {
     P [label="="];
     Y [label="z"];
     Z [label="+"];
-    a [label="+"];
-    c [label="*"];
-    e [label="*"];
-    g [label="k"];
-    h [label="l"];
-    f [label="m"];
-    d [label="n"];
-    b [label="o"];
+    b [label="+"];
+    d [label="*"];
+    f [label="*"];
+    h [label="k"];
+    i [label="l"];
+    g [label="m"];
+    e [label="n"];
+    c [label="o"];
+    a [label="return"];
+    j [label="0"];
     `
   );
 
@@ -986,6 +1247,7 @@ async function test() {
       y = d / e - f;
       z = (g + h) * i;
       w = j / (k - l);
+      return 0;
    }
     `,
     `
@@ -1013,10 +1275,12 @@ async function test() {
     T, W
     S, X
     S, Y
-    Y, Z
+    S, Z
     Y, a
-    a, b
-    a, c
+    Y, b
+    b, c
+    b, d
+    Z, e
     A [label="f"];
     B [label="="];
     C [label="x"];
@@ -1042,45 +1306,61 @@ async function test() {
     S [label="="];
     X [label="w"];
     Y [label="/"];
-    Z [label="j"];
-    a [label="-"];
-    b [label="k"];
-    c [label="l"];
+    a [label="j"];
+    b [label="-"];
+    c [label="k"];
+    d [label="l"];
+    Z [label="return"];
+    e [label="0"];
     `
   );
 
   //w68
   await testInput(
     `
-    int k(int x, int y, int z){}
+    int k(int x, int y, int z){ return x + y + z; }
     int f(){
-            k(10+11,20+21,30+31);
+            return k(10+11,20+21,30+31);
     }
     `,
     `
     A, B
-    B, C
-    C, D
+    A, C
+    B, D
     D, E
     D, F
-    D, G
-    G, H
-    G, I
-    G, J
+    E, G
+    E, H
+    C, I
+    I, J
     J, K
-    J, L
+    K, L
+    K, M
+    K, N
+    N, O
+    N, P
+    N, Q
+    Q, R
+    Q, S
     A [label="k"];
-    B [label="f"];
-    C [label="call k"];
+    B [label="return"];
     D [label="+"];
-    E [label="10"];
-    F [label="11"];
-    G [label="+"];
-    H [label="20"];
-    I [label="21"];
-    J [label="+"];
-    K [label="30"];
-    L [label="31"];
+    E [label="+"];
+    G [label="x"];
+    H [label="y"];
+    F [label="z"];
+    C [label="f"];
+    I [label="return"];
+    J [label="call k"];
+    K [label="+"];
+    L [label="10"];
+    M [label="11"];
+    N [label="+"];
+    O [label="20"];
+    P [label="21"];
+    Q [label="+"];
+    R [label="30"];
+    S [label="31"];
     `
   );
 
@@ -1094,10 +1374,15 @@ async function test() {
           {};
         };
       };
+      return 0;
     }
     `,
     `
+    A, B
+    B, C
     A [label="f"];
+    B [label="return"];
+    C [label="0"];
     `
   );
 
@@ -1108,6 +1393,7 @@ async function test() {
     {
       int b <= 10;
       int a <= b;
+      return b;
     }
     `,
     `
@@ -1117,6 +1403,8 @@ async function test() {
     B, E
     E, F
     E, G
+    E, H
+    H, I
     A [label="f"];
     B [label="<="];
     C [label="b"];
@@ -1124,6 +1412,8 @@ async function test() {
     E [label="<="];
     F [label="a"];
     G [label="b"];
+    H [label="return"];
+    I [label="b"];
     `
   );
 
@@ -1136,6 +1426,7 @@ async function test() {
       int c;
       c = 2;
       a[c+c] = 2;
+      return a[c+c];
     }
     `,
     `
@@ -1145,21 +1436,33 @@ async function test() {
     B, E
     E, F
     E, G
-    F, H
+    E, H
     F, I
-    I, J
-    I, K
+    F, J
+    J, K
+    J, L
+    H, M
+    M, N
+    M, O
+    O, P
+    O, Q
     A [label="f"];
     B [label="="];
     C [label="c"];
     D [label="2"];
     E [label="="];
     F [label="[]"];
-    H [label="a"];
-    I [label="+"];
-    J [label="c"];
+    I [label="a"];
+    J [label="+"];
     K [label="c"];
+    L [label="c"];
     G [label="2"];
+    H [label="return"];
+    M [label="[]"];
+    N [label="a"];
+    O [label="+"];
+    P [label="c"];
+    Q [label="c"];
     `
   );
 
@@ -1168,32 +1471,55 @@ async function test() {
     `
     int f()
     {
-      int a;
-      int b;
-      int c;
+      int a <= 1;
+      int b <= 2;
+      int c <= 3;
       a = 2*c+a/b;
+      return a;
     }
     `,
     `
     A, B
     B, C
     B, D
-    D, E
-    D, F
+    B, E
+    E, F
     E, G
     E, H
-    F, I
-    F, J
+    H, I
+    H, J
+    H, K
+    K, L
+    K, M
+    K, N
+    M, O
+    M, P
+    O, Q
+    O, R
+    P, S
+    P, T
+    N, U
     A [label="f"];
-    B [label="="];
+    B [label="<="];
     C [label="a"];
-    D [label="+"];
-    E [label="*"];
+    D [label="1"];
+    E [label="<="];
+    F [label="b"];
     G [label="2"];
-    H [label="c"];
-    F [label="/"];
-    I [label="a"];
-    J [label="b"];
+    H [label="<="];
+    I [label="c"];
+    J [label="3"];
+    K [label="="];
+    L [label="a"];
+    M [label="+"];
+    O [label="*"];
+    Q [label="2"];
+    R [label="c"];
+    P [label="/"];
+    S [label="a"];
+    T [label="b"];
+    N [label="return"];
+    U [label="a"];
     `
   );
 
@@ -1206,6 +1532,7 @@ async function test() {
     int f()
     {
       c[5] = a[2*c+k];
+      return c[5];
     }
     
     `,
@@ -1213,26 +1540,34 @@ async function test() {
     A, B
     B, C
     B, D
-    C, E
+    B, E
     C, F
-    D, G
+    C, G
     D, H
-    H, I
-    H, J
+    D, I
+    I, J
     I, K
-    I, L
+    J, L
+    J, M
+    E, N
+    N, O
+    N, P
     A [label="f"];
     B [label="="];
     C [label="[]"];
-    E [label="c"];
-    F [label="5"];
+    F [label="c"];
+    G [label="5"];
     D [label="[]"];
-    G [label="a"];
-    H [label="+"];
-    I [label="*"];
-    K [label="2"];
-    L [label="c"];
-    J [label="k"];
+    H [label="a"];
+    I [label="+"];
+    J [label="*"];
+    L [label="2"];
+    M [label="c"];
+    K [label="k"];
+    E [label="return"];
+    N [label="[]"];
+    O [label="c"];
+    P [label="5"];
     `
   );
 
@@ -1244,6 +1579,7 @@ async function test() {
     {
       int a;
       c[5] = 3 * f(a) + a;
+      return c[5];
     }
 
     `,
@@ -1251,34 +1587,45 @@ async function test() {
     A, B
     B, C
     B, D
-    C, E
+    B, E
     C, F
-    D, G
+    C, G
     D, H
-    G, I
-    G, J
-    J, K
+    D, I
+    H, J
+    H, K
+    K, L
+    E, M
+    M, N
+    M, O
     A [label="f"];
     B [label="="];
     C [label="[]"];
-    E [label="c"];
-    F [label="5"];
+    F [label="c"];
+    G [label="5"];
     D [label="+"];
-    G [label="*"];
-    I [label="3"];
-    J [label="call f"];
-    K [label="a"];
-    H [label="a"];
+    H [label="*"];
+    J [label="3"];
+    K [label="call f"];
+    L [label="a"];
+    I [label="a"];
+    E [label="return"];
+    M [label="[]"];
+    N [label="c"];
+    O [label="5"];
     `
   );
 
   //w75
   await testInput(
     `
+    int a;
+    int b;
     int f()
     {
-      if (a == 2) { };
-      if ((a+b) <= 10) { };
+      if (a == 2) { return 0; };
+      if ((a+b) <= 10) { return 1; };
+      return 2;
     }
     
     `,
@@ -1286,24 +1633,36 @@ async function test() {
     A, B
     B, C
     B, D
-    C, E
+    B, E
     C, F
-    D, G
-    G, H
-    G, I
-    H, J
-    H, K
+    C, G
+    D, H
+    E, I
+    E, J
+    E, K
+    I, L
+    I, M
+    L, N
+    L, O
+    J, P
+    K, Q
     A [label="f"];
     B [label="if"];
     C [label="=="];
-    E [label="a"];
-    F [label="2"];
-    D [label="if"];
-    G [label="<="];
-    H [label="+"];
-    J [label="a"];
-    K [label="b"];
-    I [label="10"];
+    F [label="a"];
+    G [label="2"];
+    D [label="return"];
+    H [label="0"];
+    E [label="if"];
+    I [label="<="];
+    L [label="+"];
+    N [label="a"];
+    O [label="b"];
+    M [label="10"];
+    J [label="return"];
+    P [label="1"];
+    K [label="return"];
+    Q [label="2"];
     `
   );
 
@@ -1314,12 +1673,17 @@ async function test() {
     int f1 (float k, int l) 
     {
       int a;
+      return l;
     }
     int v2[100];
     char v3;
     `,
     `
+    A, B
+    B, C
     A [label="f1"];
+    B [label="return"];
+    C [label="l"];
     `
   );
 
