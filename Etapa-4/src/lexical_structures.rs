@@ -35,7 +35,7 @@ impl AstNode for GlobalVarDef {
         print_dependencies_ripple(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        print_labels_next(&self.next, lexer, own_address)
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -102,7 +102,7 @@ impl AstNode for GlobalVecDef {
         print_dependencies_ripple(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        print_labels_next(&self.next, lexer, own_address)
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -264,7 +264,7 @@ impl AstNode for LocalVarDef {
             print_label_self(self.node_id, lexer, own_address);
             print_labels_next(&self.next, lexer, own_address);
         } else {
-            print_labels_ripple(&self.next, lexer, own_address)
+            print_labels_next(&self.next, lexer, own_address)
         }
     }
     fn is_tree_member(&self) -> bool {
@@ -1502,7 +1502,7 @@ impl AstNode for EmptyBlock {
         print_dependencies_ripple(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        print_labels_next(&self.next, lexer, own_address)
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -2278,21 +2278,6 @@ fn print_dependencies_ripple(
             next.print_dependencies(next_address, false);
         } else {
             next.print_dependencies(own_address, ripple);
-        }
-    }
-}
-
-fn print_labels_ripple(
-    next_node: &Option<Box<dyn AstNode>>,
-    lexer: &dyn NonStreamingLexer<u32>,
-    own_address: *const c_void,
-) {
-    if let Some(next) = next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
-            next.print_labels(lexer, next_address);
-        } else {
-            next.print_labels(lexer, own_address);
         }
     }
 }
