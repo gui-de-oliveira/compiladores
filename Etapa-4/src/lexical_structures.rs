@@ -32,7 +32,7 @@ impl GlobalVarDef {
 
 impl AstNode for GlobalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        print_dependencies_ripple_maybe(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_labels_next(&self.next, lexer, own_address)
@@ -99,7 +99,7 @@ impl GlobalVecDef {
 
 impl AstNode for GlobalVecDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        print_dependencies_ripple_maybe(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_labels_next(&self.next, lexer, own_address)
@@ -256,7 +256,7 @@ impl LocalVarDef {
 impl AstNode for LocalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
         if !self.is_tree_node {
-            print_dependencies_ripple(&self.next, own_address, ripple)
+            print_dependencies_ripple_maybe(&self.next, own_address, ripple)
         }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
@@ -1499,7 +1499,7 @@ impl EmptyBlock {
 
 impl AstNode for EmptyBlock {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        print_dependencies_ripple_maybe(&self.next, own_address, ripple)
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_labels_next(&self.next, lexer, own_address)
@@ -2264,21 +2264,25 @@ pub enum UnaryType {
     Hash,
 }
 
-fn print_dependencies_ripple(
+fn print_dependencies_ripple_maybe(
     next_node: &Option<Box<dyn AstNode>>,
     own_address: *const c_void,
     ripple: bool,
 ) {
     if let Some(next) = &next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
+        print_dependencies_ripple(next, own_address, ripple);
+    }
+}
+
+fn print_dependencies_ripple(node: &Box<dyn AstNode>, own_address: *const c_void, ripple: bool) {
+    if node.is_tree_member() {
+        let next_address = addr_of!(*node) as *const c_void;
             if ripple {
                 println!("{:p}, {:p}", own_address, next_address);
             }
-            next.print_dependencies(next_address, false);
+        node.print_dependencies(next_address, false);
         } else {
-            next.print_dependencies(own_address, ripple);
-        }
+        node.print_dependencies(own_address, ripple);
     }
 }
 
