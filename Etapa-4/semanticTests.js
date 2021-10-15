@@ -2,6 +2,34 @@ const fs = require("fs").promises;
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
+/*
+B Códigos de retorno
+Os seguintes códigos de retorno devem ser utilizados quando o compilador encontrar erros semânticos.
+O programa deve chamar exit utilizando esses códigos imediamente após a impressão da linha que descreve o erro.
+Na ausência de qualquer erro, o programa deve retornar o valor zero.
+
+#define ERR_UNDECLARED 10
+#define ERR_DECLARED 11
+#define ERR_VARIABLE 20
+#define ERR_VECTOR 21
+#define ERR_FUNCTION 22
+#define ERR_WRONG_TYPE 30
+#define ERR_STRING_TO_X 31
+#define ERR_CHAR_TO_X 32
+#define ERR_STRING_MAX 33
+#define ERR_STRING_VECTOR 34
+#define ERR_MISSING_ARGS 40
+#define ERR_EXCESS_ARGS 41
+#define ERR_WRONG_TYPE_ARGS 42
+#define ERR_FUNCTION_STRING 43
+#define ERR_WRONG_PAR_INPUT 50
+#define ERR_WRONG_PAR_OUTPUT 51
+#define ERR_WRONG_PAR_RETURN 52
+#define ERR_WRONG_PAR_SHIFT 53
+
+Estes valores são utilizados na avaliação objetiva.
+*/
+
 const ERROR_CODE = {
   ERR_LEX_PAR: 1,
   ERR_UNDECLARED: 10,
@@ -39,14 +67,19 @@ function acceptTest() {
   console.log(Color.Green + `Test ${++testsCounter} passed!` + Color.Reset);
 }
 
-function rejectTest(reason = "") {
+function rejectTest(testName, reason) {
   console.log(
-    Color.Red + `Test ${++testsCounter} failed${reason}!` + Color.Reset
+    Color.Red + `Test "${testName}" failed!\nReason: ${reason}!` + Color.Reset
   );
   process.exit();
 }
 
-async function testInvalidInput(input, expectedReturnCode, expectedOutput) {
+async function testInvalidInput(
+  testName,
+  input,
+  expectedReturnCode,
+  expectedOutput
+) {
   await fs.writeFile(`.temp`, input);
 
   try {
@@ -61,63 +94,48 @@ async function testInvalidInput(input, expectedReturnCode, expectedOutput) {
       logError(receivedOutput);
     }
 
-    rejectTest(" by succeeding");
+    rejectTest(testName, " by succeeding");
   } catch (error) {
     const { code: receivedReturnCode, stdout: receivedOutput } = error;
 
     let failedTest = false;
 
     if (expectedReturnCode !== receivedReturnCode) {
-      logError(`Wrong ReturnCode!`);
       logError(`Expected:`);
       logError(expectedReturnCode);
       logError(`Received:`);
       logError(receivedReturnCode);
-      failedTest = true;
+      rejectTest(testName, "WRONG RETURN CODE!");
     }
 
     if (!receivedOutput.startsWith(expectedOutput)) {
-      logError(`Wrong output!`);
       logError(`Expected:`);
       logError(expectedOutput);
       logError(`Received:`);
       logError(receivedOutput);
-      failedTest = true;
+      rejectTest(testName, "WRONG OUTPUT!");
     }
 
-    if (failedTest) {
-      rejectTest();
-    } else {
-      acceptTest();
-    }
+    acceptTest();
   }
 }
 
-async function testValidInput(input) {
+async function testValidInput(testName, input) {
   await fs.writeFile(`.temp`, input);
 
   await exec(`./etapa4 < .temp`).catch((error) => {
     console.log("Error:", error);
-    logError("INPUT SHOULD BE VALID!");
-    rejectTest();
+    rejectTest(testName, "INPUT SHOULD BE VALID!");
   });
 
   acceptTest();
 }
 
 async function main() {
-  // Example
-  //   await testInvalidInput(
-  //     `int f1() { undeclared = 1; }`,
-  //     ERROR_CODE.ERR_UNDECLARED,
-  //     `Erro semântico na linha 1, coluna 13. Variável "undeclared" não foi declarada.`
-  //   );
+  await testValidInput("Basic valid input", "int f1() { return 0; }");
 
-  // Test 1: Valid input.
-  await testValidInput("int f1() { return 0; }");
-
-  // Test 2: Generic parsing error.
   await testInvalidInput(
+    "Generic parsing error",
     `
       int a a;
       bool a a;
@@ -126,8 +144,8 @@ async function main() {
     `Parsing errors: Parsing error at line 2 column 13. No repair sequences found.\n`
   );
 
-  // Test 3: Two same-name global vars, in same scope.
   await testInvalidInput(
+    "Two same-name global vars, in same scope",
     `
       int abc;
       bool abc;
@@ -143,8 +161,8 @@ And again at line 3, column 12:
 `
   );
 
-  // Test 4: One global vec and one global var, both with same name, in same scope.
   await testInvalidInput(
+    "One global vec and one global var, both with same name, in same scope",
     `
       int abc[3];
       bool abc;
@@ -160,8 +178,8 @@ And again at line 3, column 12:
 `
   );
 
-  // Test 5: One global vec and one global function, both with same name, in same scope.
   await testInvalidInput(
+    "One global vec and one global function, both with same name, in same scope",
     `
       int abc[3];
       bool abc() { return true; }
@@ -177,8 +195,8 @@ And again at line 3, column 12:
 `
   );
 
-  // Test 6: Two local variables, both with same name, in same scope.
   await testInvalidInput(
+    "Two local variables, both with same name, in same scope",
     `
       bool abc() {
         float aa <= 1;
@@ -197,25 +215,84 @@ And again at line 4, column 16:
 `
   );
 
-  // Test 7: Uninitialized variable.
+  // Todos os identificadores devem ter sido declarados no momento do seu uso, seja como variável, como vetor ou como função.
+  // Caso o identificador não tenha sido declarado no seu uso, deve-se lançar o erro ERR_UNDECLARED.
+
   await testInvalidInput(
+    "Uninitialized variable",
     `
-      int aaa;
-      bool bbb() {
-        float ccc <= ddd;
-        return true;
+      int main() {
+        float xxx <= aaa;
+        return 0;
       }
     `,
     ERROR_CODE.ERR_UNDECLARED,
-    `Usage of undeclared identifier: "ddd"
-Occurrence at line 4, column 22:
-        float ccc <= ddd;
-                     ^^^
-`
+    `Usage of undeclared identifier: "aaa"
+Occurrence at line 3, column 22:
+        float xxx <= aaa;
+                     ^^^`
   );
 
-  // Test 8: Expected vector, found variable.
   await testInvalidInput(
+    "Uninitialized vector",
+    `
+      int main() {
+        float xxx;
+        xxx = aaa[5];
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "aaa"
+Occurrence at line 4, column 15:
+        xxx = aaa[5];
+              ^^^`
+  );
+
+  await testInvalidInput(
+    "Uninitialized function",
+    `
+      int main() {
+        aaa();
+        return 0;
+      }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "aaa"
+Occurrence at line 3, column 9:
+        aaa();
+        ^^^`
+  );
+
+  // O uso de identificadores deve ser compatível com sua declaração e com seu tipo.
+  // Variáveis somente podem ser usadas sem indexação, vetores somente podem ser utilizados com indexação, e funções apenas devem ser usadas como chamada de função, isto é, seguidas da lista de argumentos, esta possivelmente vazia conforme a sintaxe da E2, entre parênteses.
+
+  // Caso o identificador dito variável seja usado como vetor ou como função, deve-se lançar o erro ERR_VARIABLE.
+
+  await testInvalidInput(
+    "Expected variable, found function",
+    `
+      int aaa;
+      bool bbb() {
+        float ccc <= aaa;
+        ccc = aaa();
+        return true;
+      }
+    `,
+    ERROR_CODE.ERR_VARIABLE,
+    `Variable identifier used as function: "aaa"
+First occurrence at line 2, column 11:
+      int aaa;
+          ^^^
+And again at line 5, column 15:
+        ccc = aaa();
+              ^^^`
+  );
+
+  // Caso o identificador dito vetor seja usado como variável ou função, deve-se lançar o erro ERR_VECTOR.
+
+  await testInvalidInput(
+    "Expected vector, found variable",
     `
       int aaa[1];
       bool bbb() {
@@ -234,29 +311,10 @@ And again at line 4, column 22:
 `
   );
 
-  // Test 9: Expected variable, found function.
-  await testInvalidInput(
-    `
-      int aaa;
-      bool bbb() {
-        float ccc <= aaa;
-        ccc = aaa();
-        return true;
-      }
-    `,
-    ERROR_CODE.ERR_VARIABLE,
-    `Variable identifier used as function: "aaa"
-First occurrence at line 2, column 11:
-      int aaa;
-          ^^^
-And again at line 5, column 15:
-        ccc = aaa();
-              ^^^
-`
-  );
+  // Enfim, caso o identificador dito função seja utilizado como variável ou vetor, deve-se lançar o erro ERR_FUNCTION.
 
-  // Test 10: Expected function, found vector.
   await testInvalidInput(
+    "Expected function, found vector",
     `
       bool bbb() {
         bbb[3] = aaa;
@@ -274,8 +332,30 @@ And again at line 3, column 9:
 `
   );
 
-  // Test 11: Duplicated function definition.
+  // Todas as entradas na tabela de símbolos devem ter um tipo associado conforme a declaração, verificando-se se não houve dupla declaração ou se o símbolo nao foi declarado.
+  //  Caso o identificador ja tenha sido declarado, deve-se lançar o erro ERR_DECLARED.
+
   await testInvalidInput(
+    "Duplicated variable declaration",
+    `
+        int main() {
+          int aaa;
+          float aaa;
+          return 0;
+        }
+      `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "aaa"
+First occurrence at line 3, column 15:
+          int aaa;
+              ^^^
+And again at line 4, column 17:
+          float aaa;
+                ^^^`
+  );
+
+  await testInvalidInput(
+    "Duplicated function definition",
     `
         int f1(int a) { return 0; }
         int f1(int a) { return 0; }
@@ -290,8 +370,8 @@ And again at line 3, column 13:
             ^^`
   );
 
-  // Test 12: Duplicated vector definition.
   await testInvalidInput(
+    "Duplicated vector definition.",
     `
       int vec[10];
       int vec[10];
@@ -306,11 +386,46 @@ And again at line 3, column 11:
           ^^^`
   );
 
+  // Variáveis com o mesmo nome podem co-existir em escopos diferentes, efetivamente mascarando as variaveis que estão em escopos superiores.
+
+  await testValidInput(
+    "Variable shadowing.",
+    `
+      int aaa;
+      int main( ) {
+        int aaa;
+        return 0;
+      }
+    `
+  );
+
+  await testValidInput(
+    "Variable shadowing function declaration.",
+    `
+      int aaa ( ) { return 0; }
+      int main( ) {
+        int aaa;
+        return 0;
+      }
+    `
+  );
+
+  await testValidInput(
+    "Variable shadowing vector declaration.",
+    `
+      int aaa[5];
+      int main( ) {
+        int aaa;
+        return 0;
+      }
+    `
+  );
+
   // O comando input deve ser seguido obrigatoriamente por um identificador do tipo int e float.
   // Caso contrário, o compilador deve lançar o erro ERR_WRONG_PAR_INPUT.
 
-  // Test 13: expected int or float, received char
   await testInvalidInput(
+    "when input command receives char, should fail",
     `
       int main() {
         char a;
@@ -328,8 +443,8 @@ And again at line 4, column 15:
               ^`
   );
 
-  // Test 14: expected int or float, received string
   await testInvalidInput(
+    "when input command receives string, should fail",
     `
       int main() {
         string a;
@@ -347,8 +462,8 @@ And again at line 4, column 15:
               ^`
   );
 
-  // Test 15: expected int or float, received bool
   await testInvalidInput(
+    "when input command receives bool, should fail",
     `
       int main() {
         bool a;
@@ -366,8 +481,8 @@ And again at line 4, column 15:
               ^`
   );
 
-  // Test 16: valid int variable
   await testValidInput(
+    "when input command receives int, should succeed",
     `
       int main() {
         int a;
@@ -377,8 +492,8 @@ And again at line 4, column 15:
     `
   );
 
-  // Test 17: valid float variable
   await testValidInput(
+    "when input command receives float, should succeed",
     `
       int main() {
         float a;
@@ -391,8 +506,8 @@ And again at line 4, column 15:
   // De maneira analoga, o comando output deve ser seguido por um identificador ou literal do tipo int e float.
   // Caso contrário, deve ser lançado o erro ERR_WRONG_PAR_OUTPUT.
 
-  // Test 18: expected int or float, received bool
   await testInvalidInput(
+    "when output command receives bool, should fail",
     `
       int main() {
         bool a;
@@ -410,8 +525,8 @@ And again at line 4, column 16:
                ^`
   );
 
-  // Test 19: expected int or float, received char
   await testInvalidInput(
+    "when output command receives char, should fail",
     `
       int main() {
         char a;
@@ -429,8 +544,8 @@ And again at line 4, column 16:
                ^`
   );
 
-  // Test 20: expected int or float, received string
   await testInvalidInput(
+    "when output command receives string, should fail",
     `
       int main() {
         string a;
@@ -448,8 +563,8 @@ And again at line 4, column 16:
                ^`
   );
 
-  // Test 21: valid int variable
   await testValidInput(
+    "when output command receives int, should succeed",
     `
       int main() {
         int a;
@@ -459,8 +574,8 @@ And again at line 4, column 16:
     `
   );
 
-  // Test 22: valid float variable
   await testValidInput(
+    "when output command receives float, should succeed",
     `
       int main() {
         float a;
@@ -470,8 +585,8 @@ And again at line 4, column 16:
     `
   );
 
-  // Test 23: expected literal int or float, received string
   await testInvalidInput(
+    "when output command receives literal string, should fail",
     `
       int main() {
         output \"string\";
@@ -485,8 +600,8 @@ Occurrence at line 3, column 16:
                ^^^^^^^^`
   );
 
-  // Test 24: expected literal int or float, received char
   await testInvalidInput(
+    "when output command receives literal char, should fail",
     `
       int main() {
         output \'c\';
@@ -500,8 +615,8 @@ Occurrence at line 3, column 16:
                ^^^`
   );
 
-  // Test 25: expected literal int or float, received bool
   await testInvalidInput(
+    "when output command receives false, should fail",
     `
       int main() {
         output false;
@@ -515,8 +630,8 @@ Occurrence at line 3, column 16:
                ^^^^^`
   );
 
-  // Test 26: expected literal int or float, received bool
   await testInvalidInput(
+    "when output command receives true, should fail",
     `
       int main() {
         output true;
@@ -530,8 +645,8 @@ Occurrence at line 3, column 16:
                ^^^^`
   );
 
-  // Test 27: valid literal int
   await testValidInput(
+    "when output command receives literal int, should succeed",
     `
       int main() {
         output 0;
@@ -540,8 +655,8 @@ Occurrence at line 3, column 16:
     `
   );
 
-  // Test 28: valid literal float
   await testValidInput(
+    "when output command receives literal float, should succeed",
     `
       int main() {
         output 0.0;
@@ -549,6 +664,27 @@ Occurrence at line 3, column 16:
       }
     `
   );
+
+  // A Sistema de tipos da Linguagem
+  // Regras de Escopo.
+  // A verificação de declaração prévia de tipos deve considerar o escopo da linguagem.
+  // O escopo pode ser global, local da função e local de um bloco, sendo que este pode ser recursivamente aninhado.
+  // Uma forma de se implementar estas regras de escopo é através de uma pilha de tabelas de símbolos.
+  // Para verificar se uma variável foi declarada, verificase primeiramente no escopo atual (topo da pilha) e enquanto não encontrar, deve-se descer na pilha até chegar no escopo global (base da pilha, sempre presente).
+
+  // await testValidInput(
+  //   "Variable shadowing with command block.",
+  //   `
+  //     int aaa;
+  //     int main( ) {
+  //       int aaa;
+  //       {
+  //         int aaa;
+  //         return 0;
+  //       };
+  //     }
+  //   `
+  // );
 }
 
 main();
@@ -556,46 +692,6 @@ main();
 /*
   TODO = EACH NEW TEST SHOULD REMOVE A SPECIFICATION LINE BELOW.
   The project will be complete when there are no untested specification line.
-
-  1 Introdução
-
-  A quarta etapa do trabalho de implementação de um compilador para a linguagem consiste em verificações semânticas.
-  Estas verificações fazem parte do sistema de tipos da linguagem com um conjunto de regras detalhado a seguir.
-  Toda a verificação de tipos é feita em tempo de compilação.
-  Todos os nós da Arvore Sintática Abstrata (AST), é gerada na E3, terão agora um novo campo que indica o seu tipo (se e inteiro, ponto-flutuante, etc).
-  O tipo de um determinado no da AST pode, em algumas situações, não ser definido diretamente (para os comandos de fluxo de controle, por exemplo).
-  Na maioria dos casos, no entanto, seu tipo e definido seguindo as regras de inferência da linguagem.
-
-  2 Funcionalidades Necessárias
-
-  2.1 Implementar uma tabela de símbolos
-
-  A tabela de símbolos guarda informações a respeito dos símbolos (identificadores e literais) encontrados na entrada.
-  Cada entrada na tabela de símbolos tem uma chave e um conteúdo.
-  A chave única identifica o símbolo, e o conteudo deve ter os campos:
-  • localização (linha e coluna, esta opcional)
-  • natureza (literal, variavel, função, etc)
-  • tipo (qual o tipo de dado deste símbolo)
-  • tamanho (derivado do tipo e se vetor)
-  • argumentos e seus tipos (no caso de funções)
-  • dados do valor do token pelo yylval (veja E3)
-  A implementação deve prever que várias tabelas de símbolos possam coexistir, uma para cada escopo.
-  As regras de escopo sao delineadas a no anexo.
-
-  2.2 Verificação de declarações
-  Todos os identificadores devem ter sido declarados no momento do seu uso, seja como variável, como vetor ou como função.
-  Todas as entradas na tabela de símbolos devem ter um tipo associado conforme a declaração, verificando-se se não houve dupla declaração ou se o símbolo nao foi declarado.
-  Caso o identificador ja tenha sido declarado, deve-se lançar o erro ERR_DECLARED.
-  Caso o identificador não tenha sido declarado no seu uso, deve-se lançar o erro ERR_UNDECLARED.
-  Variáveis com o mesmo nome podem co-existir em escopos diferentes, efetivamente mascarando as variaveis que estão em escopos superiores.
-  As regras de escopo sao delineadas no anexo.
-
-  2.3 Uso correto de identificadores
-  O uso de identificadores deve ser compatível com sua declaração e com seu tipo.
-  Variáveis somente podem ser usadas sem indexação, vetores somente podem ser utilizados com indexação, e funções apenas devem ser usadas como chamada de função, isto é, seguidas da lista de argumentos, esta possivelmente vazia conforme a sintaxe da E2, entre parênteses.
-  Caso o identificador dito variável seja usado como vetor ou como função, deve-se lançar o erro ERR_VARIABLE.
-  Caso o identificador dito vetor seja usado como variável ou função, deve-se lançar o erro ERR_VECTOR.
-  Enfim, caso o identificador dito função seja utilizado como variável ou vetor, deve-se lançar o erro ERR_FUNCTION.
 
   2.4 Verificação de tipos e tamanho dos dados
   Uma declaração de variável deve permitir ao compilador definir o tipo e a ocupação em memória da variável na sua entrada na tabela de símbolos.
@@ -607,13 +703,13 @@ main();
   Como não temos coerção de variáveis do tipo string e char, o compilador deve lançar o erro ERR_STRING_TO_X quando a variável do tipo string estiver em uma situação onde ela deve ser convertida para qualquer outro tipo.
   De maneira análoga, o erro ERR_CHAR_TO_X deve ser lançado quando uma variável do tipo char deve ser convertida implicitamente.
   Enfim, vetores não podem ser do tipo string.
-  Caso um vetor tenha sido declarado com o tipo string, o erro ERR-STRING-VECTOR deve ser lançado.
+  Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
 
   2.5 Retorno, argumentos e parâmetros de funções
   A lista de argumentos fornecidos em uma chamada de função deve ser verificada contra a lista de parâmetros formais na declaração da mesma função.
   Cada chamada de função deve prover um argumento para cada parâmetro, e ter o seu tipo compatível.
   Tais verificações devem ser realizadas levando-se em conta as informações registradas na tabela de símbolos, registradas no momento da declaração/definição da função.
-  Na hora da chamada da função, caso houver um número menor de argumentos que o necessário, deve-se lançar o erro ERR-MISSING_ARGS.
+  Na hora da chamada da função, caso houver um número menor de argumentos que o necessário, deve-se lançar o erro ERR_MISSING_ARGS.
   Caso houver um número maior de argumentos que o necessário, deve-se lançar o erro ERR_EXCESS_ARGS.
   Enfim, quando o número de argumentos é correto, mas os tipos dos argumentos são incompatíveis com os tipos registrados na tabela de símbolo, deve-se lançar o erro ERR_WRONG_TYPE_ARGS.
   Retorno, argumentos e parâmetros de funções não podem ser do tipo string.
@@ -623,26 +719,9 @@ main();
   Prevalece o tipo do identificador que recebe um valor em um comando de atribuição.
   O erro ERR_WRONG_TYPE deve ser lançado quando o tipo do valor a ser atribuído a um identificador for incompatível com o tipo deste identificador.
   Os demais comandos simples da linguagem devem ser verificados semanticamente para obedecer as seguintes regras.
-  O comando input deve ser seguido obrigatoriamente por um identificador do tipo int e float.
-  Caso contrário, o compilador deve lançar o erro ERR_WRONG_PAR_INPUT.
-  De maneira análoga, o comando output deve ser seguido por um identificador ou literal do tipo int e float.
-  Caso contrário, deve ser lançado o erro ERR_WRONG_PAR_OUTPUT.
   O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
-  Caso não seja o caso, o erro ERR_WRONG_PAR RETURN deve ser lançado pelo compilador.
+  Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
   Nos comandos de shift (esquerda e direta), deve-se lançar o erro ERR_WRONG_PAR_SHIFT caso o parâmetro após o token de shift for um número maior que 16.
-
-  2.7 Mensagens de erro
-  Mensagens de erro significativas devem ser fornecidas.
-  Elas devem descrever em linguagem natural o erro semântico, as linhas envolvidas, os identificadores e a natureza destes.
-
-  A Sistema de tipos da Linguagem
-  Regras de Escopo.
-  A verificação de declaração prévia de tipos deve considerar o escopo da linguagem.
-  O escopo pode ser global, local da função e local de um bloco, sendo que este pode ser recursivamente aninhado.
-  Uma forma de se implementar estas regras de escopo é através de uma pilha de tabelas de símbolos.
-  Para verificar se uma variável foi declarada, verificase primeiramente no escopo atual (topo da pilha) e enquanto não encontrar, deve-se descer na pilha até chegar no escopo global (base da pilha, sempre presente).
-  Caso o identificador não seja encontrado, isso indica que ele não foi declarado.
-  Para se "declarar"um símbolo, basta inseri-lo na tabela de símbolos do escopo que encontra-se no topo da pilha.
 
   Conversão implícita.
   As regras de coerção de tipos da Linguagem são as seguintes.
@@ -671,32 +750,40 @@ main();
   Um float ocupa 8 bytes.
   Um bool ocupa 1 byte.
   Um vetor ocupa o seu tamanho vezes o seu tipo.
+*/
 
-  B Códigos de retorno
-  Os seguintes códigos de retorno devem ser utilizados quando o compilador encontrar erros semânticos.
-  O programa deve chamar exit utilizando esses códigos imediamente após a impressão da linha que descreve o erro.
-  Na ausência de qualquer erro, o programa deve retornar o valor zero.
+/*
+  NÃO-Testáveis + Testes manuais
+  // Checar essa lista antes de enviar o trabalho
 
-  #define ERR_UNDECLARED 10
-  #define ERR_DECLARED 11
-  #define ERR_VARIABLE 20
-  #define ERR_VECTOR 21
-  #define ERR_FUNCTION 22
-  #define ERR_WRONG_TYPE 30
-  #define ERR_STRING_TO_X 31
-  #define ERR_CHAR_TO_X 32
-  #define ERR_STRING_MAX 33
-  #define ERR_STRING_VECTOR 34
-  #define ERR_MISSING_ARGS 40
-  #define ERR_EXCESS_ARGS 41
-  #define ERR_WRONG_TYPE_ARGS 42
-  #define ERR_FUNCTION_STRING 43
-  #define ERR_WRONG_PAR_INPUT 50
-  #define ERR_WRONG_PAR_OUTPUT 51
-  #define ERR_WRONG_PAR_RETURN 52
-  #define ERR_WRONG_PAR_SHIFT 53
+  1 Introdução
 
-  Estes valores são utilizados na avaliação objetiva.
+  A quarta etapa do trabalho de implementação de um compilador para a linguagem consiste em verificações semânticas.
+  Estas verificações fazem parte do sistema de tipos da linguagem com um conjunto de regras detalhado a seguir.
+  Toda a verificação de tipos é feita em tempo de compilação.
+  Todos os nós da Arvore Sintática Abstrata (AST), é gerada na E3, terão agora um novo campo que indica o seu tipo (se e inteiro, ponto-flutuante, etc).
+  O tipo de um determinado no da AST pode, em algumas situações, não ser definido diretamente (para os comandos de fluxo de controle, por exemplo).
+  Na maioria dos casos, no entanto, seu tipo e definido seguindo as regras de inferência da linguagem.
+
+  2 Funcionalidades Necessárias
+
+  2.1 Implementar uma tabela de símbolos
+
+  A tabela de símbolos guarda informações a respeito dos símbolos (identificadores e literais) encontrados na entrada.
+  Cada entrada na tabela de símbolos tem uma chave e um conteúdo.
+  A chave única identifica o símbolo, e o conteudo deve ter os campos:
+  • localização (linha e coluna, esta opcional)
+  • natureza (literal, variavel, função, etc)
+  • tipo (qual o tipo de dado deste símbolo)
+  • tamanho (derivado do tipo e se vetor)
+  • argumentos e seus tipos (no caso de funções)
+  • dados do valor do token pelo yylval (veja E3)
+  A implementação deve prever que várias tabelas de símbolos possam coexistir, uma para cada escopo.
+  As regras de escopo sao delineadas a no anexo.
+
+  2.7 Mensagens de erro
+  Mensagens de erro significativas devem ser fornecidas.
+  Elas devem descrever em linguagem natural o erro semântico, as linhas envolvidas, os identificadores e a natureza destes.
 
   C Arquivo main.c
   Utilize o mesmo main.c da E3.
