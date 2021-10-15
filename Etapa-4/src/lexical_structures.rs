@@ -32,10 +32,14 @@ impl GlobalVarDef {
 
 impl AstNode for GlobalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        if let Some(next_node) = &self.next {
+            print_dependencies_ripple(next_node.as_ref(), own_address, ripple)
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -99,10 +103,14 @@ impl GlobalVecDef {
 
 impl AstNode for GlobalVecDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        if let Some(next_node) = &self.next {
+            print_dependencies_ripple(next_node.as_ref(), own_address, ripple)
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -169,15 +177,21 @@ impl FnDef {
 
 impl AstNode for FnDef {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.commands, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.commands, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.commands.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.commands.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.commands, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.commands.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -256,15 +270,17 @@ impl LocalVarDef {
 impl AstNode for LocalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
         if !self.is_tree_node {
-            print_dependencies_ripple(&self.next, own_address, ripple)
+            if let Some(next_node) = &self.next {
+                print_dependencies_ripple(next_node.as_ref(), own_address, ripple)
+            }
         }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         if self.is_tree_node {
             print_label_self(self.node_id, lexer, own_address);
-            print_labels_next(&self.next, lexer, own_address);
-        } else {
-            print_labels_ripple(&self.next, lexer, own_address)
+        };
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
         }
     }
     fn is_tree_member(&self) -> bool {
@@ -326,18 +342,24 @@ impl VarDefInitId {
 
 impl AstNode for VarDefInitId {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_def, own_address);
-        print_dependencies_own(&self.var_value, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_def, own_address);
-        print_dependencies_child(&self.var_value, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_def.as_ref(), own_address);
+        print_dependencies_own(self.var_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_def.as_ref(), own_address);
+        print_dependencies_child(self.var_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_def, lexer);
-        print_labels_child(&self.var_value, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_def.as_ref(), lexer);
+        print_labels_child(self.var_value.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -391,18 +413,24 @@ impl VarDefInitLit {
 
 impl AstNode for VarDefInitLit {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_def, own_address);
-        print_dependencies_own(&self.var_value, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_def, own_address);
-        print_dependencies_child(&self.var_value, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_def.as_ref(), own_address);
+        print_dependencies_own(self.var_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_def.as_ref(), own_address);
+        print_dependencies_child(self.var_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_def, lexer);
-        print_labels_child(&self.var_value, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_def.as_ref(), lexer);
+        print_labels_child(self.var_value.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -458,18 +486,24 @@ impl VarLeftShift {
 
 impl AstNode for VarLeftShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
-        print_dependencies_own(&self.shift_amount, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
-        print_dependencies_child(&self.shift_amount, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_name.as_ref(), own_address);
+        print_dependencies_own(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_name.as_ref(), own_address);
+        print_dependencies_child(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
-        print_labels_child(&self.shift_amount, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_name.as_ref(), lexer);
+        print_labels_child(self.shift_amount.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -515,18 +549,24 @@ impl VarRightShift {
 
 impl AstNode for VarRightShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
-        print_dependencies_own(&self.shift_amount, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
-        print_dependencies_child(&self.shift_amount, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_name.as_ref(), own_address);
+        print_dependencies_own(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_name.as_ref(), own_address);
+        print_dependencies_child(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
-        print_labels_child(&self.shift_amount, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_name.as_ref(), lexer);
+        print_labels_child(self.shift_amount.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -572,18 +612,24 @@ impl VecLeftShift {
 
 impl AstNode for VecLeftShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.vec_access, own_address);
-        print_dependencies_own(&self.shift_amount, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.vec_access, own_address);
-        print_dependencies_child(&self.shift_amount, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.vec_access.as_ref(), own_address);
+        print_dependencies_own(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.vec_access.as_ref(), own_address);
+        print_dependencies_child(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.vec_access, lexer);
-        print_labels_child(&self.shift_amount, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.vec_access.as_ref(), lexer);
+        print_labels_child(self.shift_amount.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -629,18 +675,24 @@ impl VecRightShift {
 
 impl AstNode for VecRightShift {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.vec_access, own_address);
-        print_dependencies_own(&self.shift_amount, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.vec_access, own_address);
-        print_dependencies_child(&self.shift_amount, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.vec_access.as_ref(), own_address);
+        print_dependencies_own(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.vec_access.as_ref(), own_address);
+        print_dependencies_child(self.shift_amount.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.vec_access, lexer);
-        print_labels_child(&self.shift_amount, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.vec_access.as_ref(), lexer);
+        print_labels_child(self.shift_amount.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -686,18 +738,24 @@ impl VarSet {
 
 impl AstNode for VarSet {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
-        print_dependencies_own(&self.new_value, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
-        print_dependencies_child(&self.new_value, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_name.as_ref(), own_address);
+        print_dependencies_own(self.new_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_name.as_ref(), own_address);
+        print_dependencies_child(self.new_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
-        print_labels_child(&self.new_value, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_name.as_ref(), lexer);
+        print_labels_child(self.new_value.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -753,18 +811,24 @@ impl VecSet {
 
 impl AstNode for VecSet {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.vec_access, own_address);
-        print_dependencies_own(&self.new_value, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.vec_access, own_address);
-        print_dependencies_child(&self.new_value, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.vec_access.as_ref(), own_address);
+        print_dependencies_own(self.new_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.vec_access.as_ref(), own_address);
+        print_dependencies_child(self.new_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.vec_access, lexer);
-        print_labels_child(&self.new_value, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.vec_access.as_ref(), lexer);
+        print_labels_child(self.new_value.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -813,15 +877,21 @@ impl Input {
 
 impl AstNode for Input {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_name.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_name.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_name.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -894,15 +964,21 @@ impl OutputId {
 
 impl AstNode for OutputId {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.var_name, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.var_name, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.var_name.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.var_name.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.var_name, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.var_name.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -975,15 +1051,21 @@ impl OutputLit {
 
 impl AstNode for OutputLit {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.lit_value, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.lit_value, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.lit_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.lit_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.lit_value, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.lit_value.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1048,12 +1130,18 @@ impl Continue {
 
 impl AstNode for Continue {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1087,12 +1175,18 @@ impl Break {
 
 impl AstNode for Break {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1135,15 +1229,21 @@ impl Return {
 
 impl AstNode for Return {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.ret_value, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.ret_value, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.ret_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.ret_value.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.ret_value, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.ret_value.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1195,22 +1295,30 @@ impl FnCall {
 impl AstNode for FnCall {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         if let Some(args) = &self.args {
-            print_dependencies_own(&args, own_address);
+            print_dependencies_own(args.as_ref(), own_address);
         }
-        print_dependencies_own_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
         if let Some(args) = &self.args {
-            print_dependencies_child(&args, own_address);
+            print_dependencies_child(args.as_ref(), own_address);
         }
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         self.print_label_fn_call(lexer, own_address);
         match &self.args {
-            Some(args) => print_labels_child(&args, lexer),
+            Some(args) => print_labels_child(args.as_ref(), lexer),
             None => (),
         };
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1265,18 +1373,24 @@ impl If {
 
 impl AstNode for If {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.condition, own_address);
-        print_dependencies_own(&self.consequence, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.condition, own_address);
-        print_dependencies_child(&self.consequence, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.condition.as_ref(), own_address);
+        print_dependencies_own(self.consequence.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.condition.as_ref(), own_address);
+        print_dependencies_child(self.consequence.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.condition, lexer);
-        print_labels_child(&self.consequence, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.condition.as_ref(), lexer);
+        print_labels_child(self.consequence.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1325,21 +1439,27 @@ impl IfElse {
 
 impl AstNode for IfElse {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.condition, own_address);
-        print_dependencies_own(&self.if_true, own_address);
-        print_dependencies_own(&self.if_false, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.condition, own_address);
-        print_dependencies_child(&self.if_true, own_address);
-        print_dependencies_child(&self.if_false, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.condition.as_ref(), own_address);
+        print_dependencies_own(self.if_true.as_ref(), own_address);
+        print_dependencies_own(self.if_false.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.condition.as_ref(), own_address);
+        print_dependencies_child(self.if_true.as_ref(), own_address);
+        print_dependencies_child(self.if_false.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.condition, lexer);
-        print_labels_child(&self.if_true, lexer);
-        print_labels_child(&self.if_false, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.condition.as_ref(), lexer);
+        print_labels_child(self.if_true.as_ref(), lexer);
+        print_labels_child(self.if_false.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1391,24 +1511,30 @@ impl For {
 
 impl AstNode for For {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.count_init, own_address);
-        print_dependencies_own(&self.count_check, own_address);
-        print_dependencies_own(&self.count_iter, own_address);
-        print_dependencies_own(&self.actions, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.count_init, own_address);
-        print_dependencies_child(&self.count_check, own_address);
-        print_dependencies_child(&self.count_iter, own_address);
-        print_dependencies_child(&self.actions, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.count_init.as_ref(), own_address);
+        print_dependencies_own(self.count_check.as_ref(), own_address);
+        print_dependencies_own(self.count_iter.as_ref(), own_address);
+        print_dependencies_own(self.actions.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.count_init.as_ref(), own_address);
+        print_dependencies_child(self.count_check.as_ref(), own_address);
+        print_dependencies_child(self.count_iter.as_ref(), own_address);
+        print_dependencies_child(self.actions.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.count_init, lexer);
-        print_labels_child(&self.count_check, lexer);
-        print_labels_child(&self.count_iter, lexer);
-        print_labels_child(&self.actions, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.count_init.as_ref(), lexer);
+        print_labels_child(self.count_check.as_ref(), lexer);
+        print_labels_child(self.count_iter.as_ref(), lexer);
+        print_labels_child(self.actions.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1454,18 +1580,24 @@ impl While {
 
 impl AstNode for While {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.condition, own_address);
-        print_dependencies_own(&self.consequence, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.condition, own_address);
-        print_dependencies_child(&self.consequence, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.condition.as_ref(), own_address);
+        print_dependencies_own(self.consequence.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.condition.as_ref(), own_address);
+        print_dependencies_child(self.consequence.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.condition, lexer);
-        print_labels_child(&self.consequence, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.condition.as_ref(), lexer);
+        print_labels_child(self.consequence.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1499,10 +1631,14 @@ impl EmptyBlock {
 
 impl AstNode for EmptyBlock {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
-        print_dependencies_ripple(&self.next, own_address, ripple)
+        if let Some(next_node) = &self.next {
+            print_dependencies_ripple(next_node.as_ref(), own_address, ripple)
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_labels_ripple(&self.next, lexer, own_address)
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         false
@@ -1558,21 +1694,27 @@ impl Ternary {
 
 impl AstNode for Ternary {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.condition, own_address);
-        print_dependencies_own(&self.if_true, own_address);
-        print_dependencies_own(&self.if_false, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.condition, own_address);
-        print_dependencies_child(&self.if_true, own_address);
-        print_dependencies_child(&self.if_false, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.condition.as_ref(), own_address);
+        print_dependencies_own(self.if_true.as_ref(), own_address);
+        print_dependencies_own(self.if_false.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.condition.as_ref(), own_address);
+        print_dependencies_child(self.if_true.as_ref(), own_address);
+        print_dependencies_child(self.if_false.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         self.print_label_ternary(own_address);
-        print_labels_child(&self.condition, lexer);
-        print_labels_child(&self.if_true, lexer);
-        print_labels_child(&self.if_false, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.condition.as_ref(), lexer);
+        print_labels_child(self.if_true.as_ref(), lexer);
+        print_labels_child(self.if_false.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1621,18 +1763,24 @@ impl Binary {
 
 impl AstNode for Binary {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.lhs, own_address);
-        print_dependencies_own(&self.rhs, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.lhs, own_address);
-        print_dependencies_child(&self.rhs, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.lhs.as_ref(), own_address);
+        print_dependencies_own(self.rhs.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.lhs.as_ref(), own_address);
+        print_dependencies_child(self.rhs.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.lhs, lexer);
-        print_labels_child(&self.rhs, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.lhs.as_ref(), lexer);
+        print_labels_child(self.rhs.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1678,15 +1826,21 @@ impl Unary {
 
 impl AstNode for Unary {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.operand, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.operand, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.operand.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.operand.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(&self.operand, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.operand.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1720,12 +1874,18 @@ impl VarAccess {
 
 impl AstNode for VarAccess {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1775,18 +1935,24 @@ impl VecAccess {
 
 impl AstNode for VecAccess {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(&self.vec_name, own_address);
-        print_dependencies_own(&self.vec_index, own_address);
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_child(&self.vec_name, own_address);
-        print_dependencies_child(&self.vec_index, own_address);
-        print_dependencies_next(&self.next, own_address);
+        print_dependencies_own(self.vec_name.as_ref(), own_address);
+        print_dependencies_own(self.vec_index.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        print_dependencies_child(self.vec_name.as_ref(), own_address);
+        print_dependencies_child(self.vec_index.as_ref(), own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         self.print_label_vec_access(own_address);
-        print_labels_child(&self.vec_name, lexer);
-        print_labels_child(&self.vec_index, lexer);
-        print_labels_next(&self.next, lexer, own_address);
+        print_labels_child(self.vec_name.as_ref(), lexer);
+        print_labels_child(self.vec_index.as_ref(), lexer);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1830,12 +1996,18 @@ impl VarInvoke {
 
 impl AstNode for VarInvoke {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1877,12 +2049,18 @@ impl VecInvoke {
 
 impl AstNode for VecInvoke {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1924,12 +2102,18 @@ impl LiteralInt {
 
 impl AstNode for LiteralInt {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -1988,12 +2172,18 @@ impl LiteralFloat {
 
 impl AstNode for LiteralFloat {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -2048,12 +2238,18 @@ impl LiteralBool {
 
 impl AstNode for LiteralBool {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -2117,12 +2313,18 @@ impl LiteralChar {
 
 impl AstNode for LiteralChar {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         self.print_label_lit_char(lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -2189,12 +2391,18 @@ impl LiteralString {
 
 impl AstNode for LiteralString {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own_next(&self.next, own_address);
-        print_dependencies_next(&self.next, own_address);
+        if let Some(next_node) = &self.next {
+            print_dependencies_own_next(next_node.as_ref(), own_address);
+        }
+        if let Some(next_node) = &self.next {
+            print_dependencies_next(next_node.as_ref(), own_address);
+        }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         self.print_label_lit_string(lexer, own_address);
-        print_labels_next(&self.next, lexer, own_address);
+        if let Some(next_node) = &self.next {
+            print_labels_next(next_node.as_ref(), own_address, lexer)
+        }
     }
     fn is_tree_member(&self) -> bool {
         true
@@ -2265,46 +2473,29 @@ pub enum UnaryType {
 }
 
 fn print_dependencies_ripple(
-    next_node: &Option<Box<dyn AstNode>>,
+    next_node: &(dyn AstNode),
     own_address: *const c_void,
     ripple: bool,
 ) {
-    if let Some(next) = &next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
-            if ripple {
-                println!("{:p}, {:p}", own_address, next_address);
-            }
-            next.print_dependencies(next_address, false);
-        } else {
-            next.print_dependencies(own_address, ripple);
+    if next_node.is_tree_member() {
+        let next_address = addr_of!(*next_node) as *const c_void;
+        if ripple {
+            println!("{:p}, {:p}", own_address, next_address);
         }
+        next_node.print_dependencies(next_address, false);
+    } else {
+        next_node.print_dependencies(own_address, ripple);
     }
 }
 
-fn print_labels_ripple(
-    next_node: &Option<Box<dyn AstNode>>,
-    lexer: &dyn NonStreamingLexer<u32>,
-    own_address: *const c_void,
-) {
-    if let Some(next) = next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
-            next.print_labels(lexer, next_address);
-        } else {
-            next.print_labels(lexer, own_address);
-        }
-    }
-}
-
-fn print_dependencies_own(child: &Box<dyn AstNode>, own_address: *const c_void) {
+fn print_dependencies_own(child: &(dyn AstNode), own_address: *const c_void) {
     if child.is_tree_member() {
         let child_address = addr_of!(*child) as *const c_void;
         println!("{:p}, {:p}", own_address, child_address);
     }
 }
 
-fn print_dependencies_child(child: &Box<dyn AstNode>, own_address: *const c_void) {
+fn print_dependencies_child(child: &(dyn AstNode), own_address: *const c_void) {
     if child.is_tree_member() {
         let child_address = addr_of!(*child) as *const c_void;
         child.print_dependencies(child_address, false);
@@ -2313,23 +2504,19 @@ fn print_dependencies_child(child: &Box<dyn AstNode>, own_address: *const c_void
     }
 }
 
-fn print_dependencies_own_next(next_node: &Option<Box<dyn AstNode>>, own_address: *const c_void) {
-    if let Some(next) = &next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
-            println!("{:p}, {:p}", own_address, next_address);
-        }
+fn print_dependencies_own_next(next_node: &(dyn AstNode), own_address: *const c_void) {
+    if next_node.is_tree_member() {
+        let next_address = addr_of!(*next_node) as *const c_void;
+        println!("{:p}, {:p}", own_address, next_address);
     }
 }
 
-fn print_dependencies_next(next_node: &Option<Box<dyn AstNode>>, own_address: *const c_void) {
-    if let Some(next) = &next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
-            next.print_dependencies(next_address, false);
-        } else {
-            next.print_dependencies(own_address, true);
-        }
+fn print_dependencies_next(next_node: &(dyn AstNode), own_address: *const c_void) {
+    if next_node.is_tree_member() {
+        let next_address = addr_of!(*next_node) as *const c_void;
+        next_node.print_dependencies(next_address, false);
+    } else {
+        next_node.print_dependencies(own_address, true);
     }
 }
 
@@ -2345,22 +2532,20 @@ fn print_label_self(
     );
 }
 
-fn print_labels_child(child: &Box<dyn AstNode>, lexer: &dyn NonStreamingLexer<u32>) {
+fn print_labels_child(child: &(dyn AstNode), lexer: &dyn NonStreamingLexer<u32>) {
     child.print_labels(lexer, addr_of!(*child) as *const c_void);
 }
 
 fn print_labels_next(
-    next_node: &Option<Box<dyn AstNode>>,
-    lexer: &dyn NonStreamingLexer<u32>,
+    next_node: &(dyn AstNode),
     own_address: *const c_void,
+    lexer: &dyn NonStreamingLexer<u32>,
 ) {
-    if let Some(next) = &next_node {
-        if next.is_tree_member() {
-            let next_address = addr_of!(*next) as *const c_void;
-            next.print_labels(lexer, next_address);
-        } else {
-            next.print_labels(lexer, own_address);
-        }
+    if next_node.is_tree_member() {
+        let next_address = addr_of!(*next_node) as *const c_void;
+        next_node.print_labels(lexer, next_address);
+    } else {
+        next_node.print_labels(lexer, own_address);
     }
 }
 
