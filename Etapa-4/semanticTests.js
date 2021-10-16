@@ -686,28 +686,50 @@ Occurrence at line 3, column 16:
     `
     );
 
-    await testInvalidInput(
-      "Variable redefinition inside command block.",
-      `
+  await testInvalidInput(
+    "Variable redefinition inside command block.",
+    `
+      int aaa;
+      int main( ) {
         int aaa;
-        int main( ) {
+        {
           int aaa;
-          {
-            int aaa;
-            int aaa;
-            return 0;
-          };
-        }
-        `,
-        ERROR_CODE.ERR_DECLARED,
-        `Same-scope identifier redeclaration: "aaa"
-First occurrence at line 6, column 17:
-            int aaa;
-                ^^^
-And again at line 7, column 17:
-            int aaa;
-                ^^^`
-      );
+          int aaa;
+          return 0;
+        };
+      }
+      `,
+      ERROR_CODE.ERR_DECLARED,
+      `Same-scope identifier redeclaration: "aaa"
+First occurrence at line 6, column 15:
+          int aaa;
+              ^^^
+And again at line 7, column 15:
+          int aaa;
+              ^^^`
+    );
+
+      // Enfim, vetores não podem ser do tipo string.
+      // Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
+
+  await testValidInput(
+    "Declaring a vector of float types.",
+    `
+      float aaa[1];
+    `
+    );
+
+  await testInvalidInput(
+    "Declaring a vector of string types.",
+    `
+    string aaa[1];
+    `,
+    ERROR_CODE.ERR_STRING_VECTOR,
+    `Invalid usage of "string" type for vector declaration: "aaa"
+Occurrence at line 2, column 5:
+    string aaa[1];
+    ^^^^^^^^^^^^^`
+    );
 
 }
 

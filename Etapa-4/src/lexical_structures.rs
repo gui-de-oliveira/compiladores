@@ -128,9 +128,30 @@ impl AstNode for GlobalVecDef {
     ) -> Result<(), CompilerError> {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
-
-        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.node_id).to_string();
+
+        let var_type = match SymbolType::from_str(lexer.span_str(self.var_type))? {
+            SymbolType::String(_) => {
+                let start = self.var_type.start();
+                let end = self.vec_size.end() + 1;
+                if end < start {
+                    return Err(CompilerError::SanityError(format!(
+                        "evaluate_node() found unlawful spans on GlobalVecDef for \"{}\"",
+                        id.to_string(),
+                    )));
+                };
+                let span = Span::new(start, end);
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                return Err(CompilerError::SemanticErrorStringVector {
+                    id,
+                    line,
+                    col,
+                    highlight,
+                });
+            }
+            not_string @ _ => not_string,
+        };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Vec;
         let our_symbol = Symbol::new(id, span, line, col, var_type, class);
@@ -183,11 +204,13 @@ impl FnDef {
 
 impl AstNode for FnDef {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        self.commands.print_first_dependencies(print_dependencies_own, own_address);
+        self.commands
+            .print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
-        self.commands.print_first_dependencies(print_dependencies_child, own_address);
+        self.commands
+            .print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1429,12 +1452,14 @@ impl If {
 impl AstNode for If {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(self.condition.as_ref(), own_address);
-        self.consequence.print_first_dependencies(print_dependencies_own, own_address);
+        self.consequence
+            .print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.condition.as_ref(), own_address);
-        self.consequence.print_first_dependencies(print_dependencies_child, own_address);
+        self.consequence
+            .print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1442,7 +1467,8 @@ impl AstNode for If {
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
         print_labels_child(self.condition.as_ref(), lexer);
-        self.consequence.print_first_labels(print_labels_child, lexer);
+        self.consequence
+            .print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -1498,14 +1524,18 @@ impl IfElse {
 impl AstNode for IfElse {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(self.condition.as_ref(), own_address);
-        self.if_true.print_first_dependencies(print_dependencies_own, own_address);
-        self.if_false.print_first_dependencies(print_dependencies_own, own_address);
+        self.if_true
+            .print_first_dependencies(print_dependencies_own, own_address);
+        self.if_false
+            .print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.condition.as_ref(), own_address);
-        self.if_true.print_first_dependencies(print_dependencies_child, own_address);
-        self.if_false.print_first_dependencies(print_dependencies_child, own_address);
+        self.if_true
+            .print_first_dependencies(print_dependencies_child, own_address);
+        self.if_false
+            .print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1575,14 +1605,16 @@ impl AstNode for For {
         print_dependencies_own(self.count_init.as_ref(), own_address);
         print_dependencies_own(self.count_check.as_ref(), own_address);
         print_dependencies_own(self.count_iter.as_ref(), own_address);
-        self.actions.print_first_dependencies(print_dependencies_own, own_address);
+        self.actions
+            .print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.count_init.as_ref(), own_address);
         print_dependencies_child(self.count_check.as_ref(), own_address);
         print_dependencies_child(self.count_iter.as_ref(), own_address);
-        self.actions.print_first_dependencies(print_dependencies_child, own_address);
+        self.actions
+            .print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1645,12 +1677,14 @@ impl While {
 impl AstNode for While {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(self.condition.as_ref(), own_address);
-        self.consequence.print_first_dependencies(print_dependencies_own, own_address);
+        self.consequence
+            .print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.condition.as_ref(), own_address);
-        self.consequence.print_first_dependencies(print_dependencies_child, own_address);
+        self.consequence
+            .print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1658,7 +1692,8 @@ impl AstNode for While {
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
         print_labels_child(self.condition.as_ref(), lexer);
-        self.consequence.print_first_labels(print_labels_child, lexer);
+        self.consequence
+            .print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -1692,8 +1727,16 @@ pub struct CommandBlock {
 }
 
 impl CommandBlock {
-    pub fn new(node_id: Span, first_command: Option<Box<dyn AstNode>>, next: Option<Box<dyn AstNode>>) -> CommandBlock {
-        CommandBlock { node_id, first_command, next }
+    pub fn new(
+        node_id: Span,
+        first_command: Option<Box<dyn AstNode>>,
+        next: Option<Box<dyn AstNode>>,
+    ) -> CommandBlock {
+        CommandBlock {
+            node_id,
+            first_command,
+            next,
+        }
     }
 }
 
@@ -1735,7 +1778,11 @@ impl AstNode for CommandBlock {
 }
 
 impl CommandBlock {
-    pub fn print_first_dependencies(&self, print_func: fn(&(dyn AstNode), *const c_void), own_address: *const c_void) {
+    pub fn print_first_dependencies(
+        &self,
+        print_func: fn(&(dyn AstNode), *const c_void),
+        own_address: *const c_void,
+    ) {
         let mut current_command = &self.first_command;
         loop {
             match current_command {
@@ -1747,12 +1794,16 @@ impl CommandBlock {
                         current_command = command.get_next();
                         continue;
                     };
-                },
+                }
                 None => break,
             }
         }
     }
-    pub fn print_first_labels(&self, print_func: fn(&(dyn AstNode), &dyn NonStreamingLexer<u32>), lexer: &dyn NonStreamingLexer<u32>) {
+    pub fn print_first_labels(
+        &self,
+        print_func: fn(&(dyn AstNode), &dyn NonStreamingLexer<u32>),
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) {
         let mut current_command = &self.first_command;
         loop {
             match current_command {
@@ -1764,7 +1815,7 @@ impl CommandBlock {
                         current_command = command.get_next();
                         continue;
                     };
-                },
+                }
                 None => break,
             }
         }
@@ -2621,11 +2672,7 @@ pub enum UnaryType {
     Hash,
 }
 
-fn print_dependencies_ripple(
-    next_node: &(dyn AstNode),
-    own_address: *const c_void,
-    ripple: bool,
-) {
+fn print_dependencies_ripple(next_node: &(dyn AstNode), own_address: *const c_void, ripple: bool) {
     if next_node.is_tree_member() {
         let next_address = addr_of!(*next_node) as *const c_void;
         if ripple {
