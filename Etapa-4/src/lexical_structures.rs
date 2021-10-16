@@ -2458,11 +2458,19 @@ impl AstNode for VarAccess {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        // TO DO: Implement a return value here.
-        Ok(None)
+        let span = self.node_id;
+        let class = SymbolClass::Var;
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
+        let type_value = previous_def.type_value.clone();
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
+        Ok(Some(type_value))
     }
     fn get_id(&self) -> Span {
         self.node_id

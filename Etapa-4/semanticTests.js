@@ -821,10 +821,10 @@ Occurrence at line 2, column 5:
     }
   `
   );
-  /* TODO
-await testValidInput(
-  "Valid unary positive with var int.",
-  `
+
+  await testValidInput(
+    "Valid unary positive with var int.",
+    `
     int main() {
       int aaa;
       int bbb <= 1;
@@ -833,7 +833,7 @@ await testValidInput(
     }
   `
   );
-*/
+
   await testValidInput(
     "Valid unary positive with literal float.",
     `
@@ -844,10 +844,10 @@ await testValidInput(
     }
   `
   );
-  /* TODO
-await testValidInput(
-  "Valid unary positive with var float.",
-  `
+
+  await testValidInput(
+    "Valid unary positive with var float.",
+    `
     float main() {
       float aaa;
       float bbb <= 1.1;
@@ -856,7 +856,7 @@ await testValidInput(
     }
   `
   );
-*/
+
   await testValidInput(
     "Valid unary positive with literal bool.",
     `
@@ -867,20 +867,19 @@ await testValidInput(
     }
   `
   );
-  /* TODO
-await testValidInput(
-  "Valid unary positive with var bool.",
-  `
+
+  await testValidInput(
+    "Valid unary positive with var bool.",
+    `
     int main() {
       int aaa;
-      float aaa;
       bool bbb <= true;
       aaa = +bbb;
       return aaa;
     }
   `
   );
-*/
+
   await testInvalidInput(
     "Invalid unary positive with literal char.",
     `
@@ -896,10 +895,10 @@ Occurrence at line 4, column 13:
       aaa = +'1';
             ^`
   );
-  /* TODO
-await testInvalidInput(
-  "Invalid unary positive with var char.",
-  `
+
+  await testInvalidInput(
+    "Invalid unary positive with var char.",
+    `
     int main() {
       char aaa;
       char bbb <= '1';
@@ -913,7 +912,7 @@ Occurrence at line 5, column 13:
       aaa = +bbb;
             ^`
   );
-*/
+
   await testInvalidInput(
     "Invalid unary positive with literal string.",
     `
@@ -929,10 +928,10 @@ Occurrence at line 4, column 13:
       aaa = +"1";
             ^`
   );
-  /* TODO
-await testInvalidInput(
-  "Invalid unary positive with var string.",
-  `
+
+  await testInvalidInput(
+    "Invalid unary positive with var string.",
+    `
     int main() {
       string aaa <= " ";
       string bbb <= "1";
@@ -943,10 +942,9 @@ await testInvalidInput(
     ERROR_CODE.ERR_STRING_TO_X,
     `Invalid type conversion from "string" to "int or float"
 Occurrence at line 5, column 13:
-      aaa = +"1";
+      aaa = +bbb;
             ^`
   );
-*/
 
   // Unary negative:
 
@@ -960,7 +958,7 @@ Occurrence at line 5, column 13:
     }
   `
   );
-  /* TODO
+
   await testValidInput(
     "Valid unary negative with var int.",
     `
@@ -971,8 +969,8 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
-*/
+  );
+
   await testValidInput(
     "Valid unary negative with literal float.",
     `
@@ -983,7 +981,7 @@ Occurrence at line 5, column 13:
     }
   `
   );
-  /* TODO
+
   await testValidInput(
     "Valid unary negative with var float.",
     `
@@ -994,8 +992,8 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
-*/
+  );
+
   await testValidInput(
     "Valid unary negative with literal bool.",
     `
@@ -1006,10 +1004,10 @@ Occurrence at line 5, column 13:
     }
   `
   );
-  /* TODO
-await testValidInput(
-  "Valid unary negative with var bool.",
-  `
+
+  await testValidInput(
+    "Valid unary negative with var bool.",
+    `
     int main() {
       int aaa;
       bool bbb <= true;
@@ -1018,7 +1016,7 @@ await testValidInput(
     }
   `
   );
-*/
+
   await testInvalidInput(
     "Invalid unary negative with literal char.",
     `
@@ -1034,10 +1032,10 @@ Occurrence at line 4, column 13:
       aaa = - '1';
             ^`
   );
-  /* TODO
-await testInvalidInput(
-  "Invalid unary negative with var char.",
-  `
+
+  await testInvalidInput(
+    "Invalid unary negative with var char.",
+    `
     int main() {
       char aaa;
       char bbb <= '1';
@@ -1051,7 +1049,7 @@ Occurrence at line 5, column 13:
       aaa = -bbb;
             ^`
   );
-*/
+
   await testInvalidInput(
     "Invalid unary negative with literal string.",
     `
@@ -1067,10 +1065,10 @@ Occurrence at line 4, column 13:
       aaa = - "1";
             ^`
   );
-  /* TODO
-await testInvalidInput(
-  "Invalid unary negative with var string.",
-  `
+
+  await testInvalidInput(
+    "Invalid unary negative with var string.",
+    `
     int main() {
       string aaa <= " ";
       string bbb <= "1";
@@ -1081,10 +1079,9 @@ await testInvalidInput(
     ERROR_CODE.ERR_STRING_TO_X,
     `Invalid type conversion from "string" to "int or float"
 Occurrence at line 5, column 13:
-      aaa = -"1";
+      aaa = -bbb;
             ^`
   );
-*/
 
   // Unary negation:
 
@@ -1098,7 +1095,7 @@ Occurrence at line 5, column 13:
     }
   `
   );
-  /* TODO
+
   await testValidInput(
     "Valid unary negative with var int.",
     `
@@ -1109,8 +1106,8 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
-*/
+  );
+
   await testValidInput(
     "Valid unary negation with literal float.",
     `
@@ -1121,7 +1118,7 @@ Occurrence at line 5, column 13:
     }
   `
   );
-  /* TODO
+
   await testValidInput(
     "Valid unary negation with var float.",
     `
@@ -1132,8 +1129,8 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
-*/
+  );
+
   await testValidInput(
     "Valid unary negation with literal bool.",
     `
@@ -1144,10 +1141,10 @@ Occurrence at line 5, column 13:
     }
   `
   );
-  /* TODO
-await testValidInput(
-  "Valid unary negation with var bool.",
-  `
+
+  await testValidInput(
+    "Valid unary negation with var bool.",
+    `
     bool main() {
       bool aaa;
       int bbb <= 1;
@@ -1156,7 +1153,7 @@ await testValidInput(
     }
   `
   );
-*/
+
   await testInvalidInput(
     "Invalid unary negation with literal char.",
     `
@@ -1172,7 +1169,7 @@ Occurrence at line 4, column 13:
       aaa = !'1';
             ^`
   );
-  /* TODO
+
   await testInvalidInput(
     "Invalid unary negation with var char.",
     `
@@ -1183,13 +1180,13 @@ Occurrence at line 4, column 13:
         return 0;
       }
     `,
-      ERROR_CODE.ERR_CHAR_TO_X,
-      `Invalid type conversion from "char" to "int or float"
-  Occurrence at line 5, column 13:
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "bool"
+Occurrence at line 5, column 15:
         aaa = !bbb;
               ^`
-    );
-  */
+  );
+
   await testInvalidInput(
     "Invalid unary negation with literal string.",
     `
@@ -1205,10 +1202,10 @@ Occurrence at line 4, column 13:
       aaa = !"1";
             ^`
   );
-  /* TODO
-await testInvalidInput(
-  "Invalid unary negation with var string.",
-  `
+
+  await testInvalidInput(
+    "Invalid unary negation with var string.",
+    `
     int main() {
       bool aaa;
       string bbb <= "1";
@@ -1217,12 +1214,11 @@ await testInvalidInput(
     }
   `,
     ERROR_CODE.ERR_STRING_TO_X,
-    `Invalid type conversion from "string" to "int or float"
+    `Invalid type conversion from "string" to "bool"
 Occurrence at line 5, column 13:
-      aaa = !"1";
+      aaa = !bbb;
             ^`
   );
-*/
 
   // Unary boolean:
 
@@ -1236,10 +1232,10 @@ Occurrence at line 5, column 13:
       }
     `
   );
-  /* TODO
-    await testValidInput(
-      "Valid unary boolean with var int.",
-      `
+
+  await testValidInput(
+    "Valid unary boolean with var int.",
+    `
         bool main() {
           bool aaa;
           int bbb <= 1;
@@ -1247,8 +1243,8 @@ Occurrence at line 5, column 13:
           return aaa;
         }
       `
-      );
-  */
+  );
+
   await testValidInput(
     "Valid unary boolean with literal float.",
     `
@@ -1259,10 +1255,10 @@ Occurrence at line 5, column 13:
       }
     `
   );
-  /* TODO
-    await testValidInput(
-      "Valid unary boolean with var float.",
-      `
+
+  await testValidInput(
+    "Valid unary boolean with var float.",
+    `
         bool main() {
           bool aaa;
           float bbb <= 1.1;
@@ -1270,8 +1266,8 @@ Occurrence at line 5, column 13:
           return aaa;
         }
       `
-      );
-  */
+  );
+
   await testValidInput(
     "Valid unary boolean with literal bool.",
     `
@@ -1282,7 +1278,7 @@ Occurrence at line 5, column 13:
       }
     `
   );
-  /* TODO
+
   await testValidInput(
     "Valid unary boolean with var bool.",
     `
@@ -1293,8 +1289,8 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
-  */
+  );
+
   await testInvalidInput(
     "Invalid unary boolean with literal char.",
     `
@@ -1310,10 +1306,10 @@ Occurrence at line 4, column 13:
       aaa = ?'1';
             ^`
   );
-  /* TODO
-    await testInvalidInput(
-      "Invalid unary boolean with var char.",
-      `
+
+  await testInvalidInput(
+    "Invalid unary boolean with var char.",
+    `
         int main() {
           bool aaa;
           char bbb <= '1';
@@ -1321,13 +1317,13 @@ Occurrence at line 4, column 13:
           return 0;
         }
       `,
-        ERROR_CODE.ERR_CHAR_TO_X,
-        `Invalid type conversion from "char" to "int or float"
-    Occurrence at line 5, column 13:
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "bool"
+Occurrence at line 5, column 17:
           aaa = ?bbb;
                 ^`
-      );
-    */
+  );
+
   await testInvalidInput(
     "Invalid unary boolean with literal string.",
     `
@@ -1343,7 +1339,7 @@ Occurrence at line 4, column 13:
       aaa = ?"1";
             ^`
   );
-  /* TODO
+
   await testInvalidInput(
     "Invalid unary boolean with var string.",
     `
@@ -1354,13 +1350,12 @@ Occurrence at line 4, column 13:
         return 0;
       }
     `,
-      ERROR_CODE.ERR_STRING_TO_X,
-      `Invalid type conversion from "string" to "int or float"
-  Occurrence at line 5, column 13:
-        aaa = ?"1";
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "bool"
+Occurrence at line 5, column 15:
+        aaa = ?bbb;
               ^`
-    );
-  */
+  );
 
   // Nos comandos de shift (esquerda e direta), deve-se lançar o erro ERR_WRONG_PAR_SHIFT caso o parâmetro após o token de shift for um número maior que 16.
 
