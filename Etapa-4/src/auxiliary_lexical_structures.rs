@@ -3,7 +3,8 @@ use lrpar::Span;
 use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::lexical_structures::{
-    GlobalVarDef, GlobalVecDef, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit, VarInvoke,
+    CommandBlock, GlobalVarDef, GlobalVecDef, LocalVarDef, Parameter, VarDefInitId, VarDefInitLit,
+    VarInvoke,
 };
 
 #[derive(Debug)]
@@ -31,7 +32,7 @@ pub enum AuxLocalNameDef {
 pub enum AuxTopDefEnd {
     FnDefEnd {
         params: Vec<Parameter>,
-        commands: Box<dyn AstNode>,
+        commands: CommandBlock,
     },
     SingleGlob,
     GlobList(Vec<AuxVarOrVecName>),
