@@ -21,6 +21,9 @@ pub enum CompilerError {
     #[error("Lexical error: {0}")]
     LexicalError(String),
 
+    #[error("Semantic error: {0}")]
+    SemanticError(String),
+
     #[error("Parsing errors: {0}")]
     ParsingErrors(String),
 
@@ -91,11 +94,21 @@ pub enum CompilerError {
     #[error("incompatible type in attribution")]
     SemanticErrorWrongType,
 
-    #[error("invalid type conversion from \"string\" to \"{0}\"")]
-    SemanticErrorStringToX(String),
+    #[error("Invalid type conversion from \"string\" to \"{invalid_type}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorStringToX {
+        invalid_type: String,
+        line: usize,
+        col: usize,
+        highlight: String,
+    },
 
-    #[error("invalid type conversion from \"char\" to \"{0}\"")]
-    SemanticErrorCharToX(String),
+    #[error("Invalid type conversion from \"char\" to \"{invalid_type}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorCharToX {
+        invalid_type: String,
+        line: usize,
+        col: usize,
+        highlight: String,
+    },
 
     #[error(
         "invalid attribution of type \"string\" value, size exceeds that of variable declaration"
@@ -165,6 +178,7 @@ impl CompilerError {
             CompilerError::SanityError(_)
             | CompilerError::IoReadFailure(_)
             | CompilerError::LexicalError(_)
+            | CompilerError::SemanticError(_)
             | CompilerError::ParsingErrors(_)
             | CompilerError::TreeBuildingError(_)
             | CompilerError::EvalParserFailure
@@ -175,8 +189,8 @@ impl CompilerError {
             CompilerError::SemanticErrorVector { .. } => 21,
             CompilerError::SemanticErrorFunction { .. } => 22,
             CompilerError::SemanticErrorWrongType => 30,
-            CompilerError::SemanticErrorStringToX(_) => 31,
-            CompilerError::SemanticErrorCharToX(_) => 32,
+            CompilerError::SemanticErrorStringToX { .. } => 31,
+            CompilerError::SemanticErrorCharToX { .. } => 32,
             CompilerError::SemanticErrorStringMax => 33,
             CompilerError::SemanticErrorStringVector { .. } => 34,
             CompilerError::SemanticErrorMissingArgs(_) => 40,
