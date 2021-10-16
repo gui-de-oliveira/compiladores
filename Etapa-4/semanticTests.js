@@ -672,19 +672,43 @@ Occurrence at line 3, column 16:
   // Uma forma de se implementar estas regras de escopo é através de uma pilha de tabelas de símbolos.
   // Para verificar se uma variável foi declarada, verificase primeiramente no escopo atual (topo da pilha) e enquanto não encontrar, deve-se descer na pilha até chegar no escopo global (base da pilha, sempre presente).
 
-  // await testValidInput(
-  //   "Variable shadowing with command block.",
-  //   `
-  //     int aaa;
-  //     int main( ) {
-  //       int aaa;
-  //       {
-  //         int aaa;
-  //         return 0;
-  //       };
-  //     }
-  //   `
-  // );
+  await testValidInput(
+    "Variable shadowing with command block.",
+    `
+      int aaa;
+      int main( ) {
+        int aaa;
+        {
+          int aaa;
+          return 0;
+        };
+      }
+    `
+    );
+
+    await testInvalidInput(
+      "Variable redefinition inside command block.",
+      `
+        int aaa;
+        int main( ) {
+          int aaa;
+          {
+            int aaa;
+            int aaa;
+            return 0;
+          };
+        }
+        `,
+        ERROR_CODE.ERR_DECLARED,
+        `Same-scope identifier redeclaration: "aaa"
+First occurrence at line 6, column 17:
+            int aaa;
+                ^^^
+And again at line 7, column 17:
+            int aaa;
+                ^^^`
+      );
+
 }
 
 main();

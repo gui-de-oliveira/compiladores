@@ -17,6 +17,7 @@ pub trait AstNode: Debug {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError>;
     fn get_id(&self) -> Span;
+    fn get_next(&self) -> &Option<Box<dyn AstNode>>;
 }
 
 impl AstNode for Box<dyn AstNode> {
@@ -42,6 +43,9 @@ impl AstNode for Box<dyn AstNode> {
     fn get_id(&self) -> Span {
         self.as_ref().get_id()
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        self.as_ref().get_next()
+    }
 }
 
 impl AstNode for Span {
@@ -63,5 +67,8 @@ impl AstNode for Span {
     }
     fn get_id(&self) -> Span {
         self.clone()
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &None
     }
 }

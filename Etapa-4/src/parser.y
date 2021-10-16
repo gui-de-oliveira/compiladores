@@ -152,12 +152,12 @@ optionalConst -> Result<bool, CompilerError>:
     ;
 
 
-commandBlock -> Result<Box<dyn AstNode>, CompilerError>:
-    '{' optionalSimpleCommandList '}' { 
-        match $2? {
-            Some(node) => Ok(node),
-            None => Ok(Box::new(EmptyBlock::new($span, None))),
-        }
+commandBlock -> Result<CommandBlock, CompilerError>:
+    '{' optionalSimpleCommandList '}' {
+        let node_id = $span;
+        let first_command = $2?;
+        let next = None;
+        Ok(CommandBlock::new(node_id, first_command, next))
     }
     ;
 
@@ -177,7 +177,7 @@ simpleCommandList -> Result<Box<dyn AstNode>, CompilerError>:
     ;
 
 simpleCommandSequence -> Result<Box<dyn AstNode>, CompilerError>:
-    commandBlock ';' { $1 }
+    commandBlock ';' { Ok(Box::new($1?)) }
     | localDefList ';' { $1 }
     | simpleCommand { $1 }
     ;
@@ -374,14 +374,14 @@ conditional -> Result<Box<dyn AstNode>, CompilerError>:
     ifTok '(' expression ')' commandBlock {
         let op_name = $1?;
         let condition = Box::new($3?);
-        let consequence =  Box::new($5?);
+        let consequence =  $5?;
         Ok(Box::new(If::new(op_name, condition, consequence, None)))
     }
     | ifTok '(' expression ')' commandBlock 'TK_PR_ELSE' commandBlock {
         let op_name = $1?;
         let condition = Box::new($3?);
-        let if_true = Box::new($5?);
-        let if_false = Box::new($7?);
+        let if_true = $5?;
+        let if_false = $7?;
         Ok(Box::new(IfElse::new(op_name, condition, if_true, if_false, None)))
     }
     | forTok '(' varSet ':' expression ':' varSet ')' commandBlock {
@@ -389,13 +389,13 @@ conditional -> Result<Box<dyn AstNode>, CompilerError>:
         let count_init = Box::new($3?);
         let count_check = Box::new($5?);
         let count_iter = Box::new($7?);
-        let actions = Box::new($9?);
+        let actions = $9?;
         Ok(Box::new(For::new(op_name, count_init, count_check, count_iter, actions, None)))
     }
     | whileTok '(' expression ')' 'TK_PR_DO' commandBlock {
         let op_name = $1?;
         let condition = Box::new($3?);
-        let consequence =  Box::new($6?);
+        let consequence =  $6?;
         Ok(Box::new(While::new(op_name, condition, consequence, None)))
     }
     ;

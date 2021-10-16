@@ -72,6 +72,9 @@ impl AstNode for GlobalVarDef {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -143,6 +146,9 @@ impl AstNode for GlobalVecDef {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -151,7 +157,7 @@ pub struct FnDef {
     return_type: Span,
     node_id: Span,
     params: Vec<Parameter>,
-    commands: Box<dyn AstNode>,
+    commands: CommandBlock,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -161,7 +167,7 @@ impl FnDef {
         return_type: Span,
         node_id: Span,
         params: Vec<Parameter>,
-        commands: Box<dyn AstNode>,
+        commands: CommandBlock,
         next: Option<Box<dyn AstNode>>,
     ) -> FnDef {
         FnDef {
@@ -177,18 +183,18 @@ impl FnDef {
 
 impl AstNode for FnDef {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        print_dependencies_own(self.commands.as_ref(), own_address);
+        self.commands.print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
-        print_dependencies_child(self.commands.as_ref(), own_address);
+        self.commands.print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        print_labels_child(self.commands.as_ref(), lexer);
+        self.commands.print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -215,9 +221,7 @@ impl AstNode for FnDef {
 
         stack.add_def_symbol(our_symbol)?;
 
-        stack.add_scope();
         self.commands.evaluate_node(stack, lexer)?;
-        stack.remove_scope()?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -227,6 +231,9 @@ impl AstNode for FnDef {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -314,6 +321,9 @@ impl AstNode for LocalVarDef {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -384,6 +394,9 @@ impl AstNode for VarDefInitId {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -458,6 +471,9 @@ impl AstNode for VarDefInitLit {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -520,6 +536,9 @@ impl AstNode for VarLeftShift {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -584,6 +603,9 @@ impl AstNode for VarRightShift {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -647,6 +669,9 @@ impl AstNode for VecLeftShift {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -709,6 +734,9 @@ impl AstNode for VecRightShift {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -783,6 +811,9 @@ impl AstNode for VarSet {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -855,6 +886,9 @@ impl AstNode for VecSet {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -938,6 +972,9 @@ impl AstNode for Input {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -1025,6 +1062,9 @@ impl AstNode for OutputId {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -1114,6 +1154,9 @@ impl AstNode for OutputLit {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -1159,6 +1202,9 @@ impl AstNode for Continue {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -1203,6 +1249,9 @@ impl AstNode for Break {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -1260,6 +1309,9 @@ impl AstNode for Return {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -1345,13 +1397,16 @@ impl AstNode for FnCall {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
 pub struct If {
     node_id: Span,
     condition: Box<dyn AstNode>,
-    consequence: Box<dyn AstNode>,
+    consequence: CommandBlock,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -1359,7 +1414,7 @@ impl If {
     pub fn new(
         node_id: Span,
         condition: Box<dyn AstNode>,
-        consequence: Box<dyn AstNode>,
+        consequence: CommandBlock,
         next: Option<Box<dyn AstNode>>,
     ) -> If {
         If {
@@ -1374,12 +1429,12 @@ impl If {
 impl AstNode for If {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(self.condition.as_ref(), own_address);
-        print_dependencies_own(self.consequence.as_ref(), own_address);
+        self.consequence.print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.condition.as_ref(), own_address);
-        print_dependencies_child(self.consequence.as_ref(), own_address);
+        self.consequence.print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1387,7 +1442,7 @@ impl AstNode for If {
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
         print_labels_child(self.condition.as_ref(), lexer);
-        print_labels_child(self.consequence.as_ref(), lexer);
+        self.consequence.print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -1408,14 +1463,17 @@ impl AstNode for If {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
 pub struct IfElse {
     node_id: Span,
     condition: Box<dyn AstNode>,
-    if_true: Box<dyn AstNode>,
-    if_false: Box<dyn AstNode>,
+    if_true: CommandBlock,
+    if_false: CommandBlock,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -1423,8 +1481,8 @@ impl IfElse {
     pub fn new(
         node_id: Span,
         condition: Box<dyn AstNode>,
-        if_true: Box<dyn AstNode>,
-        if_false: Box<dyn AstNode>,
+        if_true: CommandBlock,
+        if_false: CommandBlock,
         next: Option<Box<dyn AstNode>>,
     ) -> IfElse {
         IfElse {
@@ -1440,14 +1498,14 @@ impl IfElse {
 impl AstNode for IfElse {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(self.condition.as_ref(), own_address);
-        print_dependencies_own(self.if_true.as_ref(), own_address);
-        print_dependencies_own(self.if_false.as_ref(), own_address);
+        self.if_true.print_first_dependencies(print_dependencies_own, own_address);
+        self.if_false.print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.condition.as_ref(), own_address);
-        print_dependencies_child(self.if_true.as_ref(), own_address);
-        print_dependencies_child(self.if_false.as_ref(), own_address);
+        self.if_true.print_first_dependencies(print_dependencies_child, own_address);
+        self.if_false.print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1455,8 +1513,8 @@ impl AstNode for IfElse {
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
         print_labels_child(self.condition.as_ref(), lexer);
-        print_labels_child(self.if_true.as_ref(), lexer);
-        print_labels_child(self.if_false.as_ref(), lexer);
+        self.if_true.print_first_labels(print_labels_child, lexer);
+        self.if_false.print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -1477,6 +1535,9 @@ impl AstNode for IfElse {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -1485,7 +1546,7 @@ pub struct For {
     count_init: Box<dyn AstNode>,
     count_check: Box<dyn AstNode>,
     count_iter: Box<dyn AstNode>,
-    actions: Box<dyn AstNode>,
+    actions: CommandBlock,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -1495,7 +1556,7 @@ impl For {
         count_init: Box<dyn AstNode>,
         count_check: Box<dyn AstNode>,
         count_iter: Box<dyn AstNode>,
-        actions: Box<dyn AstNode>,
+        actions: CommandBlock,
         next: Option<Box<dyn AstNode>>,
     ) -> For {
         For {
@@ -1514,14 +1575,14 @@ impl AstNode for For {
         print_dependencies_own(self.count_init.as_ref(), own_address);
         print_dependencies_own(self.count_check.as_ref(), own_address);
         print_dependencies_own(self.count_iter.as_ref(), own_address);
-        print_dependencies_own(self.actions.as_ref(), own_address);
+        self.actions.print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.count_init.as_ref(), own_address);
         print_dependencies_child(self.count_check.as_ref(), own_address);
         print_dependencies_child(self.count_iter.as_ref(), own_address);
-        print_dependencies_child(self.actions.as_ref(), own_address);
+        self.actions.print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1531,7 +1592,7 @@ impl AstNode for For {
         print_labels_child(self.count_init.as_ref(), lexer);
         print_labels_child(self.count_check.as_ref(), lexer);
         print_labels_child(self.count_iter.as_ref(), lexer);
-        print_labels_child(self.actions.as_ref(), lexer);
+        self.actions.print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -1552,13 +1613,16 @@ impl AstNode for For {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
 pub struct While {
     node_id: Span,
     condition: Box<dyn AstNode>,
-    consequence: Box<dyn AstNode>,
+    consequence: CommandBlock,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -1566,7 +1630,7 @@ impl While {
     pub fn new(
         node_id: Span,
         condition: Box<dyn AstNode>,
-        consequence: Box<dyn AstNode>,
+        consequence: CommandBlock,
         next: Option<Box<dyn AstNode>>,
     ) -> While {
         While {
@@ -1581,12 +1645,12 @@ impl While {
 impl AstNode for While {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         print_dependencies_own(self.condition.as_ref(), own_address);
-        print_dependencies_own(self.consequence.as_ref(), own_address);
+        self.consequence.print_first_dependencies(print_dependencies_own, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
         print_dependencies_child(self.condition.as_ref(), own_address);
-        print_dependencies_child(self.consequence.as_ref(), own_address);
+        self.consequence.print_first_dependencies(print_dependencies_child, own_address);
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
@@ -1594,7 +1658,7 @@ impl AstNode for While {
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
         print_labels_child(self.condition.as_ref(), lexer);
-        print_labels_child(self.consequence.as_ref(), lexer);
+        self.consequence.print_first_labels(print_labels_child, lexer);
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -1615,21 +1679,25 @@ impl AstNode for While {
     fn get_id(&self) -> Span {
         self.node_id
     }
-}
-
-#[derive(Debug)]
-pub struct EmptyBlock {
-    node_id: Span,
-    next: Option<Box<dyn AstNode>>,
-}
-
-impl EmptyBlock {
-    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> EmptyBlock {
-        EmptyBlock { node_id, next }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
-impl AstNode for EmptyBlock {
+#[derive(Debug)]
+pub struct CommandBlock {
+    node_id: Span,
+    first_command: Option<Box<dyn AstNode>>,
+    next: Option<Box<dyn AstNode>>,
+}
+
+impl CommandBlock {
+    pub fn new(node_id: Span, first_command: Option<Box<dyn AstNode>>, next: Option<Box<dyn AstNode>>) -> CommandBlock {
+        CommandBlock { node_id, first_command, next }
+    }
+}
+
+impl AstNode for CommandBlock {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
         if let Some(next_node) = &self.next {
             print_dependencies_ripple(next_node.as_ref(), own_address, ripple)
@@ -1648,13 +1716,58 @@ impl AstNode for EmptyBlock {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
+        if let Some(command) = &self.first_command {
+            stack.add_scope();
+            command.evaluate_node(stack, lexer)?;
+            stack.remove_scope()?;
+        };
         Ok(())
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
+}
+
+impl CommandBlock {
+    pub fn print_first_dependencies(&self, print_func: fn(&(dyn AstNode), *const c_void), own_address: *const c_void) {
+        let mut current_command = &self.first_command;
+        loop {
+            match current_command {
+                Some(command) => {
+                    if command.is_tree_member() {
+                        print_func(command.as_ref(), own_address);
+                        break;
+                    } else {
+                        current_command = command.get_next();
+                        continue;
+                    };
+                },
+                None => break,
+            }
+        }
+    }
+    pub fn print_first_labels(&self, print_func: fn(&(dyn AstNode), &dyn NonStreamingLexer<u32>), lexer: &dyn NonStreamingLexer<u32>) {
+        let mut current_command = &self.first_command;
+        loop {
+            match current_command {
+                Some(command) => {
+                    if command.is_tree_member() {
+                        print_func(command.as_ref(), lexer);
+                        break;
+                    } else {
+                        current_command = command.get_next();
+                        continue;
+                    };
+                },
+                None => break,
+            }
+        }
     }
 }
 
@@ -1732,6 +1845,9 @@ impl AstNode for Ternary {
     fn get_id(&self) -> Span {
         self.left_span
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -1798,6 +1914,9 @@ impl AstNode for Binary {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -1858,6 +1977,9 @@ impl AstNode for Unary {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -1902,6 +2024,9 @@ impl AstNode for VarAccess {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -1980,6 +2105,9 @@ impl AstNode for VecAccess {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -2033,6 +2161,9 @@ impl AstNode for VarInvoke {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -2085,6 +2216,9 @@ impl AstNode for VecInvoke {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -2156,6 +2290,9 @@ impl AstNode for LiteralInt {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -2222,6 +2359,9 @@ impl AstNode for LiteralFloat {
     fn get_id(&self) -> Span {
         self.node_id
     }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
+    }
 }
 
 #[derive(Debug)]
@@ -2287,6 +2427,9 @@ impl AstNode for LiteralBool {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -2361,6 +2504,9 @@ impl AstNode for LiteralChar {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
@@ -2438,6 +2584,9 @@ impl AstNode for LiteralString {
     }
     fn get_id(&self) -> Span {
         self.node_id
+    }
+    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
+        &self.next
     }
 }
 
