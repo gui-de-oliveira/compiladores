@@ -748,8 +748,6 @@ main();
   O processo de inferência de tipos está descrito abaixo.
   Como não temos coerção de variáveis do tipo string e char, o compilador deve lançar o erro ERR_STRING_TO_X quando a variável do tipo string estiver em uma situação onde ela deve ser convertida para qualquer outro tipo.
   De maneira análoga, o erro ERR_CHAR_TO_X deve ser lançado quando uma variável do tipo char deve ser convertida implicitamente.
-  Enfim, vetores não podem ser do tipo string.
-  Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
 
   2.5 Retorno, argumentos e parâmetros de funções
   A lista de argumentos fornecidos em uma chamada de função deve ser verificada contra a lista de parâmetros formais na declaração da mesma função.
