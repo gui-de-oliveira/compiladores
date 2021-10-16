@@ -685,7 +685,7 @@ Occurrence at line 3, column 16:
         };
       }
     `
-    );
+  );
 
   await testInvalidInput(
     "Variable redefinition inside command block.",
@@ -700,15 +700,15 @@ Occurrence at line 3, column 16:
         };
       }
       `,
-      ERROR_CODE.ERR_DECLARED,
-      `Same-scope identifier redeclaration: "aaa"
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "aaa"
 First occurrence at line 6, column 15:
           int aaa;
               ^^^
 And again at line 7, column 15:
           int aaa;
               ^^^`
-    );
+  );
 
   // Enfim, vetores não podem ser do tipo string.
   // Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
@@ -718,7 +718,7 @@ And again at line 7, column 15:
     `
       float aaa[1];
     `
-    );
+  );
 
   await testInvalidInput(
     "Declaring a vector of string types.",
@@ -730,7 +730,7 @@ And again at line 7, column 15:
 Occurrence at line 2, column 5:
     string aaa[1];
     ^^^^^^^^^^^^^`
-    );
+  );
 
   // Conversão implícita.
   // As regras de coerção de tipos da Linguagem são as seguintes.
@@ -748,11 +748,11 @@ Occurrence at line 2, column 5:
   // A partir de bool e float, infere-se float.
   // A matriz abaixo resume:
 
-// Unary positive:
+  // Unary positive:
 
-await testValidInput(
-  "Valid unary positive with literal int.",
-  `
+  await testValidInput(
+    "Valid unary positive with literal int.",
+    `
     int main() {
       int aaa;
       aaa = + 1;
@@ -760,7 +760,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
 await testValidInput(
   "Valid unary positive with var int.",
   `
@@ -773,9 +773,9 @@ await testValidInput(
   `
   );
 */
-await testValidInput(
-  "Valid unary positive with literal float.",
-  `
+  await testValidInput(
+    "Valid unary positive with literal float.",
+    `
     int main() {
       int aaa;
       aaa = +1.1;
@@ -783,7 +783,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
 await testValidInput(
   "Valid unary positive with var float.",
   `
@@ -796,9 +796,9 @@ await testValidInput(
   `
   );
 */
-await testValidInput(
-  "Valid unary positive with literal bool.",
-  `
+  await testValidInput(
+    "Valid unary positive with literal bool.",
+    `
     int main() {
       int aaa;
       aaa = +true;
@@ -806,7 +806,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
 await testValidInput(
   "Valid unary positive with var bool.",
   `
@@ -820,9 +820,9 @@ await testValidInput(
   `
   );
 */
-await testInvalidInput(
-  "Invalid unary positive with literal char.",
-  `
+  await testInvalidInput(
+    "Invalid unary positive with literal char.",
+    `
     int main() {
       char aaa;
       aaa = +'1';
@@ -835,7 +835,7 @@ Occurrence at line 4, column 13:
       aaa = +'1';
             ^`
   );
-/* TODO
+  /* TODO
 await testInvalidInput(
   "Invalid unary positive with var char.",
   `
@@ -853,9 +853,9 @@ Occurrence at line 5, column 13:
             ^`
   );
 */
-await testInvalidInput(
-  "Invalid unary positive with literal string.",
-  `
+  await testInvalidInput(
+    "Invalid unary positive with literal string.",
+    `
     int main() {
       string aaa <= " ";
       aaa = +"1";
@@ -868,7 +868,7 @@ Occurrence at line 4, column 13:
       aaa = +"1";
             ^`
   );
-/* TODO
+  /* TODO
 await testInvalidInput(
   "Invalid unary positive with var string.",
   `
@@ -887,11 +887,11 @@ Occurrence at line 5, column 13:
   );
 */
 
-// Unary negative:
+  // Unary negative:
 
-await testValidInput(
-  "Valid unary negative with literal int.",
-  `
+  await testValidInput(
+    "Valid unary negative with literal int.",
+    `
     int main() {
       int aaa;
       aaa = -1;
@@ -899,7 +899,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
   await testValidInput(
     "Valid unary negative with var int.",
     `
@@ -912,9 +912,9 @@ await testValidInput(
     `
     );
 */
-await testValidInput(
-  "Valid unary negative with literal float.",
-  `
+  await testValidInput(
+    "Valid unary negative with literal float.",
+    `
     float main() {
       float aaa;
       aaa = -1.1;
@@ -922,7 +922,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
   await testValidInput(
     "Valid unary negative with var float.",
     `
@@ -935,9 +935,9 @@ await testValidInput(
     `
     );
 */
-await testValidInput(
-  "Valid unary negative with literal bool.",
-  `
+  await testValidInput(
+    "Valid unary negative with literal bool.",
+    `
     int main() {
       int aaa;
       aaa = - true;
@@ -945,7 +945,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
 await testValidInput(
   "Valid unary negative with var bool.",
   `
@@ -958,9 +958,9 @@ await testValidInput(
   `
   );
 */
-await testInvalidInput(
-  "Invalid unary negative with literal char.",
-  `
+  await testInvalidInput(
+    "Invalid unary negative with literal char.",
+    `
     int main() {
       char aaa;
       aaa = - '1';
@@ -973,7 +973,7 @@ Occurrence at line 4, column 13:
       aaa = - '1';
             ^`
   );
-/* TODO
+  /* TODO
 await testInvalidInput(
   "Invalid unary negative with var char.",
   `
@@ -991,9 +991,9 @@ Occurrence at line 5, column 13:
             ^`
   );
 */
-await testInvalidInput(
-  "Invalid unary negative with literal string.",
-  `
+  await testInvalidInput(
+    "Invalid unary negative with literal string.",
+    `
     int main() {
       string aaa <= " ";
       aaa = - "1";
@@ -1006,7 +1006,7 @@ Occurrence at line 4, column 13:
       aaa = - "1";
             ^`
   );
-/* TODO
+  /* TODO
 await testInvalidInput(
   "Invalid unary negative with var string.",
   `
@@ -1025,11 +1025,11 @@ Occurrence at line 5, column 13:
   );
 */
 
-// Unary negation:
+  // Unary negation:
 
-await testValidInput(
-  "Valid unary negation with literal int.",
-  `
+  await testValidInput(
+    "Valid unary negation with literal int.",
+    `
     bool main() {
       bool aaa;
       aaa = !1;
@@ -1037,7 +1037,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
   await testValidInput(
     "Valid unary negative with var int.",
     `
@@ -1050,9 +1050,9 @@ await testValidInput(
     `
     );
 */
-await testValidInput(
-  "Valid unary negation with literal float.",
-  `
+  await testValidInput(
+    "Valid unary negation with literal float.",
+    `
     bool main() {
       bool aaa;
       aaa = !1.1;
@@ -1060,7 +1060,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
   await testValidInput(
     "Valid unary negation with var float.",
     `
@@ -1073,9 +1073,9 @@ await testValidInput(
     `
     );
 */
-await testValidInput(
-  "Valid unary negation with literal bool.",
-  `
+  await testValidInput(
+    "Valid unary negation with literal bool.",
+    `
     bool main() {
       bool aaa;
       aaa = !true;
@@ -1083,7 +1083,7 @@ await testValidInput(
     }
   `
   );
-/* TODO
+  /* TODO
 await testValidInput(
   "Valid unary negation with var bool.",
   `
@@ -1096,9 +1096,9 @@ await testValidInput(
   `
   );
 */
-await testInvalidInput(
-  "Invalid unary negation with literal char.",
-  `
+  await testInvalidInput(
+    "Invalid unary negation with literal char.",
+    `
     int main() {
       bool aaa;
       aaa = !'1';
@@ -1129,9 +1129,9 @@ Occurrence at line 4, column 13:
               ^`
     );
   */
-await testInvalidInput(
-  "Invalid unary negation with literal string.",
-  `
+  await testInvalidInput(
+    "Invalid unary negation with literal string.",
+    `
     int main() {
       bool aaa;
       aaa = !"1";
@@ -1144,7 +1144,7 @@ Occurrence at line 4, column 13:
       aaa = !"1";
             ^`
   );
-/* TODO
+  /* TODO
 await testInvalidInput(
   "Invalid unary negation with var string.",
   `
@@ -1163,8 +1163,7 @@ Occurrence at line 5, column 13:
   );
 */
 
-
-// Unary boolean:
+  // Unary boolean:
 
   await testValidInput(
     "Valid unary boolean with literal int.",
@@ -1175,7 +1174,7 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
+  );
   /* TODO
     await testValidInput(
       "Valid unary boolean with var int.",
@@ -1198,7 +1197,7 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
+  );
   /* TODO
     await testValidInput(
       "Valid unary boolean with var float.",
@@ -1221,7 +1220,7 @@ Occurrence at line 5, column 13:
         return aaa;
       }
     `
-    );
+  );
   /* TODO
   await testValidInput(
     "Valid unary boolean with var bool.",
@@ -1235,9 +1234,9 @@ Occurrence at line 5, column 13:
     `
     );
   */
-await testInvalidInput(
-  "Invalid unary boolean with literal char.",
-  `
+  await testInvalidInput(
+    "Invalid unary boolean with literal char.",
+    `
     int main() {
       bool aaa;
       aaa = ?'1';
@@ -1249,8 +1248,8 @@ await testInvalidInput(
 Occurrence at line 4, column 13:
       aaa = ?'1';
             ^`
-    );
-    /* TODO
+  );
+  /* TODO
     await testInvalidInput(
       "Invalid unary boolean with var char.",
       `
@@ -1268,9 +1267,9 @@ Occurrence at line 4, column 13:
                 ^`
       );
     */
-await testInvalidInput(
-  "Invalid unary boolean with literal string.",
-  `
+  await testInvalidInput(
+    "Invalid unary boolean with literal string.",
+    `
     int main() {
       bool aaa;
       aaa = ?"1";
@@ -1282,7 +1281,7 @@ await testInvalidInput(
 Occurrence at line 4, column 13:
       aaa = ?"1";
             ^`
-    );
+  );
   /* TODO
   await testInvalidInput(
     "Invalid unary boolean with var string.",
@@ -1302,6 +1301,115 @@ Occurrence at line 4, column 13:
     );
   */
 
+  // Nos comandos de shift (esquerda e direta), deve-se lançar o erro ERR_WRONG_PAR_SHIFT caso o parâmetro após o token de shift for um número maior que 16.
+
+  await testInvalidInput(
+    "Left shift with a value above 16 on a variable.",
+    `
+    int main() {
+      int a;
+      a << 17;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_SHIFT,
+    `Invalid number parameter on shift command; expected number lower or equal to 16, found "17";
+Occurrence at line 4, column 12:
+      a << 17;
+           ^^`
+  );
+
+  await testInvalidInput(
+    "Right shift with a value above 16 on a variable.",
+    `
+    int main() {
+      int a;
+      a >> 17;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_SHIFT,
+    `Invalid number parameter on shift command; expected number lower or equal to 16, found "17";
+Occurrence at line 4, column 12:
+      a >> 17;
+           ^^`
+  );
+
+  await testInvalidInput(
+    "Left shift with a value above 16 on a vector.",
+    `
+    int a[1];
+    int main() {
+      a[0] << 17;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_SHIFT,
+    `Invalid number parameter on shift command; expected number lower or equal to 16, found "17";
+Occurrence at line 4, column 15:
+      a[0] << 17;
+              ^^`
+  );
+
+  await testInvalidInput(
+    "Right shift with a value above 16 on a vector.",
+    `
+    int a[1];
+    int main() {
+      a[0] >> 17;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_SHIFT,
+    `Invalid number parameter on shift command; expected number lower or equal to 16, found "17";
+Occurrence at line 4, column 15:
+      a[0] >> 17;
+              ^^`
+  );
+
+  await testValidInput(
+    "Right shift with a value below 16 on a vector.",
+    `
+    int a[1];
+    int main() {
+      a[0] >> 15;
+      return 0;
+    }
+    `
+  );
+
+  await testValidInput(
+    "Left shift with a value below 16 on a vector.",
+    `
+    int a[1];
+    int main() {
+      a[0] << 15;
+      return 0;
+    }
+    `
+  );
+
+  await testValidInput(
+    "Right shift with a value below 16 on a variable.",
+    `
+    int main() {
+      int a;
+      a >> 15;
+      return 0;
+    }
+    `
+  );
+
+  await testValidInput(
+    "Left shift with a value below 16 on a variable.",
+    `
+    int main() {
+      int a;
+      a << 15;
+      return 0;
+    }
+    `
+  );
 }
 
 main();
@@ -1336,7 +1444,6 @@ main();
   Os demais comandos simples da linguagem devem ser verificados semanticamente para obedecer as seguintes regras.
   O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
-  Nos comandos de shift (esquerda e direta), deve-se lançar o erro ERR_WRONG_PAR_SHIFT caso o parâmetro após o token de shift for um número maior que 16.
 
   Tamanho.
   O tamanho dos tipos da linguagem é definido da seguinte forma.

@@ -552,9 +552,56 @@ impl AstNode for VarLeftShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        self.node_id.evaluate_node(stack, lexer)?;
+        self.var_name.evaluate_node(stack, lexer)?;
+
+        self.shift_amount.evaluate_node(stack, lexer)?;
+
+        let symbol = match stack.pop_symbol()? {
+            Some(symbol) => symbol,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "failed to pop expected literal int symbol (on varLeftShift.evaluate_node())"
+                )))
+            }
+        };
+
+        match symbol.type_value {
+            SymbolType::Int(option_value) => match option_value {
+                Some(value) => {
+                    if value > 16 {
+                        let shift_amount_span = self.shift_amount.get_id();
+                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+
+                        return Err(CompilerError::SemanticErrorWrongParShift {
+                            received_value: value,
+                            highlight,
+                            line,
+                            col,
+                        });
+                    }
+                }
+                None => {
+                    return Err(CompilerError::SanityError(format!(
+                        "shift_amount option received is None (on varLeftShift.evaluate_node())"
+                    )))
+                }
+            },
+            _ => {
+                return Err(CompilerError::SanityError(format!(
+                    "shift_amount received is NOT a literal int (on varLeftShift.evaluate_node())"
+                )))
+            }
+        }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -618,9 +665,56 @@ impl AstNode for VarRightShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        self.node_id.evaluate_node(stack, lexer)?;
+        self.var_name.evaluate_node(stack, lexer)?;
+
+        self.shift_amount.evaluate_node(stack, lexer)?;
+
+        let symbol = match stack.pop_symbol()? {
+            Some(symbol) => symbol,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "failed to pop expected literal int symbol (on varRightShift.evaluate_node())"
+                )))
+            }
+        };
+
+        match symbol.type_value {
+            SymbolType::Int(option_value) => match option_value {
+                Some(value) => {
+                    if value > 16 {
+                        let shift_amount_span = self.shift_amount.get_id();
+                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+
+                        return Err(CompilerError::SemanticErrorWrongParShift {
+                            received_value: value,
+                            highlight,
+                            line,
+                            col,
+                        });
+                    }
+                }
+                None => {
+                    return Err(CompilerError::SanityError(format!(
+                        "shift_amount option received is None (on varRightShift.evaluate_node())"
+                    )))
+                }
+            },
+            _ => {
+                return Err(CompilerError::SanityError(format!(
+                    "shift_amount received is NOT a literal int (on varRightShift.evaluate_node())"
+                )))
+            }
+        }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -684,9 +778,56 @@ impl AstNode for VecLeftShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        self.node_id.evaluate_node(stack, lexer)?;
+        self.vec_access.evaluate_node(stack, lexer)?;
+
+        self.shift_amount.evaluate_node(stack, lexer)?;
+
+        let symbol = match stack.pop_symbol()? {
+            Some(symbol) => symbol,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "failed to pop expected literal int symbol (on vecLeftShift.evaluate_node())"
+                )))
+            }
+        };
+
+        match symbol.type_value {
+            SymbolType::Int(option_value) => match option_value {
+                Some(value) => {
+                    if value > 16 {
+                        let shift_amount_span = self.shift_amount.get_id();
+                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+
+                        return Err(CompilerError::SemanticErrorWrongParShift {
+                            received_value: value,
+                            highlight,
+                            line,
+                            col,
+                        });
+                    }
+                }
+                None => {
+                    return Err(CompilerError::SanityError(format!(
+                        "shift_amount option received is None (on vecLeftShift.evaluate_node())"
+                    )))
+                }
+            },
+            _ => {
+                return Err(CompilerError::SanityError(format!(
+                    "shift_amount received is NOT a literal int (on vecLeftShift.evaluate_node())"
+                )))
+            }
+        }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -750,9 +891,56 @@ impl AstNode for VecRightShift {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        self.node_id.evaluate_node(stack, lexer)?;
+        self.vec_access.evaluate_node(stack, lexer)?;
+
+        self.shift_amount.evaluate_node(stack, lexer)?;
+
+        let symbol = match stack.pop_symbol()? {
+            Some(symbol) => symbol,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "failed to pop expected literal int symbol (on vecRightShift.evaluate_node())"
+                )))
+            }
+        };
+
+        match symbol.type_value {
+            SymbolType::Int(option_value) => match option_value {
+                Some(value) => {
+                    if value > 16 {
+                        let shift_amount_span = self.shift_amount.get_id();
+                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+
+                        return Err(CompilerError::SemanticErrorWrongParShift {
+                            received_value: value,
+                            highlight,
+                            line,
+                            col,
+                        });
+                    }
+                }
+                None => {
+                    return Err(CompilerError::SanityError(format!(
+                        "shift_amount option received is None (on vecRightShift.evaluate_node())"
+                    )))
+                }
+            },
+            _ => {
+                return Err(CompilerError::SanityError(format!(
+                    "shift_amount received is NOT a literal int (on vecRightShift.evaluate_node())"
+                )))
+            }
+        }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {

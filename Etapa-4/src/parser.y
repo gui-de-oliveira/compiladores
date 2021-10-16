@@ -270,25 +270,25 @@ varShift -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule leftShiftTok literal_int {
         let var_name = Box::new($1?);
         let shift_type = $2?;
-        let shift_amount = Box::new($3?);
+        let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VarLeftShift::new(shift_type, var_name, shift_amount, None)))
     }
     | identifier_rule rightShiftTok literal_int {
         let var_name = Box::new($1?);
         let shift_type = $2?;
-        let shift_amount = Box::new($3?);
+        let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VarRightShift::new(shift_type, var_name, shift_amount, None)))
     }
     | vecAccess leftShiftTok literal_int {
         let vec_access = $1?;
         let shift_type = $2?;
-        let shift_amount = Box::new($3?);
+        let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VecLeftShift::new(shift_type, vec_access, shift_amount, None)))
     }
     | vecAccess rightShiftTok literal_int {
         let vec_access = $1?;
         let shift_type = $2?;
-        let shift_amount = Box::new($3?);
+        let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VecRightShift::new(shift_type, vec_access, shift_amount, None)))
     }
     ;
