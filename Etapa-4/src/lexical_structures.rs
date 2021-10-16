@@ -502,16 +502,16 @@ impl AstNode for VarDefInitLit {
 #[derive(Debug)]
 pub struct VarLeftShift {
     node_id: Span,
-    var_name: Box<dyn AstNode>,
-    shift_amount: Box<dyn AstNode>,
+    var_name: Box<VarInvoke>,
+    shift_amount: Box<LiteralInt>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl VarLeftShift {
     pub fn new(
         node_id: Span,
-        var_name: Box<dyn AstNode>,
-        shift_amount: Box<dyn AstNode>,
+        var_name: Box<VarInvoke>,
+        shift_amount: Box<LiteralInt>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarLeftShift {
         VarLeftShift {
@@ -557,7 +557,6 @@ impl AstNode for VarLeftShift {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
         self.var_name.evaluate_node(stack, lexer)?;
-
         self.shift_amount.evaluate_node(stack, lexer)?;
 
         let symbol = match stack.pop_symbol()? {
@@ -615,16 +614,16 @@ impl AstNode for VarLeftShift {
 #[derive(Debug)]
 pub struct VarRightShift {
     node_id: Span,
-    var_name: Box<dyn AstNode>,
-    shift_amount: Box<dyn AstNode>,
+    var_name: Box<VarInvoke>,
+    shift_amount: Box<LiteralInt>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl VarRightShift {
     pub fn new(
         node_id: Span,
-        var_name: Box<dyn AstNode>,
-        shift_amount: Box<dyn AstNode>,
+        var_name: Box<VarInvoke>,
+        shift_amount: Box<LiteralInt>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarRightShift {
         VarRightShift {
@@ -670,7 +669,6 @@ impl AstNode for VarRightShift {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
         self.var_name.evaluate_node(stack, lexer)?;
-
         self.shift_amount.evaluate_node(stack, lexer)?;
 
         let symbol = match stack.pop_symbol()? {

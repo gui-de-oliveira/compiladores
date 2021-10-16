@@ -105,6 +105,7 @@ async function testInvalidInput(
       logError(expectedReturnCode);
       logError(`Received:`);
       logError(receivedReturnCode);
+      logError(`Received Output:`);
       logError(receivedOutput);
       rejectTest(testName, "WRONG RETURN CODE!");
     }
@@ -263,6 +264,66 @@ Occurrence at line 4, column 15:
 Occurrence at line 3, column 9:
         aaa();
         ^^^`
+  );
+
+  await testInvalidInput(
+    "Left shift on an undeclared variable.",
+    `
+    int main() {
+      a << 15;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "a"
+Occurrence at line 3, column 7:
+      a << 15;
+      ^`
+  );
+
+  await testInvalidInput(
+    "Right shift on an undeclared variable.",
+    `
+    int main() {
+      a >> 15;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "a"
+Occurrence at line 3, column 7:
+      a >> 15;
+      ^`
+  );
+
+  await testInvalidInput(
+    "Left shift on an undeclared vector.",
+    `
+    int main() {
+      a[0] << 15;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "a"
+Occurrence at line 3, column 7:
+      a[0] << 15;
+      ^`
+  );
+
+  await testInvalidInput(
+    "Right shift on an undeclared vector.",
+    `
+    int main() {
+      a[0] >> 15;
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_UNDECLARED,
+    `Usage of undeclared identifier: "a"
+Occurrence at line 3, column 7:
+      a[0] >> 15;
+      ^`
   );
 
   // O uso de identificadores deve ser compatível com sua declaração e com seu tipo.

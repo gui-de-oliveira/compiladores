@@ -268,13 +268,13 @@ returnTok -> Result<Span, CompilerError>:
 
 varShift -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule leftShiftTok literal_int {
-        let var_name = Box::new($1?);
+        let var_name = Box::new(VarInvoke::new($1?, None));
         let shift_type = $2?;
         let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VarLeftShift::new(shift_type, var_name, shift_amount, None)))
     }
     | identifier_rule rightShiftTok literal_int {
-        let var_name = Box::new($1?);
+        let var_name = Box::new(VarInvoke::new($1?, None));
         let shift_type = $2?;
         let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VarRightShift::new(shift_type, var_name, shift_amount, None)))
