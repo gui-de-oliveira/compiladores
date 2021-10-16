@@ -709,8 +709,8 @@ And again at line 7, column 15:
               ^^^`
     );
 
-      // Enfim, vetores não podem ser do tipo string.
-      // Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
+  // Enfim, vetores não podem ser do tipo string.
+  // Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
 
   await testValidInput(
     "Declaring a vector of float types.",
