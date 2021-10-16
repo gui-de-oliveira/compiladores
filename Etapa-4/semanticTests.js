@@ -1474,12 +1474,6 @@ main();
   TODO = EACH NEW TEST SHOULD REMOVE A SPECIFICATION LINE BELOW.
   The project will be complete when there are no untested specification line.
 
-  2.4 Verificação de tipos e tamanho dos dados
-  Uma declaração de variável deve permitir ao compilador definir o tipo e a ocupação em memória da variável na sua entrada na tabela de símbolos.
-  Com o auxílio desta informação, quando necessário, os tipos de dados corretos devem ser inferidos onde forem usados, em expressões aritméticas, relacionais, lógicas, ou para índices de vetores.
-  Por simplificação, isso nos leva a situação onde todos os nós da AST devem ser anotados com um tipo definido de acordo com as regras de inferência de tipos.
-  Um nó da AST deve ter portanto um novo campo que registra o seu tipo de dado.
-
   O processo de inferência de tipos está descrito abaixo.
   Como não temos coerção de variáveis do tipo string e char, o compilador deve lançar o erro ERR_STRING_TO_X quando a variável do tipo string estiver em uma situação onde ela deve ser convertida para qualquer outro tipo.
   De maneira análoga, o erro ERR_CHAR_TO_X deve ser lançado quando uma variável do tipo char deve ser convertida implicitamente.
@@ -1507,7 +1501,7 @@ main();
   Um string ocupa 1 byte para cada caractere.
   O tamanho máximo de um string é definido na sua inicialização (com o operador de inicialização).
   Uma string não inicializada ocupa 0 bytes e não pode receber valores cujo tamanho excede àquele máximo da inicialização.
-  Caso o tamanho de um string a ser atribuído exceder o máximo, deve-se emitir o erro ERR-STRING-MAX.
+  Caso o tamanho de um string a ser atribuído exceder o máximo, deve-se emitir o erro ERR_STRING_MAX.
   Um int ocupa 4 bytes.
   Um float ocupa 8 bytes.
   Um bool ocupa 1 byte.
@@ -1542,6 +1536,12 @@ main();
   • dados do valor do token pelo yylval (veja E3)
   A implementação deve prever que várias tabelas de símbolos possam coexistir, uma para cada escopo.
   As regras de escopo sao delineadas a no anexo.
+
+  2.4 Verificação de tipos e tamanho dos dados
+  Uma declaração de variável deve permitir ao compilador definir o tipo e a ocupação em memória da variável na sua entrada na tabela de símbolos.
+  Com o auxílio desta informação, quando necessário, os tipos de dados corretos devem ser inferidos onde forem usados, em expressões aritméticas, relacionais, lógicas, ou para índices de vetores.
+  Por simplificação, isso nos leva a situação onde todos os nós da AST devem ser anotados com um tipo definido de acordo com as regras de inferência de tipos.
+  Um nó da AST deve ter portanto um novo campo que registra o seu tipo de dado.
 
   2.7 Mensagens de erro
   Mensagens de erro significativas devem ser fornecidas.
