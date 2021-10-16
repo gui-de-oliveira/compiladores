@@ -102,8 +102,13 @@ pub enum CompilerError {
     )]
     SemanticErrorStringMax,
 
-    #[error("invalid usage of \"string\" for vector data type")]
-    SemanticErrorStringVector,
+    #[error("Invalid usage of \"string\" type for vector declaration: \"{id}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorStringVector {
+        id: String,
+        line: usize,
+        col: usize,
+        highlight: String,
+    },
 
     #[error("missing args in function call \"{0}()\"")]
     SemanticErrorMissingArgs(String),
@@ -173,7 +178,7 @@ impl CompilerError {
             CompilerError::SemanticErrorStringToX(_) => 31,
             CompilerError::SemanticErrorCharToX(_) => 32,
             CompilerError::SemanticErrorStringMax => 33,
-            CompilerError::SemanticErrorStringVector => 34,
+            CompilerError::SemanticErrorStringVector { .. } => 34,
             CompilerError::SemanticErrorMissingArgs(_) => 40,
             CompilerError::SemanticErrorExcessArgs(_) => 41,
             CompilerError::SemanticErrorWrongTypeArgs => 42,
