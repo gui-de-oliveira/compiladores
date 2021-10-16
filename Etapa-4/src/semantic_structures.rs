@@ -5,7 +5,7 @@ use lrpar::{NonStreamingLexer, Span};
 use super::error::CompilerError;
 
 #[derive(Debug)]
-pub struct Symbol {
+pub struct DefSymbol {
     pub id: String,
     pub span: Span,
     pub line: usize,
@@ -14,7 +14,7 @@ pub struct Symbol {
     pub class: SymbolClass,
 }
 
-impl Symbol {
+impl DefSymbol {
     pub fn new(
         id: String,
         span: Span,
@@ -22,8 +22,38 @@ impl Symbol {
         col: usize,
         type_value: SymbolType,
         class: SymbolClass,
-    ) -> Symbol {
-        Symbol {
+    ) -> DefSymbol {
+        DefSymbol {
+            id,
+            span,
+            line,
+            col,
+            type_value,
+            class,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct CallSymbol {
+    pub id: String,
+    pub span: Span,
+    pub line: usize,
+    pub col: usize,
+    pub type_value: SymbolType,
+    pub class: SymbolClass,
+}
+
+impl CallSymbol {
+    pub fn new(
+        id: String,
+        span: Span,
+        line: usize,
+        col: usize,
+        type_value: SymbolType,
+        class: SymbolClass,
+    ) -> CallSymbol {
+        CallSymbol {
             id,
             span,
             line,
@@ -88,7 +118,7 @@ impl SymbolClass {
 }
 
 pub struct ScopeStack {
-    stack: Vec<(HashMap<String, Symbol>, Vec<Symbol>)>,
+    stack: Vec<(HashMap<String, DefSymbol>, Vec<CallSymbol>)>,
 }
 
 impl ScopeStack {
@@ -102,7 +132,7 @@ impl ScopeStack {
         self.stack.push((HashMap::new(), vec![]))
     }
 
-    pub fn remove_scope(&mut self) -> Result<HashMap<String, Symbol>, CompilerError> {
+    pub fn remove_scope(&mut self) -> Result<HashMap<String, DefSymbol>, CompilerError> {
         match self.stack.pop() {
             Some((def_table, _symbols)) => Ok(def_table),
             None => Err(CompilerError::FailedScoping),
@@ -147,7 +177,7 @@ impl ScopeStack {
         span: Span,
         lexer: &dyn NonStreamingLexer<u32>,
         expected_class: SymbolClass,
-    ) -> Result<&Symbol, CompilerError> {
+    ) -> Result<&DefSymbol, CompilerError> {
         let id = lexer.span_str(span).to_string();
 
         for (scope, _symbols) in self.stack.iter().rev() {
@@ -220,7 +250,7 @@ impl ScopeStack {
         })
     }
 
-    pub fn add_def_symbol(&mut self, addition: Symbol) -> Result<(), CompilerError> {
+    pub fn add_def_symbol(&mut self, addition: DefSymbol) -> Result<(), CompilerError> {
         match self.stack.last_mut() {
             Some((scope, _symbols)) => {
                 scope.insert(addition.id.clone(), addition);
@@ -230,7 +260,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn push_symbol(&mut self, addition: Symbol) -> Result<(), CompilerError> {
+    pub fn push_symbol(&mut self, addition: CallSymbol) -> Result<(), CompilerError> {
         match self.stack.last_mut() {
             Some((_scope, symbols)) => {
                 symbols.push(addition);
@@ -240,7 +270,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn pop_symbol(&mut self) -> Result<Option<Symbol>, CompilerError> {
+    pub fn pop_symbol(&mut self) -> Result<Option<CallSymbol>, CompilerError> {
         match self.stack.last_mut() {
             Some((_scope, symbols)) => Ok(symbols.pop()),
             None => Err(CompilerError::FailedScoping),
