@@ -4,7 +4,7 @@ use std::ptr::addr_of;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::semantic_structures::{ScopeStack, Symbol, SymbolClass, SymbolType};
+use super::semantic_structures::{CallSymbol, DefSymbol, ScopeStack, SymbolClass, SymbolType};
 
 #[derive(Debug)]
 pub struct GlobalVarDef {
@@ -59,7 +59,7 @@ impl AstNode for GlobalVarDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -154,7 +154,7 @@ impl AstNode for GlobalVecDef {
         };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Vec;
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -240,7 +240,7 @@ impl AstNode for FnDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Fn;
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -331,7 +331,7 @@ impl AstNode for LocalVarDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -2328,7 +2328,7 @@ impl AstNode for LiteralInt {
         let var_type = SymbolType::Int(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
 
         stack.push_symbol(our_symbol)?;
 
@@ -2401,7 +2401,7 @@ impl AstNode for LiteralFloat {
         let var_type = SymbolType::Float(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
 
         stack.push_symbol(our_symbol)?;
 
@@ -2470,7 +2470,7 @@ impl AstNode for LiteralBool {
         let var_type = SymbolType::Bool(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
 
         stack.push_symbol(our_symbol)?;
 
@@ -2547,7 +2547,7 @@ impl AstNode for LiteralChar {
         let var_type = SymbolType::Char(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
 
         stack.push_symbol(our_symbol)?;
 
@@ -2627,7 +2627,7 @@ impl AstNode for LiteralString {
         let var_type = SymbolType::String(Some(clean_string));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = Symbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
 
         stack.push_symbol(our_symbol)?;
 
