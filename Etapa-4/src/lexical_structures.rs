@@ -51,7 +51,7 @@ impl AstNode for GlobalVarDef {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
@@ -67,7 +67,7 @@ impl AstNode for GlobalVarDef {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -125,7 +125,7 @@ impl AstNode for GlobalVecDef {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
         let id = lexer.span_str(self.node_id).to_string();
@@ -162,7 +162,7 @@ impl AstNode for GlobalVecDef {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -232,7 +232,7 @@ impl AstNode for FnDef {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
@@ -250,7 +250,7 @@ impl AstNode for FnDef {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -323,7 +323,7 @@ impl AstNode for LocalVarDef {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
@@ -339,7 +339,7 @@ impl AstNode for LocalVarDef {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -404,7 +404,7 @@ impl AstNode for VarDefInitId {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_def.evaluate_node(stack, lexer)?;
 
         self.var_value.evaluate_node(stack, lexer)?;
@@ -413,7 +413,7 @@ impl AstNode for VarDefInitId {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -478,7 +478,7 @@ impl AstNode for VarDefInitLit {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_def.evaluate_node(stack, lexer)?;
 
         self.var_value.evaluate_node(stack, lexer)?;
@@ -489,7 +489,7 @@ impl AstNode for VarDefInitLit {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -554,8 +554,8 @@ impl AstNode for VarLeftShift {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -620,8 +620,8 @@ impl AstNode for VarRightShift {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -686,8 +686,8 @@ impl AstNode for VecLeftShift {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -752,8 +752,8 @@ impl AstNode for VecRightShift {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -818,7 +818,7 @@ impl AstNode for VarSet {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
 
         self.new_value.evaluate_node(stack, lexer)?;
@@ -829,7 +829,7 @@ impl AstNode for VarSet {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -894,7 +894,7 @@ impl AstNode for VecSet {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.vec_access.evaluate_node(stack, lexer)?;
 
         self.new_value.evaluate_node(stack, lexer)?;
@@ -905,7 +905,7 @@ impl AstNode for VecSet {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -960,7 +960,7 @@ impl AstNode for Input {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_name.evaluate_node(stack, lexer)?;
 
         let id = self.var_name.get_id();
@@ -991,7 +991,7 @@ impl AstNode for Input {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1050,7 +1050,7 @@ impl AstNode for OutputId {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_name.evaluate_node(stack, lexer)?;
 
         let id = self.var_name.get_id();
@@ -1081,7 +1081,7 @@ impl AstNode for OutputId {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1140,7 +1140,7 @@ impl AstNode for OutputLit {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.lit_value.evaluate_node(stack, lexer)?;
 
         let symbol = match stack.pop_symbol()? {
@@ -1172,7 +1172,7 @@ impl AstNode for OutputLit {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1219,8 +1219,8 @@ impl AstNode for Continue {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1267,8 +1267,8 @@ impl AstNode for Break {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1327,8 +1327,8 @@ impl AstNode for Return {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1405,17 +1405,18 @@ impl AstNode for FnCall {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         let class = SymbolClass::Fn;
         //TO DO: Add args-checking.
-        let _previous_def = stack.get_previous_def(span, lexer, class)?;
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
+        let type_value = previous_def.type_value.clone();
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(Some(type_value))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1483,8 +1484,8 @@ impl AstNode for If {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1559,8 +1560,8 @@ impl AstNode for IfElse {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1639,8 +1640,8 @@ impl AstNode for For {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1708,8 +1709,8 @@ impl AstNode for While {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1761,13 +1762,13 @@ impl AstNode for CommandBlock {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         if let Some(command) = &self.first_command {
             stack.add_scope();
             command.evaluate_node(stack, lexer)?;
             stack.remove_scope()?;
         };
-        Ok(())
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1890,8 +1891,9 @@ impl AstNode for Ternary {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        //TO DO: Implement a boolean return here.
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.left_span
@@ -1959,8 +1961,9 @@ impl AstNode for Binary {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        // TO DO: Implement a return value here.
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -1992,6 +1995,177 @@ impl Unary {
             next,
         }
     }
+    fn unary_evaluation(
+        &self,
+        type_value: SymbolType,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<SymbolType, CompilerError> {
+        match &self.op_type {
+            UnaryType::Positive => match type_value {
+                symbol @ SymbolType::Int(_) | symbol @ SymbolType::Float(_) => Ok(symbol),
+                SymbolType::Bool(maybe_value) => match &maybe_value {
+                    Some(value) => match value {
+                        true => Ok(SymbolType::Int(Some(1))),
+                        false => Ok(SymbolType::Int(Some(0))),
+                    },
+                    None => Ok(SymbolType::Int(None)),
+                },
+                SymbolType::Char(_) => {
+                    let invalid_type = "int or float".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorCharToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+                SymbolType::String(_) => {
+                    let invalid_type = "int or float".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorStringToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+            },
+            UnaryType::Negative => match type_value {
+                symbol @ SymbolType::Int(_) | symbol @ SymbolType::Float(_) => Ok(symbol),
+                SymbolType::Bool(maybe_value) => match &maybe_value {
+                    Some(value) => match value {
+                        true => Ok(SymbolType::Int(Some(-1))),
+                        false => Ok(SymbolType::Int(Some(0))),
+                    },
+                    None => Ok(SymbolType::Int(None)),
+                },
+                SymbolType::Char(_) => {
+                    let invalid_type = "int or float".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorCharToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+                SymbolType::String(_) => {
+                    let invalid_type = "int or float".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorStringToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+            },
+            UnaryType::Not => match type_value {
+                SymbolType::Int(maybe_value) => match &maybe_value {
+                    Some(value) => {
+                        if *value == 0i32 {
+                            Ok(SymbolType::Bool(Some(true)))
+                        } else {
+                            Ok(SymbolType::Bool(Some(false)))
+                        }
+                    }
+                    None => Ok(SymbolType::Bool(None)),
+                },
+                SymbolType::Float(maybe_value) => match &maybe_value {
+                    Some(value) => {
+                        if *value == 0f64 {
+                            Ok(SymbolType::Bool(Some(true)))
+                        } else {
+                            Ok(SymbolType::Bool(Some(false)))
+                        }
+                    }
+                    None => Ok(SymbolType::Bool(None)),
+                },
+                SymbolType::Bool(maybe_value) => match &maybe_value {
+                    Some(value) => match value {
+                        true => Ok(SymbolType::Bool(Some(false))),
+                        false => Ok(SymbolType::Bool(Some(true))),
+                    },
+                    None => Ok(SymbolType::Bool(None)),
+                },
+                SymbolType::Char(_) => {
+                    let invalid_type = "bool".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorCharToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+                SymbolType::String(_) => {
+                    let invalid_type = "bool".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorStringToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+            },
+            UnaryType::Boolean => match type_value {
+                SymbolType::Int(maybe_value) => match &maybe_value {
+                    Some(value) => {
+                        if *value == 0i32 {
+                            Ok(SymbolType::Bool(Some(false)))
+                        } else {
+                            Ok(SymbolType::Bool(Some(true)))
+                        }
+                    }
+                    None => Ok(SymbolType::Bool(None)),
+                },
+                SymbolType::Float(maybe_value) => match &maybe_value {
+                    Some(value) => {
+                        if *value == 0f64 {
+                            Ok(SymbolType::Bool(Some(false)))
+                        } else {
+                            Ok(SymbolType::Bool(Some(true)))
+                        }
+                    }
+                    None => Ok(SymbolType::Bool(None)),
+                },
+                symbol @ SymbolType::Bool(_) => Ok(symbol),
+                SymbolType::Char(_) => {
+                    let invalid_type = "bool".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorCharToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+                SymbolType::String(_) => {
+                    let invalid_type = "bool".to_string();
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    Err(CompilerError::SemanticErrorStringToX {
+                        invalid_type,
+                        line,
+                        col,
+                        highlight,
+                    })
+                }
+            },
+            UnaryType::Hash => Ok(SymbolType::Int(None)),
+            UnaryType::Address => Ok(type_value),
+            UnaryType::Pointer => Ok(type_value),
+        }
+    }
 }
 
 impl AstNode for Unary {
@@ -2020,10 +2194,29 @@ impl AstNode for Unary {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        if let Some(node) = &self.next {
+            return Err(CompilerError::LexicalError(format!(
+                "Unary struct holds a reference to a next node: {:?}",
+                node
+            )));
+        };
+
+        let type_value = match self.operand.evaluate_node(stack, lexer)? {
+            Some(value) => value,
+            None => {
+                return Err(CompilerError::SemanticError(format!(
+                    "Unary struct operand returned no value on evaluation: {:?}",
+                    self.operand
+                )))
+            }
+        };
+
+        let type_value = self.unary_evaluation(type_value.clone(), lexer)?;
+
+        Ok(Some(type_value))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2031,6 +2224,17 @@ impl AstNode for Unary {
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         &self.next
     }
+}
+
+#[derive(Debug)]
+pub enum UnaryType {
+    Positive,
+    Negative,
+    Not,
+    Boolean,
+    Hash,
+    Address,
+    Pointer,
 }
 
 #[derive(Debug)]
@@ -2070,8 +2274,9 @@ impl AstNode for VarAccess {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        // TO DO: Implement a return value here.
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2140,7 +2345,7 @@ impl AstNode for VecAccess {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.vec_name.evaluate_node(stack, lexer)?;
 
         self.vec_index.evaluate_node(stack, lexer)?;
@@ -2151,7 +2356,8 @@ impl AstNode for VecAccess {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        // TO DO: Implement a return value here.
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2198,16 +2404,17 @@ impl AstNode for VarInvoke {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         let class = SymbolClass::Var;
-        let _previous_def = stack.get_previous_def(span, lexer, class)?;
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
+        let type_value = previous_def.type_value.clone();
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(Some(type_value))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2254,16 +2461,17 @@ impl AstNode for VecInvoke {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         let class = SymbolClass::Vec;
-        let _previous_def = stack.get_previous_def(span, lexer, class)?;
+        let previous_def = stack.get_previous_def(span, lexer, class)?;
+        let type_value = previous_def.type_value.clone();
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(Some(type_value))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2310,7 +2518,7 @@ impl AstNode for LiteralInt {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let class = SymbolClass::Lit;
 
         let span = self.node_id;
@@ -2328,7 +2536,7 @@ impl AstNode for LiteralInt {
         let var_type = SymbolType::Int(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
 
@@ -2336,7 +2544,7 @@ impl AstNode for LiteralInt {
             node.evaluate_node(stack, lexer)?;
         };
 
-        Ok(())
+        Ok(Some(var_type))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2383,7 +2591,7 @@ impl AstNode for LiteralFloat {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let class = SymbolClass::Lit;
 
         let span = self.node_id;
@@ -2401,11 +2609,11 @@ impl AstNode for LiteralFloat {
         let var_type = SymbolType::Float(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
 
-        Ok(())
+        Ok(Some(var_type))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2452,7 +2660,7 @@ impl AstNode for LiteralBool {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let class = SymbolClass::Lit;
 
         let span = self.node_id;
@@ -2470,11 +2678,11 @@ impl AstNode for LiteralBool {
         let var_type = SymbolType::Bool(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
 
-        Ok(())
+        Ok(Some(var_type))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2530,7 +2738,7 @@ impl AstNode for LiteralChar {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let class = SymbolClass::Lit;
 
         let span = self.node_id;
@@ -2547,11 +2755,11 @@ impl AstNode for LiteralChar {
         let var_type = SymbolType::Char(Some(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
 
-        Ok(())
+        Ok(Some(var_type))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2611,7 +2819,7 @@ impl AstNode for LiteralString {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         let class = SymbolClass::Lit;
 
         let span = self.node_id;
@@ -2627,11 +2835,11 @@ impl AstNode for LiteralString {
         let var_type = SymbolType::String(Some(clean_string));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
-        let our_symbol = CallSymbol::new(id, span, line, col, var_type, class);
+        let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
 
-        Ok(())
+        Ok(Some(var_type))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2659,17 +2867,6 @@ pub enum BinaryType {
     Mult,
     Div,
     Mod,
-}
-
-#[derive(Debug)]
-pub enum UnaryType {
-    Positive,
-    Negative,
-    Not,
-    Address,
-    Pointer,
-    Boolean,
-    Hash,
 }
 
 fn print_dependencies_ripple(next_node: &(dyn AstNode), own_address: *const c_void, ripple: bool) {

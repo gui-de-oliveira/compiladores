@@ -4,7 +4,7 @@ use std::ffi::c_void;
 use std::fmt::Debug;
 
 use super::error::CompilerError;
-use super::semantic_structures::ScopeStack;
+use super::semantic_structures::{ScopeStack, SymbolType};
 
 pub trait AstNode: Debug {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool);
@@ -15,7 +15,7 @@ pub trait AstNode: Debug {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError>;
+    ) -> Result<Option<SymbolType>, CompilerError>;
     fn get_id(&self) -> Span;
     fn get_next(&self) -> &Option<Box<dyn AstNode>>;
 }
@@ -37,7 +37,7 @@ impl AstNode for Box<dyn AstNode> {
         &self,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
+    ) -> Result<Option<SymbolType>, CompilerError> {
         self.as_ref().evaluate_node(stack, lexer)
     }
     fn get_id(&self) -> Span {
@@ -62,8 +62,8 @@ impl AstNode for Span {
         &self,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<(), CompilerError> {
-        Ok(())
+    ) -> Result<Option<SymbolType>, CompilerError> {
+        Ok(None)
     }
     fn get_id(&self) -> Span {
         self.clone()

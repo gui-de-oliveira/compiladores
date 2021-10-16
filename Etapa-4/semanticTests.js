@@ -105,6 +105,7 @@ async function testInvalidInput(
       logError(expectedReturnCode);
       logError(`Received:`);
       logError(receivedReturnCode);
+      logError(receivedOutput);
       rejectTest(testName, "WRONG RETURN CODE!");
     }
 
@@ -731,6 +732,576 @@ Occurrence at line 2, column 5:
     ^^^^^^^^^^^^^`
     );
 
+  // Conversão implícita.
+  // As regras de coerção de tipos da Linguagem são as seguintes.
+  // Não há conversão implícita para os tipos string e char.
+  // Um tipo int pode ser convertido implicitamente para float e para bool.
+  // Um tipo bool pode ser convertido implicitamente para float e para int.
+  // Um tipo float pode ser convertido implicitamente para int e para bool, perdendo precisão.
+  // Inferência.
+  // As regras de inferência de tipos da linguagem são as seguintes.
+  // A partir de int e int, inferese int.
+  // A partir de float e float, infere-se float.
+  // A partir de bool e bool, infere-se bool.
+  // A partir de float e int, infere-se float.
+  // A partir de bool e int, infere-se int.
+  // A partir de bool e float, infere-se float.
+  // A matriz abaixo resume:
+
+// Unary positive:
+
+await testValidInput(
+  "Valid unary positive with literal int.",
+  `
+    int main() {
+      int aaa;
+      aaa = + 1;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+await testValidInput(
+  "Valid unary positive with var int.",
+  `
+    int main() {
+      int aaa;
+      int bbb <= 1;
+      aaa = +bbb;
+      return aaa;
+    }
+  `
+  );
+*/
+await testValidInput(
+  "Valid unary positive with literal float.",
+  `
+    int main() {
+      int aaa;
+      aaa = +1.1;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+await testValidInput(
+  "Valid unary positive with var float.",
+  `
+    float main() {
+      float aaa;
+      float bbb <= 1.1;
+      aaa = +bbb;
+      return aaa;
+    }
+  `
+  );
+*/
+await testValidInput(
+  "Valid unary positive with literal bool.",
+  `
+    int main() {
+      int aaa;
+      aaa = +true;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+await testValidInput(
+  "Valid unary positive with var bool.",
+  `
+    int main() {
+      int aaa;
+      float aaa;
+      bool bbb <= true;
+      aaa = +bbb;
+      return aaa;
+    }
+  `
+  );
+*/
+await testInvalidInput(
+  "Invalid unary positive with literal char.",
+  `
+    int main() {
+      char aaa;
+      aaa = +'1';
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "int or float"
+Occurrence at line 4, column 13:
+      aaa = +'1';
+            ^`
+  );
+/* TODO
+await testInvalidInput(
+  "Invalid unary positive with var char.",
+  `
+    int main() {
+      char aaa;
+      char bbb <= '1';
+      aaa = +bbb;
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "int or float"
+Occurrence at line 5, column 13:
+      aaa = +bbb;
+            ^`
+  );
+*/
+await testInvalidInput(
+  "Invalid unary positive with literal string.",
+  `
+    int main() {
+      string aaa <= " ";
+      aaa = +"1";
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "int or float"
+Occurrence at line 4, column 13:
+      aaa = +"1";
+            ^`
+  );
+/* TODO
+await testInvalidInput(
+  "Invalid unary positive with var string.",
+  `
+    int main() {
+      string aaa <= " ";
+      string bbb <= "1";
+      aaa = +bbb;
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "int or float"
+Occurrence at line 5, column 13:
+      aaa = +"1";
+            ^`
+  );
+*/
+
+// Unary negative:
+
+await testValidInput(
+  "Valid unary negative with literal int.",
+  `
+    int main() {
+      int aaa;
+      aaa = -1;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+  await testValidInput(
+    "Valid unary negative with var int.",
+    `
+      int main() {
+        int aaa;
+        int bbb <= 1;
+        aaa = -bbb;
+        return aaa;
+      }
+    `
+    );
+*/
+await testValidInput(
+  "Valid unary negative with literal float.",
+  `
+    float main() {
+      float aaa;
+      aaa = -1.1;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+  await testValidInput(
+    "Valid unary negative with var float.",
+    `
+      float main() {
+        float aaa;
+        float bbb <= 1.1;
+        aaa = -bbb;
+        return aaa;
+      }
+    `
+    );
+*/
+await testValidInput(
+  "Valid unary negative with literal bool.",
+  `
+    int main() {
+      int aaa;
+      aaa = - true;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+await testValidInput(
+  "Valid unary negative with var bool.",
+  `
+    int main() {
+      int aaa;
+      bool bbb <= true;
+      aaa = -bbb;
+      return aaa;
+    }
+  `
+  );
+*/
+await testInvalidInput(
+  "Invalid unary negative with literal char.",
+  `
+    int main() {
+      char aaa;
+      aaa = - '1';
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "int or float"
+Occurrence at line 4, column 13:
+      aaa = - '1';
+            ^`
+  );
+/* TODO
+await testInvalidInput(
+  "Invalid unary negative with var char.",
+  `
+    int main() {
+      char aaa;
+      char bbb <= '1';
+      aaa = -bbb;
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "int or float"
+Occurrence at line 5, column 13:
+      aaa = -bbb;
+            ^`
+  );
+*/
+await testInvalidInput(
+  "Invalid unary negative with literal string.",
+  `
+    int main() {
+      string aaa <= " ";
+      aaa = - "1";
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "int or float"
+Occurrence at line 4, column 13:
+      aaa = - "1";
+            ^`
+  );
+/* TODO
+await testInvalidInput(
+  "Invalid unary negative with var string.",
+  `
+    int main() {
+      string aaa <= " ";
+      string bbb <= "1";
+      aaa = -bbb;
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "int or float"
+Occurrence at line 5, column 13:
+      aaa = -"1";
+            ^`
+  );
+*/
+
+// Unary negation:
+
+await testValidInput(
+  "Valid unary negation with literal int.",
+  `
+    bool main() {
+      bool aaa;
+      aaa = !1;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+  await testValidInput(
+    "Valid unary negative with var int.",
+    `
+      bool main() {
+        bool aaa;
+        int bbb <= 1;
+        aaa = !bbb;
+        return aaa;
+      }
+    `
+    );
+*/
+await testValidInput(
+  "Valid unary negation with literal float.",
+  `
+    bool main() {
+      bool aaa;
+      aaa = !1.1;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+  await testValidInput(
+    "Valid unary negation with var float.",
+    `
+      bool main() {
+        bool aaa;
+        float bbb <= 1.1;
+        aaa = !bbb;
+        return aaa;
+      }
+    `
+    );
+*/
+await testValidInput(
+  "Valid unary negation with literal bool.",
+  `
+    bool main() {
+      bool aaa;
+      aaa = !true;
+      return aaa;
+    }
+  `
+  );
+/* TODO
+await testValidInput(
+  "Valid unary negation with var bool.",
+  `
+    bool main() {
+      bool aaa;
+      int bbb <= 1;
+      aaa = !bbb;
+      return aaa;
+    }
+  `
+  );
+*/
+await testInvalidInput(
+  "Invalid unary negation with literal char.",
+  `
+    int main() {
+      bool aaa;
+      aaa = !'1';
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "bool"
+Occurrence at line 4, column 13:
+      aaa = !'1';
+            ^`
+  );
+  /* TODO
+  await testInvalidInput(
+    "Invalid unary negation with var char.",
+    `
+      int main() {
+        bool aaa;
+        char bbb <= '1';
+        aaa = !bbb;
+        return 0;
+      }
+    `,
+      ERROR_CODE.ERR_CHAR_TO_X,
+      `Invalid type conversion from "char" to "int or float"
+  Occurrence at line 5, column 13:
+        aaa = !bbb;
+              ^`
+    );
+  */
+await testInvalidInput(
+  "Invalid unary negation with literal string.",
+  `
+    int main() {
+      bool aaa;
+      aaa = !"1";
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "bool"
+Occurrence at line 4, column 13:
+      aaa = !"1";
+            ^`
+  );
+/* TODO
+await testInvalidInput(
+  "Invalid unary negation with var string.",
+  `
+    int main() {
+      bool aaa;
+      string bbb <= "1";
+      aaa = !bbb;
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "int or float"
+Occurrence at line 5, column 13:
+      aaa = !"1";
+            ^`
+  );
+*/
+
+
+// Unary boolean:
+
+  await testValidInput(
+    "Valid unary boolean with literal int.",
+    `
+      bool main() {
+        bool aaa;
+        aaa = ?1;
+        return aaa;
+      }
+    `
+    );
+  /* TODO
+    await testValidInput(
+      "Valid unary boolean with var int.",
+      `
+        bool main() {
+          bool aaa;
+          int bbb <= 1;
+          aaa = ?bbb;
+          return aaa;
+        }
+      `
+      );
+  */
+  await testValidInput(
+    "Valid unary boolean with literal float.",
+    `
+      bool main() {
+        bool aaa;
+        aaa = ?1.1;
+        return aaa;
+      }
+    `
+    );
+  /* TODO
+    await testValidInput(
+      "Valid unary boolean with var float.",
+      `
+        bool main() {
+          bool aaa;
+          float bbb <= 1.1;
+          aaa = ?bbb;
+          return aaa;
+        }
+      `
+      );
+  */
+  await testValidInput(
+    "Valid unary boolean with literal bool.",
+    `
+      bool main() {
+        bool aaa;
+        aaa = ?true;
+        return aaa;
+      }
+    `
+    );
+  /* TODO
+  await testValidInput(
+    "Valid unary boolean with var bool.",
+    `
+      bool main() {
+        bool aaa;
+        int bbb <= 1;
+        aaa = ?bbb;
+        return aaa;
+      }
+    `
+    );
+  */
+await testInvalidInput(
+  "Invalid unary boolean with literal char.",
+  `
+    int main() {
+      bool aaa;
+      aaa = ?'1';
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "bool"
+Occurrence at line 4, column 13:
+      aaa = ?'1';
+            ^`
+    );
+    /* TODO
+    await testInvalidInput(
+      "Invalid unary boolean with var char.",
+      `
+        int main() {
+          bool aaa;
+          char bbb <= '1';
+          aaa = ?bbb;
+          return 0;
+        }
+      `,
+        ERROR_CODE.ERR_CHAR_TO_X,
+        `Invalid type conversion from "char" to "int or float"
+    Occurrence at line 5, column 13:
+          aaa = ?bbb;
+                ^`
+      );
+    */
+await testInvalidInput(
+  "Invalid unary boolean with literal string.",
+  `
+    int main() {
+      bool aaa;
+      aaa = ?"1";
+      return 0;
+    }
+  `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "bool"
+Occurrence at line 4, column 13:
+      aaa = ?"1";
+            ^`
+    );
+  /* TODO
+  await testInvalidInput(
+    "Invalid unary boolean with var string.",
+    `
+      int main() {
+        bool aaa;
+        string bbb <= "1";
+        aaa = ?bbb;
+        return 0;
+      }
+    `,
+      ERROR_CODE.ERR_STRING_TO_X,
+      `Invalid type conversion from "string" to "int or float"
+  Occurrence at line 5, column 13:
+        aaa = ?"1";
+              ^`
+    );
+  */
+
 }
 
 main();
@@ -766,22 +1337,6 @@ main();
   O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
   Nos comandos de shift (esquerda e direta), deve-se lançar o erro ERR_WRONG_PAR_SHIFT caso o parâmetro após o token de shift for um número maior que 16.
-
-  Conversão implícita.
-  As regras de coerção de tipos da Linguagem são as seguintes.
-  Não há conversão implícita para os tipos string e char.
-  Um tipo int pode ser convertido implicitamente para float e para bool.
-  Um tipo bool pode ser convertido implicitamente para float e para int.
-  Um tipo float pode ser convertido implicitamente para int e para bool, perdendo precisão.
-  Inferência.
-  As regras de inferência de tipos da linguagem são as seguintes.
-  A partir de int e int, inferese int.
-  A partir de float e float, infere-se float.
-  A partir de bool e bool, infere-se bool.
-  A partir de float e int, infere-se float.
-  A partir de bool e int, infere-se int.
-  A partir de bool e float, infere-se float.
-  A matriz abaixo resume:
 
   Tamanho.
   O tamanho dos tipos da linguagem é definido da seguinte forma.
