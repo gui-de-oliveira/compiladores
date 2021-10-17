@@ -1921,6 +1921,44 @@ Occurrence at line 4, column 9:
     `Incompatible type in attribution.\nExpected string but received a "int"`
   );
 
+  insertInvalidTestInput(
+    `ERR_EXCESS_ARGS`,
+    `
+    int f (int a, int b) { return 0; }
+    int main() {
+      f(1, 2, 3);
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_EXCESS_ARGS,
+    `Excess args in function call: "f"
+Function definition at line 2, column 9:
+    int f (int a, int b) { return 0; }
+        ^
+Called at line 4, column 7:
+      f(1, 2, 3);
+      ^`
+  );
+
+  insertInvalidTestInput(
+    `ERR_MISSING_ARGS`,
+    `
+    int f (int a, int b) { return 0; }
+    int main() {
+      f(1);
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_MISSING_ARGS,
+    `Missing args in function call: "f"
+Function definition at line 2, column 9:
+    int f (int a, int b) { return 0; }
+        ^
+Called at line 4, column 7:
+      f(1);
+      ^`
+  );
+
   await Promise.all(promises);
 }
 
