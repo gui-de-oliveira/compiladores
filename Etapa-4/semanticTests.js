@@ -1921,6 +1921,46 @@ Occurrence at line 4, column 9:
     `Incompatible type in attribution.\nExpected string but received a "int"`
   );
 
+  // 2.5 Retorno, argumentos e parâmetros de funções
+
+  // A lista de argumentos fornecidos em uma chamada de função deve ser verificada contra a lista de parâmetros formais na declaração da mesma função.
+  // Tais verificações devem ser realizadas levando-se em conta as informações registradas na tabela de símbolos, registradas no momento da declaração/definição da função.
+  // Cada chamada de função deve prover um argumento para cada parâmetro, e ter o seu tipo compatível.
+
+  insertValidInputTest(
+    `Valid function call`,
+    `
+    int f (int a, int b) { return 0; }
+    int main() {
+      f(1, 2);
+      return 0;
+    }
+    `
+  );
+
+  // Na hora da chamada da função, caso houver um número menor de argumentos que o necessário, deve-se lançar o erro ERR_MISSING_ARGS.
+
+  insertInvalidTestInput(
+    `ERR_MISSING_ARGS`,
+    `
+    int f (int a, int b) { return 0; }
+    int main() {
+      f(1);
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_MISSING_ARGS,
+    `Missing args in function call: "f"
+  Function definition at line 2, column 9:
+    int f (int a, int b) { return 0; }
+        ^
+  Called at line 4, column 7:
+      f(1);
+      ^`
+  );
+
+  // Caso houver um número maior de argumentos que o necessário, deve-se lançar o erro ERR_EXCESS_ARGS.
+
   insertInvalidTestInput(
     `ERR_EXCESS_ARGS`,
     `
@@ -1940,24 +1980,22 @@ Called at line 4, column 7:
       ^`
   );
 
-  insertInvalidTestInput(
-    `ERR_MISSING_ARGS`,
-    `
-    int f (int a, int b) { return 0; }
-    int main() {
-      f(1);
-      return 0;
-    }
-    `,
-    ERROR_CODE.ERR_MISSING_ARGS,
-    `Missing args in function call: "f"
-Function definition at line 2, column 9:
-    int f (int a, int b) { return 0; }
-        ^
-Called at line 4, column 7:
-      f(1);
-      ^`
-  );
+  // Enfim, quando o número de argumentos é correto, mas os tipos dos argumentos são incompatíveis com os tipos registrados na tabela de símbolo, deve-se lançar o erro ERR_WRONG_TYPE_ARGS.
+
+  // TODO
+
+  //  Retorno, argumentos e parâmetros de funções não podem ser do tipo string.
+  // Quando estes casos acontecerem, lançar o erro ERR_FUNCTION_STRING.
+
+  // TODO
+
+  // 2. Verificação de tipos em comandos
+
+  // Os demais comandos simples da linguagem devem ser verificados semanticamente para obedecer as seguintes regras.
+  // O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
+  // Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
+
+  // TODO
 
   await Promise.all(promises);
 }
@@ -1968,27 +2006,6 @@ main().then(() => {
   var totalInMs = end - start;
   console.log(`Completed in ${(totalInMs / 1000.0).toFixed(1)} seconds.`);
 });
-
-/*
-  TODO = EACH NEW TEST SHOULD REMOVE A SPECIFICATION LINE BELOW.
-  The project will be complete when there are no untested specification line.
-
-  2.5 Retorno, argumentos e parâmetros de funções
-  A lista de argumentos fornecidos em uma chamada de função deve ser verificada contra a lista de parâmetros formais na declaração da mesma função.
-  Cada chamada de função deve prover um argumento para cada parâmetro, e ter o seu tipo compatível.
-  Tais verificações devem ser realizadas levando-se em conta as informações registradas na tabela de símbolos, registradas no momento da declaração/definição da função.
-  Na hora da chamada da função, caso houver um número menor de argumentos que o necessário, deve-se lançar o erro ERR_MISSING_ARGS.
-  Caso houver um número maior de argumentos que o necessário, deve-se lançar o erro ERR_EXCESS_ARGS.
-  Enfim, quando o número de argumentos é correto, mas os tipos dos argumentos são incompatíveis com os tipos registrados na tabela de símbolo, deve-se lançar o erro ERR_WRONG_TYPE_ARGS.
-  Retorno, argumentos e parâmetros de funções não podem ser do tipo string.
-  Quando estes casos acontecerem, lançar o erro ERR_FUNCTION_STRING.
-
-  2. Verificação de tipos em comandos
- 
-  Os demais comandos simples da linguagem devem ser verificados semanticamente para obedecer as seguintes regras.
-  O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
-  Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
-*/
 
 /*
   NÃO-Testáveis + Testes manuais
