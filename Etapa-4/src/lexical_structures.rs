@@ -204,10 +204,24 @@ impl AstNode for GlobalVecDef {
             }
         };
 
-        let size = get_symbol_type_size(&var_type) * size_int;
+        let base_size = get_symbol_type_size(&var_type);
+        let size = base_size * size_int;
+
+        for i in 0..size {
+            let index_id = format!("{}[{}]", &id, i);
+            let index_symbol = DefSymbol::new(
+                index_id,
+                span,
+                line,
+                col,
+                var_type.clone(),
+                class.clone(),
+                Some(base_size),
+            );
+            stack.add_def_symbol(index_symbol)?;
+        }
 
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
-
         stack.add_def_symbol(our_symbol)?;
 
         if let Some(node) = &self.next {
@@ -2957,7 +2971,7 @@ pub struct VecAccess {
 impl VecAccess {
     pub fn new(
         node_id: Span,
-        vec_name: Box<dyn AstNode>,
+        vec_name: Box<VecInvoke>,
         vec_index: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecAccess {
@@ -3006,18 +3020,43 @@ impl AstNode for VecAccess {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.vec_name.evaluate_node(stack, lexer)?;
+        let _vec_type_value =
+            self.vec_name
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                "VecAccess.evaluate_node() found no TypeValue from self.vec_name.evaluate_node()"
+            )));
 
-        self.vec_index.evaluate_node(stack, lexer)?;
+        let indexer_type_value = self.vec_index.evaluate_node(stack, lexer)?;
+        let indexer_value = match indexer_type_value {
+            Some(symbol_type) => {
+                symbol_type.to_int(self.node_id, lexer)?.ok_or(CompilerError::SanityError(format!(
+                    "VecAccess.evaluate_node() found no indexer_value from indexer_type_value -> to_int()"
+                    )))?
+            }
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                "VecAccess.evaluate_node() found no TypeValue from self.vec_index.evaluate_node()"
+            )));
+            }
+        };
 
-        // TO DO: Add symbol and check type.
+        let vec_name_id_span = self.vec_name.get_id();
+        let vec_name_id_str = lexer.span_str(vec_name_id_span);
+        let index_id = format!("{}[{}]", vec_name_id_str, indexer_value);
+        let previous_def = stack.get_previous_def_string_no_error(&index_id).ok_or(
+            CompilerError::SemanticError(format!(
+                "Out-of-range vector index access: {}",
+                &index_id
+            )),
+        )?;
+        let our_type_value = previous_def.type_value.clone();
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
 
-        // TO DO: Implement a return value here.
-        Ok(None)
+        Ok(Some(our_type_value))
     }
     fn get_id(&self) -> Span {
         self.node_id
