@@ -790,7 +790,7 @@ impl AstNode for VarRightShift {
 #[derive(Debug)]
 pub struct VecLeftShift {
     node_id: Span,
-    vec_access: Box<dyn AstNode>,
+    vec_access: Box<VecAccess>,
     shift_amount: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -798,7 +798,7 @@ pub struct VecLeftShift {
 impl VecLeftShift {
     pub fn new(
         node_id: Span,
-        vec_access: Box<dyn AstNode>,
+        vec_access: Box<VecAccess>,
         shift_amount: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecLeftShift {
@@ -903,7 +903,7 @@ impl AstNode for VecLeftShift {
 #[derive(Debug)]
 pub struct VecRightShift {
     node_id: Span,
-    vec_access: Box<dyn AstNode>,
+    vec_access: Box<VecAccess>,
     shift_amount: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -911,7 +911,7 @@ pub struct VecRightShift {
 impl VecRightShift {
     pub fn new(
         node_id: Span,
-        vec_access: Box<dyn AstNode>,
+        vec_access: Box<VecAccess>,
         shift_amount: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecRightShift {
@@ -1100,7 +1100,7 @@ impl AstNode for VarSet {
 #[derive(Debug)]
 pub struct VecSet {
     node_id: Span,
-    vec_access: Box<dyn AstNode>,
+    vec_access: Box<VecAccess>,
     new_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -1108,7 +1108,7 @@ pub struct VecSet {
 impl VecSet {
     pub fn new(
         node_id: Span,
-        vec_access: Box<dyn AstNode>,
+        vec_access: Box<VecAccess>,
         new_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VecSet {
@@ -1163,7 +1163,7 @@ impl AstNode for VecSet {
                 )))?;
 
         let def_symbol =
-            stack.get_previous_def(self.vec_access.get_id(), lexer, SymbolClass::Var)?;
+            stack.get_previous_def(self.vec_access.get_id(), lexer, SymbolClass::Vec)?;
 
         let _updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
@@ -2747,7 +2747,7 @@ impl AstNode for VarAccess {
 #[derive(Debug)]
 pub struct VecAccess {
     node_id: Span,
-    vec_name: Box<dyn AstNode>,
+    vec_name: Box<VecInvoke>,
     vec_index: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }

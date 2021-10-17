@@ -1764,7 +1764,8 @@ Occurrence at line 4, column 9:
   const values = ["0", "true", "false", "0.0"];
   const types = ["int", "bool", "float"];
 
-  if (process.argv[2] === "ALL") {
+  const isRunningAllTests = process.argv[2] === "ALL";
+  if (isRunningAllTests) {
     for (const binaryOperator of [
       ...binaryOperators,
       ...logicalOperators,
@@ -1813,6 +1814,71 @@ Occurrence at line 4, column 9:
         }
       }
     }
+  }
+
+  insertValidInputTest(
+    `Attributing a literal int to a vector access`,
+    `
+    int i[1]; 
+    int main() {
+      i[0] = 1;
+      return 0;
+    }
+    `
+  );
+
+  insertInvalidTestInput(
+    `Set a char variable with to a vector access`,
+    `
+    int i[1]; 
+    int main() {
+      i[0] = 'c';
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_CHAR_TO_X,
+    `Invalid type conversion from "char" to "int"`
+  );
+
+  insertInvalidTestInput(
+    `Set a string literal to a vector access`,
+    `
+    int i[1];
+    int main() {
+      i[0] = "123";
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_STRING_TO_X,
+    `Invalid type conversion from "string" to "int"`
+  );
+
+  if (isRunningAllTests) {
+    for (let value of values) {
+      insertValidInputTest(
+        ` Setting ${value} to a vector access`,
+        `
+        int i[1]; 
+        int main() {
+          i[0] = ${value};
+          return 0;
+        }
+        `
+      );
+    }
+
+    insertInvalidTestInput(
+      `Set a string literal to a vector access`,
+      `
+      int i[1];
+      int main() {
+        i[0] = "123";
+        return 0;
+      }
+      `,
+      ERROR_CODE.ERR_STRING_TO_X,
+      `Invalid type conversion from "string" to "int"`
+    );
   }
 
   await Promise.all(promises);

@@ -284,25 +284,25 @@ varShift -> Result<Box<dyn AstNode>, CompilerError>:
         Ok(Box::new(VarRightShift::new(shift_type, var_name, shift_amount, None)))
     }
     | vecAccess leftShiftTok literal_int {
-        let vec_access = $1?;
+        let vec_access = Box::new($1?);
         let shift_type = $2?;
         let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VecLeftShift::new(shift_type, vec_access, shift_amount, None)))
     }
     | vecAccess rightShiftTok literal_int {
-        let vec_access = $1?;
+        let vec_access = Box::new($1?);
         let shift_type = $2?;
         let shift_amount = Box::new(LiteralInt::new($3?, None));
         Ok(Box::new(VecRightShift::new(shift_type, vec_access, shift_amount, None)))
     }
     ;
 
-vecAccess -> Result<Box<dyn AstNode>, CompilerError>:
+vecAccess -> Result<VecAccess, CompilerError>:
     identifier_rule '[' expression ']' {
         let node_id = $span;
         let vec_name = Box::new(VecInvoke::new($1?, None));
         let vec_index = Box::new($3?);
-        Ok(Box::new(VecAccess::new(node_id, vec_name, vec_index, None)))
+        Ok(VecAccess::new(node_id, vec_name, vec_index, None))
     }
     ;
 
@@ -315,7 +315,7 @@ varSet -> Result<Box<dyn AstNode>, CompilerError>:
         Ok(Box::new(VarSet::new(op_name, var_name, new_value, None)))
     }
     | vecAccess setTok expression {
-        let vec_access = $1?;
+        let vec_access = Box::new($1?);
         let op_name = $2?;
         let new_value = Box::new($3?);
         Ok(Box::new(VecSet::new(op_name, vec_access, new_value, None)))
@@ -647,7 +647,7 @@ expressionOperand -> Result<Box<dyn AstNode>, CompilerError>:
 
 accessOrFnCall -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule { Ok(Box::new(VarAccess::new($1?, None))) }
-    | vecAccess { $1 }
+    | vecAccess { Ok(Box::new($1?)) }
     | functionCall { $1 }
     ;
 
