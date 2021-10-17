@@ -1982,12 +1982,79 @@ Called at line 4, column 7:
 
   // Enfim, quando o número de argumentos é correto, mas os tipos dos argumentos são incompatíveis com os tipos registrados na tabela de símbolo, deve-se lançar o erro ERR_WRONG_TYPE_ARGS.
 
-  // TODO
+  // insertInvalidTestInput(
+  //   `ERR_WRONG_TYPE_ARGS`,
+  //   `
+  //   int f (int a, int b) { return 0; }
+  //   int main() {
+  //     f('a', 'b');
+  //     return 0;
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_WRONG_TYPE_ARGS,
+  //   ""
+  // );
+
+  // insertValidInputTest(
+  //   `Valid function call`,
+  //   `
+  //   int f (int a, int b) { return 0; }
+  //   int main() {
+  //     f(1.0, true);
+  //     return 0;
+  //   }
+  //   `
+  // );
 
   //  Retorno, argumentos e parâmetros de funções não podem ser do tipo string.
   // Quando estes casos acontecerem, lançar o erro ERR_FUNCTION_STRING.
 
-  // TODO
+  // insertInvalidTestInput(
+  //   `string function returning literal string`,
+  //   `
+  //   string main() {
+  //     return "string";
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_FUNCTION_STRING,
+  //   ""
+  // );
+
+  // insertInvalidTestInput(
+  //   `string function returning variable string`,
+  //   `
+  //   string main() {
+  //     string s <= "string";
+  //     return s;
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_FUNCTION_STRING,
+  //   ""
+  // );
+
+  // insertInvalidTestInput(
+  //   `function with string argument`,
+  //   `
+  //   int main(string a) {
+  //     return 0;
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_FUNCTION_STRING,
+  //   ""
+  // );
+
+  // insertInvalidTestInput(
+  //   `function receiving string as a parameter`,
+  //   `
+  //   int f (string a) { return 0; }
+  //   int main() {
+  //     f("string");
+  //     return 0;
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_FUNCTION_STRING,
+  //   ""
+  // );
 
   // 2. Verificação de tipos em comandos
 
@@ -1995,7 +2062,28 @@ Called at line 4, column 7:
   // O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   // Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
 
-  // TODO
+  // insertInvalidTestInput(
+  //   `int function returning literal char`,
+  //   `
+  //   int main() {
+  //     return 'c';
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_WRONG_PAR_RETURN,
+  //   ""
+  // );
+
+  // insertInvalidTestInput(
+  //   `int function returning variable char`,
+  //   `
+  //   int main() {
+  //     char c <= 'c';
+  //     return c;
+  //   }
+  //   `,
+  //   ERROR_CODE.ERR_WRONG_PAR_RETURN,
+  //   ""
+  // );
 
   await Promise.all(promises);
 }
