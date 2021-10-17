@@ -26,4 +26,5 @@ allTests:
 
 test:
 	make
+	mkdir -p testFiles
 	node semanticTests.js
