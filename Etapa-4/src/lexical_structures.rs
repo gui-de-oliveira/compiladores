@@ -502,15 +502,13 @@ impl AstNode for VarDefInitId {
                 SymbolType::Char(_) => {}
                 var_type => {
                     let value_span = self.var_value.get_id();
-                    let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                    let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                    return Err(CompilerError::SemanticErrorWrongType {
-                        valid_types: "char".to_string(),
-                        received_type: var_type.to_str().to_string(),
-                        highlight,
+                    let ((line, col), (_, _)) = lexer.line_col(value_span.get_id());
+                    let highlight = ScopeStack::form_string_highlight(value_span.get_id(), lexer);
+                    return Err(CompilerError::SemanticErrorCharToX {
+                        invalid_type: var_type.to_str().to_string(),
                         line,
                         col,
+                        highlight,
                     });
                 }
             },
@@ -651,15 +649,14 @@ impl AstNode for VarDefInitLit {
                     SymbolType::Char(_) => {}
                     var_type => {
                         let value_span = self.var_value.get_id();
-                        let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                        return Err(CompilerError::SemanticErrorWrongType {
-                            valid_types: "char".to_string(),
-                            received_type: var_type.to_str().to_string(),
-                            highlight,
+                        let ((line, col), (_, _)) = lexer.line_col(value_span.get_id());
+                        let highlight =
+                            ScopeStack::form_string_highlight(value_span.get_id(), lexer);
+                        return Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type: var_type.to_str().to_string(),
                             line,
                             col,
+                            highlight,
                         });
                     }
                 },
@@ -1265,16 +1262,14 @@ impl AstNode for VarSet {
                 SymbolType::Char(_) => match symbol_type {
                     SymbolType::Char(_) => {}
                     symbol_type => {
-                        let value_span = self.new_value.get_id();
-                        let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                        return Err(CompilerError::SemanticErrorWrongType {
-                            valid_types: "char".to_string(),
-                            received_type: symbol_type.to_str().to_string(),
-                            highlight,
+                        let ((line, col), (_, _)) = lexer.line_col(self.new_value.get_id());
+                        let highlight =
+                            ScopeStack::form_string_highlight(self.new_value.get_id(), lexer);
+                        return Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type: symbol_type.to_str().to_string(),
                             line,
                             col,
+                            highlight,
                         });
                     }
                 },

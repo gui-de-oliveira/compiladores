@@ -1668,9 +1668,8 @@ Expected int, float or bool but received a "string".`
       return 0;
     }
     `,
-        ERROR_CODE.ERR_WRONG_TYPE,
-        `Incompatible type in attribution.
-Expected char but received a "${value.type}".`
+          ERROR_CODE.ERR_CHAR_TO_X,
+          `Invalid type conversion from "char" to "${value.type}"`
       );
     }
 
