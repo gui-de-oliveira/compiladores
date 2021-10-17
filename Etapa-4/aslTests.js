@@ -309,7 +309,7 @@ async function test() {
     { varType: "char", declaration: "'a'", expected: "a" },
     { varType: "bool", declaration: "true", expected: "true" },
     { varType: "bool", declaration: "false", expected: "false" },
-    { varType: "int", declaration: "id", expected: "id" },
+    { varType: "int", declaration: "b", expected: "b" },
   ];
 
   for (const literal of literalAsserts) {
