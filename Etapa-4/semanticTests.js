@@ -2001,16 +2001,16 @@ Called at line 4, column 7:
       ^`
   );
 
-  // insertValidInputTest(
-  //   `Valid function call`,
-  //   `
-  //   int f (int a, int b) { return 0; }
-  //   int main() {
-  //     f(1.0, true);
-  //     return 0;
-  //   }
-  //   `
-  // );
+  insertValidInputTest(
+    `Valid function call`,
+    `
+    int f (int a, int b) { return 0; }
+    int main() {
+      f(1.0, true);
+      return 0;
+    }
+    `
+  );
 
   //  Retorno, argumentos e parâmetros de funções não podem ser do tipo string.
   // Quando estes casos acontecerem, lançar o erro ERR_FUNCTION_STRING.
