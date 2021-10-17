@@ -461,6 +461,82 @@ impl AstNode for VarDefInitId {
         self.var_def.evaluate_node(stack, lexer)?;
         self.var_value.evaluate_node(stack, lexer)?;
 
+        let def_symbol = stack.get_previous_def(self.var_def.get_id(), lexer, SymbolClass::Var)?;
+        let var_symbol =
+            stack.get_previous_def(self.var_value.get_id(), lexer, SymbolClass::Var)?;
+
+        match (def_symbol.type_value.clone(), var_symbol.type_value.clone()) {
+            (SymbolType::String(_), var_type) => match var_type {
+                SymbolType::String(var_option) => match var_option {
+                    Some(var_value) => {
+                        let updated_symbol = {
+                            let clone = SymbolType::String(Some(var_value));
+                            let size = get_symbol_type_size(&clone);
+                            DefSymbol::new(
+                                def_symbol.id.clone(),
+                                def_symbol.span,
+                                def_symbol.line,
+                                def_symbol.col,
+                                def_symbol.type_value.clone(),
+                                def_symbol.class,
+                                Some(size),
+                            )
+                        };
+
+                        stack.add_def_symbol(updated_symbol)?;
+                    }
+                    None => {}
+                },
+                var_type => {
+                    let value_span = self.var_value.get_id();
+                    let highlight = ScopeStack::form_string_highlight(value_span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(value_span);
+
+                    return Err(CompilerError::SemanticErrorWrongType {
+                        valid_types: "string".to_string(),
+                        received_type: var_type.to_str().to_string(),
+                        highlight,
+                        line,
+                        col,
+                    });
+                }
+            },
+            (SymbolType::Char(_), var_type) => match var_type {
+                SymbolType::Char(_) => {}
+                var_type => {
+                    let value_span = self.var_value.get_id();
+                    let highlight = ScopeStack::form_string_highlight(value_span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(value_span);
+
+                    return Err(CompilerError::SemanticErrorWrongType {
+                        valid_types: "char".to_string(),
+                        received_type: var_type.to_str().to_string(),
+                        highlight,
+                        line,
+                        col,
+                    });
+                }
+            },
+            (SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_), var_type) => {
+                match var_type {
+                    SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {}
+                    var_type => {
+                        let value_span = self.var_value.get_id();
+                        let highlight = ScopeStack::form_string_highlight(value_span, lexer);
+                        let ((line, col), (_, _)) = lexer.line_col(value_span);
+
+                        return Err(CompilerError::SemanticErrorWrongType {
+                            valid_types: "int, float or bool".to_string(),
+                            received_type: var_type.to_str().to_string(),
+                            highlight,
+                            line,
+                            col,
+                        });
+                    }
+                }
+            }
+        };
+
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
         };
@@ -559,7 +635,7 @@ impl AstNode for VarDefInitLit {
                                 )
                             };
 
-                            stack.add_def_symbol(updated_symbol);
+                            stack.add_def_symbol(updated_symbol)?;
                         }
                         None => {}
                     },
@@ -578,7 +654,7 @@ impl AstNode for VarDefInitLit {
                     }
                 },
                 (SymbolType::Char(_), var_type) => match var_type {
-                    SymbolType::Char(var_option) => {}
+                    SymbolType::Char(_) => {}
                     var_type => {
                         let value_span = self.var_value.get_id();
                         let highlight = ScopeStack::form_string_highlight(value_span, lexer);
@@ -1142,7 +1218,7 @@ impl AstNode for VarSet {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
 
-        let var = self.var_name.evaluate_node(stack, lexer)?;
+        self.var_name.evaluate_node(stack, lexer)?;
         let def = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::Var)?;
         let def_size = match def.size {
             Some(size) => size,
