@@ -166,8 +166,13 @@ pub enum CompilerError {
         second_highlight: String,
     },
 
-    #[error("Function argument or parameter of invalid type \"string\"")]
-    SemanticErrorFunctionString,
+    #[error("Function argument or parameter of invalid type \"string\": \"{id}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorFunctionString {
+        id: String,
+        highlight: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Invalid argument for \"input\" command; expected variable of type \"int\" or \"float\", found \"{received_type}\";\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
     SemanticErrorWrongParInput {
@@ -235,7 +240,7 @@ impl CompilerError {
             CompilerError::SemanticErrorMissingArgs { .. } => 40,
             CompilerError::SemanticErrorExcessArgs { .. } => 41,
             CompilerError::SemanticErrorWrongTypeArgs { .. } => 42,
-            CompilerError::SemanticErrorFunctionString => 43,
+            CompilerError::SemanticErrorFunctionString { .. } => 43,
             CompilerError::SemanticErrorWrongParInput { .. } => 50,
             CompilerError::SemanticErrorWrongParOutputLit { .. }
             | CompilerError::SemanticErrorWrongParOutputId { .. } => 51,

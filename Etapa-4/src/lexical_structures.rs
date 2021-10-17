@@ -1731,7 +1731,7 @@ impl AstNode for FnCall {
 
         if params_num > 1 {
             let mut param_types = vec![];
-            for param in parameters {
+            for param in &parameters {
                 param_types.push(param.evaluate_param(lexer)?);
             }
             for (i, arg) in self.args.iter().enumerate() {
@@ -1741,8 +1741,36 @@ impl AstNode for FnCall {
                             "FnCall error; .evaluate_node() on arg returned no type: {:?}",
                             arg
                         )))?;
-                if arg_type == param_types[i] {
-                    continue;
+                match (arg_type, &param_types[i]) {
+                    (SymbolType::String(_), _) => {
+                        let param = parameters[i];
+                        let span = param.node_id;
+                        let id = lexer.span_str(span).to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(span);
+                        let highlight = ScopeStack::form_string_highlight(span, lexer);
+                        return Err(CompilerError::SemanticErrorFunctionString {
+                            id,
+                            line,
+                            col,
+                            highlight,
+                        });
+                    }
+                    (_, SymbolType::String(_)) => {
+                        let arg = &self.args[i];
+                        let span = arg.get_id();
+                        let id = lexer.span_str(span).to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(span);
+                        let highlight = ScopeStack::form_string_highlight(span, lexer);
+                        return Err(CompilerError::SemanticErrorFunctionString {
+                            id,
+                            line,
+                            col,
+                            highlight,
+                        });
+                    }
+                    (SymbolType::Char(_), SymbolType::Char(_)) => continue,
+                    (SymbolType::Char(_), _) | (_, SymbolType::Char(_)) => (),
+                    (_, _) => continue,
                 }
                 let id = lexer.span_str(self.node_id).to_string();
                 let previous_def = stack.get_previous_def(span, lexer, class)?;
