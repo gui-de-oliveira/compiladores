@@ -1611,9 +1611,8 @@ Occurrence at line 4, column 9:
       return 0;
     }
     `,
-          ERROR_CODE.ERR_WRONG_TYPE,
-          `Incompatible type in attribution.
-Expected int, float or bool but received a "char".`
+          ERROR_CODE.ERR_CHAR_TO_X,
+          `Invalid type conversion from \"char\" to \"${type}\"`
         );
 
         insertInvalidTestInput(
@@ -1632,9 +1631,8 @@ Expected int, float or bool but received a "char".`
       return 0;
     }
     `,
-          ERROR_CODE.ERR_WRONG_TYPE,
-          `Incompatible type in attribution.
-Expected int, float or bool but received a "string".`
+          ERROR_CODE.ERR_STRING_TO_X,
+          `Invalid type conversion from "string" to "${type}"`
         );
 
         for (const value of [
@@ -1686,8 +1684,8 @@ Expected int, float or bool but received a "string".`
       return 0;
     }
     `,
-          ERROR_CODE.ERR_STRING_TO_X,
-          `Invalid type conversion from "string" to "${value.type}"`
+          ERROR_CODE.ERR_WRONG_TYPE,
+          `Incompatible type in attribution.\nExpected string but received a`
         );
       }
 
@@ -1732,8 +1730,8 @@ Expected int, float or bool but received a "string".`
       return 0;
     }
     `,
-          ERROR_CODE.ERR_CHAR_TO_X,
-          `Invalid type conversion from "char" to "${value.type}"`
+          ERROR_CODE.ERR_WRONG_TYPE,
+          `Incompatible type in attribution.\nExpected char but received a`
         );
       }
 
@@ -1796,8 +1794,8 @@ Expected int, float or bool but received a "string".`
           return 0;
         }
         `,
-            ERROR_CODE.ERR_CHAR_TO_X,
-            `Invalid type conversion from "char" to `
+            ERROR_CODE.ERR_WRONG_TYPE,
+            `Incompatible type in attribution.\nExpected char but received a `
           );
 
           insertInvalidTestInput(
@@ -1809,8 +1807,8 @@ Expected int, float or bool but received a "string".`
               return 0;
             }
             `,
-            ERROR_CODE.ERR_STRING_TO_X,
-            `Invalid type conversion from "string" to `
+            ERROR_CODE.ERR_WRONG_TYPE,
+            `Incompatible type in attribution.\nExpected string but received a `
           );
         }
       }
@@ -1831,10 +1829,6 @@ main().then(() => {
   TODO = EACH NEW TEST SHOULD REMOVE A SPECIFICATION LINE BELOW.
   The project will be complete when there are no untested specification line.
 
-  O processo de inferência de tipos está descrito abaixo.
-  Como não temos coerção de variáveis do tipo string e char, o compilador deve lançar o erro ERR_STRING_TO_X quando a variável do tipo string estiver em uma situação onde ela deve ser convertida para qualquer outro tipo.
-  De maneira análoga, o erro ERR_CHAR_TO_X deve ser lançado quando uma variável do tipo char deve ser convertida implicitamente.
-
   2.5 Retorno, argumentos e parâmetros de funções
   A lista de argumentos fornecidos em uma chamada de função deve ser verificada contra a lista de parâmetros formais na declaração da mesma função.
   Cada chamada de função deve prover um argumento para cada parâmetro, e ter o seu tipo compatível.
@@ -1850,8 +1844,6 @@ main().then(() => {
   Os demais comandos simples da linguagem devem ser verificados semanticamente para obedecer as seguintes regras.
   O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
-
-
 */
 
 /*

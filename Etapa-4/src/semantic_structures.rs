@@ -84,11 +84,12 @@ impl DefSymbol {
             (SymbolType::String(_), bad_type) => {
                 let ((line, col), (_, _)) = lexer.line_col(span);
                 let highlight = ScopeStack::form_string_highlight(span, lexer);
-                Err(CompilerError::SemanticErrorStringToX {
-                    invalid_type: bad_type.to_str().to_string(),
+                Err(CompilerError::SemanticErrorWrongType {
+                    valid_type: "string".to_string(),
+                    received_type: bad_type.to_str().to_string(),
+                    highlight,
                     line,
                     col,
-                    highlight,
                 })
             }
             (SymbolType::Char(_), right_type @ SymbolType::Char(_)) => Ok(DefSymbol::new(
@@ -103,11 +104,12 @@ impl DefSymbol {
             (SymbolType::Char(_), bad_type) => {
                 let ((line, col), (_, _)) = lexer.line_col(span);
                 let highlight = ScopeStack::form_string_highlight(span, lexer);
-                Err(CompilerError::SemanticErrorCharToX {
-                    invalid_type: bad_type.to_str().to_string(),
+                Err(CompilerError::SemanticErrorWrongType {
+                    valid_type: "char".to_string(),
+                    received_type: bad_type.to_str().to_string(),
+                    highlight,
                     line,
                     col,
-                    highlight,
                 })
             }
             (
@@ -153,19 +155,33 @@ impl DefSymbol {
                 self.size,
             )),
             (
-                our_type @ SymbolType::Float(_)
-                | our_type @ SymbolType::Int(_)
-                | our_type @ SymbolType::Bool(_),
-                bad_type,
+                bad_type @ SymbolType::Int(_)
+                | bad_type @ SymbolType::Float(_)
+                | bad_type @ SymbolType::Bool(_),
+                SymbolType::Char(_),
             ) => {
                 let ((line, col), (_, _)) = lexer.line_col(span);
                 let highlight = ScopeStack::form_string_highlight(span, lexer);
-                Err(CompilerError::SemanticErrorWrongType {
-                    valid_type: "int, float or bool".to_string(),
-                    received_type: bad_type.to_str().to_string(),
-                    highlight,
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type: bad_type.to_str().to_string(),
                     line,
                     col,
+                    highlight,
+                })
+            }
+            (
+                bad_type @ SymbolType::Int(_)
+                | bad_type @ SymbolType::Float(_)
+                | bad_type @ SymbolType::Bool(_),
+                SymbolType::String(_),
+            ) => {
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type: bad_type.to_str().to_string(),
+                    line,
+                    col,
+                    highlight,
                 })
             }
         }
