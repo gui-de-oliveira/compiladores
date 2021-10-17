@@ -1610,14 +1610,14 @@ impl AstNode for Return {
 #[derive(Debug)]
 pub struct FnCall {
     node_id: Span,
-    args: Option<Box<dyn AstNode>>,
+    args: Vec<Box<dyn AstNode>>,
     next: Option<Box<dyn AstNode>>,
 }
 
 impl FnCall {
     pub fn new(
         node_id: Span,
-        args: Option<Box<dyn AstNode>>,
+        args: Vec<Box<dyn AstNode>>,
         next: Option<Box<dyn AstNode>>,
     ) -> FnCall {
         FnCall {
@@ -1638,17 +1638,14 @@ impl FnCall {
 
 impl AstNode for FnCall {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        if let Some(args) = &self.args {
-            print_dependencies_own(args.as_ref(), own_address);
+        for arg in &self.args {
+            print_dependencies_own(arg.as_ref(), own_address);
         }
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
-        if let Some(args) = &self.args {
-            print_dependencies_child(args.as_ref(), own_address);
-        }
-        if let Some(next_node) = &self.next {
-            print_dependencies_own_next(next_node.as_ref(), own_address);
+        for arg in &self.args {
+            print_dependencies_child(arg.as_ref(), own_address);
         }
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
@@ -1656,10 +1653,9 @@ impl AstNode for FnCall {
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         self.print_label_fn_call(lexer, own_address);
-        match &self.args {
-            Some(args) => print_labels_child(args.as_ref(), lexer),
-            None => (),
-        };
+        for arg in &self.args {
+            print_labels_child(arg.as_ref(), lexer);
+        }
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
