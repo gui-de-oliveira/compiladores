@@ -1951,10 +1951,10 @@ Occurrence at line 4, column 9:
     `,
     ERROR_CODE.ERR_MISSING_ARGS,
     `Missing args in function call: "f"
-  Function definition at line 2, column 9:
+Function definition at line 2, column 9:
     int f (int a, int b) { return 0; }
         ^
-  Called at line 4, column 7:
+Called at line 4, column 7:
       f(1);
       ^`
   );
