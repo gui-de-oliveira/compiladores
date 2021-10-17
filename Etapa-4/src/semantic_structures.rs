@@ -419,6 +419,15 @@ impl ScopeStack {
         })
     }
 
+    pub fn get_previous_def_string_no_error(&self, id: &str) -> Option<&DefSymbol> {
+        for (scope, _symbols) in self.stack.iter().rev() {
+            if let Some(older_symbol) = scope.get(id) {
+                return Some(&older_symbol);
+            }
+        }
+        None
+    }
+
     pub fn add_def_symbol(&mut self, addition: DefSymbol) -> Result<(), CompilerError> {
         match self.stack.last_mut() {
             Some((scope, _symbols)) => {
