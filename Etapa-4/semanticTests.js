@@ -74,16 +74,32 @@ function rejectTest(testName, reason) {
   process.exit();
 }
 
+const promises = [];
+
+async function insertInvalidTestInput(
+  testName,
+  input,
+  expectedReturnCode,
+  expectedOutput
+) {
+  promises.push(
+    testInvalidInput(testName, input, expectedReturnCode, expectedOutput)
+  );
+}
+
+let fileCounter = 0;
+
 async function testInvalidInput(
   testName,
   input,
   expectedReturnCode,
   expectedOutput
 ) {
-  await fs.writeFile(`.temp`, input);
+  const filePath = `testFiles/${++fileCounter}.temp`;
+  await fs.writeFile(filePath, input);
 
   try {
-    const value = await exec(`./etapa4 < .temp`);
+    const value = await exec(`./etapa4 < ${filePath}`);
     const receivedOutput = value.stdout;
 
     if (!receivedOutput.startsWith(expectedOutput)) {
@@ -97,8 +113,6 @@ async function testInvalidInput(
     rejectTest(testName, " by succeeding");
   } catch (error) {
     const { code: receivedReturnCode, stdout: receivedOutput } = error;
-
-    let failedTest = false;
 
     if (expectedReturnCode !== receivedReturnCode) {
       logError(`Expected:`);
@@ -118,25 +132,32 @@ async function testInvalidInput(
       rejectTest(testName, "WRONG OUTPUT!");
     }
 
+    await exec(`rm ${filePath}`);
     acceptTest();
   }
 }
 
-async function testValidInput(testName, input) {
-  await fs.writeFile(`.temp`, input);
+async function insertValidInputTest(testName, input) {
+  promises.push(testValidInput(testName, input));
+}
 
-  await exec(`./etapa4 < .temp`).catch((error) => {
+async function testValidInput(testName, input) {
+  const filePath = `testFiles/${++fileCounter}.temp`;
+  await fs.writeFile(filePath, input);
+
+  await exec(`./etapa4 < ${filePath}`).catch((error) => {
     console.log("Error:", error);
     rejectTest(testName, "INPUT SHOULD BE VALID!");
   });
 
+  await exec(`rm ${filePath}`);
   acceptTest();
 }
 
 async function main() {
-  await testValidInput("Basic valid input", "int f1() { return 0; }");
+  insertValidInputTest("Basic valid input", "int f1() { return 0; }");
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Generic parsing error",
     `
       int a a;
@@ -146,7 +167,7 @@ async function main() {
     `Parsing errors: Parsing error at line 2 column 13. No repair sequences found.\n`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Two same-name global vars, in same scope",
     `
       int abc;
@@ -163,7 +184,7 @@ And again at line 3, column 12:
 `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "One global vec and one global var, both with same name, in same scope",
     `
       int abc[3];
@@ -180,7 +201,7 @@ And again at line 3, column 12:
 `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "One global vec and one global function, both with same name, in same scope",
     `
       int abc[3];
@@ -197,7 +218,7 @@ And again at line 3, column 12:
 `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Two local variables, both with same name, in same scope",
     `
       bool abc() {
@@ -220,7 +241,7 @@ And again at line 4, column 16:
   // Todos os identificadores devem ter sido declarados no momento do seu uso, seja como variável, como vetor ou como função.
   // Caso o identificador não tenha sido declarado no seu uso, deve-se lançar o erro ERR_UNDECLARED.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Uninitialized variable",
     `
       int main() {
@@ -235,7 +256,7 @@ Occurrence at line 3, column 22:
                      ^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Uninitialized vector",
     `
       int main() {
@@ -251,7 +272,7 @@ Occurrence at line 4, column 15:
               ^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Uninitialized function",
     `
       int main() {
@@ -266,7 +287,7 @@ Occurrence at line 3, column 9:
         ^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Left shift on an undeclared variable.",
     `
     int main() {
@@ -281,7 +302,7 @@ Occurrence at line 3, column 7:
       ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Right shift on an undeclared variable.",
     `
     int main() {
@@ -296,7 +317,7 @@ Occurrence at line 3, column 7:
       ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Left shift on an undeclared vector.",
     `
     int main() {
@@ -311,7 +332,7 @@ Occurrence at line 3, column 7:
       ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Right shift on an undeclared vector.",
     `
     int main() {
@@ -331,7 +352,7 @@ Occurrence at line 3, column 7:
 
   // Caso o identificador dito variável seja usado como vetor ou como função, deve-se lançar o erro ERR_VARIABLE.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Expected variable, found function",
     `
       int aaa;
@@ -353,7 +374,7 @@ And again at line 5, column 15:
 
   // Caso o identificador dito vetor seja usado como variável ou função, deve-se lançar o erro ERR_VECTOR.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Expected vector, found variable",
     `
       int aaa[1];
@@ -375,7 +396,7 @@ And again at line 4, column 22:
 
   // Enfim, caso o identificador dito função seja utilizado como variável ou vetor, deve-se lançar o erro ERR_FUNCTION.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Expected function, found vector",
     `
       bool bbb() {
@@ -397,7 +418,7 @@ And again at line 3, column 9:
   // Todas as entradas na tabela de símbolos devem ter um tipo associado conforme a declaração, verificando-se se não houve dupla declaração ou se o símbolo nao foi declarado.
   //  Caso o identificador ja tenha sido declarado, deve-se lançar o erro ERR_DECLARED.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Duplicated variable declaration",
     `
         int main() {
@@ -416,7 +437,7 @@ And again at line 4, column 17:
                 ^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Duplicated function definition",
     `
         int f1(int a) { return 0; }
@@ -432,7 +453,7 @@ And again at line 3, column 13:
             ^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Duplicated vector definition.",
     `
       int vec[10];
@@ -450,7 +471,7 @@ And again at line 3, column 11:
 
   // Variáveis com o mesmo nome podem co-existir em escopos diferentes, efetivamente mascarando as variaveis que estão em escopos superiores.
 
-  await testValidInput(
+  insertValidInputTest(
     "Variable shadowing.",
     `
       int aaa;
@@ -461,7 +482,7 @@ And again at line 3, column 11:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Variable shadowing function declaration.",
     `
       int aaa ( ) { return 0; }
@@ -472,7 +493,7 @@ And again at line 3, column 11:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Variable shadowing vector declaration.",
     `
       int aaa[5];
@@ -486,7 +507,7 @@ And again at line 3, column 11:
   // O comando input deve ser seguido obrigatoriamente por um identificador do tipo int e float.
   // Caso contrário, o compilador deve lançar o erro ERR_WRONG_PAR_INPUT.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when input command receives char, should fail",
     `
       int main() {
@@ -505,7 +526,7 @@ And again at line 4, column 15:
               ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when input command receives string, should fail",
     `
       int main() {
@@ -524,7 +545,7 @@ And again at line 4, column 15:
               ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when input command receives bool, should fail",
     `
       int main() {
@@ -543,7 +564,7 @@ And again at line 4, column 15:
               ^`
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "when input command receives int, should succeed",
     `
       int main() {
@@ -554,7 +575,7 @@ And again at line 4, column 15:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "when input command receives float, should succeed",
     `
       int main() {
@@ -568,7 +589,7 @@ And again at line 4, column 15:
   // De maneira analoga, o comando output deve ser seguido por um identificador ou literal do tipo int e float.
   // Caso contrário, deve ser lançado o erro ERR_WRONG_PAR_OUTPUT.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives bool, should fail",
     `
       int main() {
@@ -587,7 +608,7 @@ And again at line 4, column 16:
                ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives char, should fail",
     `
       int main() {
@@ -606,7 +627,7 @@ And again at line 4, column 16:
                ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives string, should fail",
     `
       int main() {
@@ -625,7 +646,7 @@ And again at line 4, column 16:
                ^`
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "when output command receives int, should succeed",
     `
       int main() {
@@ -636,7 +657,7 @@ And again at line 4, column 16:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "when output command receives float, should succeed",
     `
       int main() {
@@ -647,7 +668,7 @@ And again at line 4, column 16:
     `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives literal string, should fail",
     `
       int main() {
@@ -662,7 +683,7 @@ Occurrence at line 3, column 16:
                ^^^^^^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives literal char, should fail",
     `
       int main() {
@@ -677,7 +698,7 @@ Occurrence at line 3, column 16:
                ^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives false, should fail",
     `
       int main() {
@@ -692,7 +713,7 @@ Occurrence at line 3, column 16:
                ^^^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "when output command receives true, should fail",
     `
       int main() {
@@ -707,7 +728,7 @@ Occurrence at line 3, column 16:
                ^^^^`
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "when output command receives literal int, should succeed",
     `
       int main() {
@@ -717,7 +738,7 @@ Occurrence at line 3, column 16:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "when output command receives literal float, should succeed",
     `
       int main() {
@@ -734,7 +755,7 @@ Occurrence at line 3, column 16:
   // Uma forma de se implementar estas regras de escopo é através de uma pilha de tabelas de símbolos.
   // Para verificar se uma variável foi declarada, verificase primeiramente no escopo atual (topo da pilha) e enquanto não encontrar, deve-se descer na pilha até chegar no escopo global (base da pilha, sempre presente).
 
-  await testValidInput(
+  insertValidInputTest(
     "Variable shadowing with command block.",
     `
       int aaa;
@@ -748,7 +769,7 @@ Occurrence at line 3, column 16:
     `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Variable redefinition inside command block.",
     `
       int aaa;
@@ -774,14 +795,14 @@ And again at line 7, column 15:
   // Enfim, vetores não podem ser do tipo string.
   // Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
 
-  await testValidInput(
+  insertValidInputTest(
     "Declaring a vector of float types.",
     `
       float aaa[1];
     `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Declaring a vector of string types.",
     `
     string aaa[1];
@@ -811,7 +832,7 @@ Occurrence at line 2, column 5:
 
   // Unary positive:
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary positive with literal int.",
     `
     int main() {
@@ -822,7 +843,7 @@ Occurrence at line 2, column 5:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary positive with var int.",
     `
     int main() {
@@ -834,7 +855,7 @@ Occurrence at line 2, column 5:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary positive with literal float.",
     `
     int main() {
@@ -845,7 +866,7 @@ Occurrence at line 2, column 5:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary positive with var float.",
     `
     float main() {
@@ -857,7 +878,7 @@ Occurrence at line 2, column 5:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary positive with literal bool.",
     `
     int main() {
@@ -868,7 +889,7 @@ Occurrence at line 2, column 5:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary positive with var bool.",
     `
     int main() {
@@ -880,7 +901,7 @@ Occurrence at line 2, column 5:
   `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary positive with literal char.",
     `
     int main() {
@@ -896,7 +917,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary positive with var char.",
     `
     int main() {
@@ -913,7 +934,7 @@ Occurrence at line 5, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary positive with literal string.",
     `
     int main() {
@@ -929,7 +950,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary positive with var string.",
     `
     int main() {
@@ -948,7 +969,7 @@ Occurrence at line 5, column 13:
 
   // Unary negative:
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with literal int.",
     `
     int main() {
@@ -959,7 +980,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with var int.",
     `
       int main() {
@@ -971,7 +992,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with literal float.",
     `
     float main() {
@@ -982,7 +1003,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with var float.",
     `
       float main() {
@@ -994,7 +1015,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with literal bool.",
     `
     int main() {
@@ -1005,7 +1026,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with var bool.",
     `
     int main() {
@@ -1017,7 +1038,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negative with literal char.",
     `
     int main() {
@@ -1033,7 +1054,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negative with var char.",
     `
     int main() {
@@ -1050,7 +1071,7 @@ Occurrence at line 5, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negative with literal string.",
     `
     int main() {
@@ -1066,7 +1087,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negative with var string.",
     `
     int main() {
@@ -1085,7 +1106,7 @@ Occurrence at line 5, column 13:
 
   // Unary negation:
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negation with literal int.",
     `
     bool main() {
@@ -1096,7 +1117,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negative with var int.",
     `
       bool main() {
@@ -1108,7 +1129,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negation with literal float.",
     `
     bool main() {
@@ -1119,7 +1140,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negation with var float.",
     `
       bool main() {
@@ -1131,7 +1152,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negation with literal bool.",
     `
     bool main() {
@@ -1142,7 +1163,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary negation with var bool.",
     `
     bool main() {
@@ -1154,7 +1175,7 @@ Occurrence at line 5, column 13:
   `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negation with literal char.",
     `
     int main() {
@@ -1170,7 +1191,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negation with var char.",
     `
       int main() {
@@ -1187,7 +1208,7 @@ Occurrence at line 5, column 15:
               ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negation with literal string.",
     `
     int main() {
@@ -1203,7 +1224,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary negation with var string.",
     `
     int main() {
@@ -1222,7 +1243,7 @@ Occurrence at line 5, column 13:
 
   // Unary boolean:
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary boolean with literal int.",
     `
       bool main() {
@@ -1233,7 +1254,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary boolean with var int.",
     `
         bool main() {
@@ -1245,7 +1266,7 @@ Occurrence at line 5, column 13:
       `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary boolean with literal float.",
     `
       bool main() {
@@ -1256,7 +1277,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary boolean with var float.",
     `
         bool main() {
@@ -1268,7 +1289,7 @@ Occurrence at line 5, column 13:
       `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary boolean with literal bool.",
     `
       bool main() {
@@ -1279,7 +1300,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Valid unary boolean with var bool.",
     `
       bool main() {
@@ -1291,7 +1312,7 @@ Occurrence at line 5, column 13:
     `
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary boolean with literal char.",
     `
     int main() {
@@ -1307,7 +1328,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary boolean with var char.",
     `
         int main() {
@@ -1324,7 +1345,7 @@ Occurrence at line 5, column 17:
                 ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary boolean with literal string.",
     `
     int main() {
@@ -1340,7 +1361,7 @@ Occurrence at line 4, column 13:
             ^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Invalid unary boolean with var string.",
     `
       int main() {
@@ -1359,7 +1380,7 @@ Occurrence at line 5, column 15:
 
   // Nos comandos de shift (esquerda e direta), deve-se lançar o erro ERR_WRONG_PAR_SHIFT caso o parâmetro após o token de shift for um número maior que 16.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Left shift with a value above 16 on a variable.",
     `
     int main() {
@@ -1375,7 +1396,7 @@ Occurrence at line 4, column 12:
            ^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Right shift with a value above 16 on a variable.",
     `
     int main() {
@@ -1391,7 +1412,7 @@ Occurrence at line 4, column 12:
            ^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Left shift with a value above 16 on a vector.",
     `
     int a[1];
@@ -1407,7 +1428,7 @@ Occurrence at line 4, column 15:
               ^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Right shift with a value above 16 on a vector.",
     `
     int a[1];
@@ -1423,7 +1444,7 @@ Occurrence at line 4, column 15:
               ^^`
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Right shift with a value below 16 on a vector.",
     `
     int a[1];
@@ -1434,7 +1455,7 @@ Occurrence at line 4, column 15:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Left shift with a value below 16 on a vector.",
     `
     int a[1];
@@ -1445,7 +1466,7 @@ Occurrence at line 4, column 15:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Right shift with a value below 16 on a variable.",
     `
     int main() {
@@ -1456,7 +1477,7 @@ Occurrence at line 4, column 15:
     `
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Left shift with a value below 16 on a variable.",
     `
     int main() {
@@ -1480,7 +1501,7 @@ Occurrence at line 4, column 15:
   // Uma string não inicializada ocupa 0 bytes e não pode receber valores cujo tamanho excede àquele máximo da inicialização.
   // Caso o tamanho de um string a ser atribuído exceder o máximo, deve-se emitir o erro ERR_STRING_MAX.
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Setting a literal string larger than its allocation",
     `
     int main() {
@@ -1497,7 +1518,7 @@ Occurrence at line 4, column 11:
           ^^^^^^`
   );
 
-  await testInvalidInput(
+  insertInvalidTestInput(
     "Setting a literal string to an unintialized string",
     `
     int main() {
@@ -1514,7 +1535,7 @@ Occurrence at line 4, column 11:
           ^^^`
   );
 
-  await testValidInput(
+  insertValidInputTest(
     "Setting a literal valid string to a string variable",
     `
     int main() {
@@ -1531,7 +1552,7 @@ Occurrence at line 4, column 11:
   for (const isInitialization of [true, false]) {
     for (const usingVariable of [true, false]) {
       for (const type of ["int", "bool", "float"]) {
-        await testInvalidInput(
+        insertInvalidTestInput(
           `Initializing a ${type} variable with an literal char [${isInitialization}, ${usingVariable}]`,
           `
     int main() {
@@ -1552,7 +1573,7 @@ Occurrence at line 4, column 11:
 Expected int, float or bool but received a "char".`
         );
 
-        await testInvalidInput(
+        insertInvalidTestInput(
           `Initializing a ${type} variable with an literal string [${isInitialization}, ${usingVariable}]`,
           `
     int main() {
@@ -1579,7 +1600,7 @@ Expected int, float or bool but received a "string".`
           { type: "bool", value: "false" },
           { type: "float", value: "0.0" },
         ]) {
-          await testValidInput(
+          insertValidInputTest(
             `Initializing a int variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
             `
       int main() {
@@ -1606,7 +1627,7 @@ Expected int, float or bool but received a "string".`
         { type: "float", value: "0.0" },
         { type: "char", value: "'c'" },
       ]) {
-        await testInvalidInput(
+        insertInvalidTestInput(
           `Initializing a string variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
           `
     int main() {
@@ -1627,7 +1648,7 @@ Expected int, float or bool but received a "string".`
         );
       }
 
-      await testValidInput(
+      insertValidInputTest(
         `Initializing a string variable with an literal string [${isInitialization}, ${usingVariable}]`,
         `
   int main() {
@@ -1652,7 +1673,7 @@ Expected int, float or bool but received a "string".`
         { type: "float", value: "0.0" },
         { type: "string", value: '"string"' },
       ]) {
-        await testInvalidInput(
+        insertInvalidTestInput(
           `Initializing a char variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
           `
     int main() {
@@ -1673,7 +1694,7 @@ Expected int, float or bool but received a "string".`
         );
       }
 
-      await testValidInput(
+      insertValidInputTest(
         `Initializing a char variable with an literal char [${isInitialization}, ${usingVariable}]`,
         `
   int main() {
@@ -1692,6 +1713,40 @@ Expected int, float or bool but received a "string".`
       );
     }
   }
+
+  // Binary operators
+
+  // +
+  const comparisonOperators = ["<=", "==", ">=", "<", ">", "!="];
+  const logicalOperators = ["&&", "||"];
+  const binaryOperators = ["+", "-", "*", "/", "%", "|", "&", "^"];
+  const values = ["0", "true", "false", "0.0"];
+  const types = ["int", "bool", "float"];
+
+  for (const binaryOperator of [
+    ...binaryOperators,
+    ...logicalOperators,
+    ...comparisonOperators,
+  ]) {
+    for (const type of types) {
+      for (const leftLiteral of values) {
+        for (const rightLiteral of values) {
+          insertValidInputTest(
+            `Set a ${type} variable with a ${leftLiteral} ${binaryOperator} ${rightLiteral}`,
+            `
+          int main() {
+            ${type} i;
+            i = ${leftLiteral} ${binaryOperator} ${rightLiteral};
+          return 0;
+          }
+          `
+          );
+        }
+      }
+    }
+  }
+
+  await Promise.all(promises);
 }
 
 var start = new Date().getTime();
