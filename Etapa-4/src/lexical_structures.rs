@@ -30,28 +30,6 @@ impl GlobalVarDef {
     }
 }
 
-// Tamanho.
-// O tamanho dos tipos da linguagem é definido da seguinte forma.
-// Um char ocupa 1 byte.
-// Um string ocupa 1 byte para cada caractere.
-// Um int ocupa 4 bytes.
-// Um float ocupa 8 bytes.
-// Um bool ocupa 1 byte.
-// Um vetor ocupa o seu tamanho vezes o seu tipo.
-
-fn get_symbol_type_size(symbol_type: &SymbolType) -> u32 {
-    match symbol_type {
-        SymbolType::Char(_) => 1,
-        SymbolType::Int(_) => 4,
-        SymbolType::Float(_) => 8,
-        SymbolType::Bool(_) => 1,
-        SymbolType::String(maybe_string) => match maybe_string {
-            Some(string) => (string.len() as u32),
-            None => 0,
-        },
-    }
-}
-
 impl AstNode for GlobalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
         if let Some(next_node) = &self.next {
@@ -81,7 +59,7 @@ impl AstNode for GlobalVarDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
-        let size = get_symbol_type_size(&var_type);
+        let size = var_type.get_symbol_type_size();
 
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
@@ -204,7 +182,7 @@ impl AstNode for GlobalVecDef {
             }
         };
 
-        let base_size = get_symbol_type_size(&var_type);
+        let base_size = var_type.get_symbol_type_size();
         let size = base_size * size_int;
 
         for i in 0..size {
@@ -397,7 +375,7 @@ impl AstNode for LocalVarDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
-        let size = get_symbol_type_size(&var_type);
+        let size = var_type.get_symbol_type_size();
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
         stack.add_def_symbol(our_symbol)?;
@@ -479,72 +457,9 @@ impl AstNode for VarDefInitId {
         let var_symbol =
             stack.get_previous_def(self.var_value.get_id(), lexer, SymbolClass::Var)?;
 
-        match (def_symbol.type_value.clone(), var_symbol.type_value.clone()) {
-            (SymbolType::String(_), var_type) => match var_type {
-                SymbolType::String(var_option) => match var_option {
-                    Some(var_value) => {
-                        let updated_symbol = {
-                            let clone = SymbolType::String(Some(var_value));
-                            let size = get_symbol_type_size(&clone);
-                            DefSymbol::new(
-                                def_symbol.id.clone(),
-                                def_symbol.span,
-                                def_symbol.line,
-                                def_symbol.col,
-                                def_symbol.type_value.clone(),
-                                def_symbol.class,
-                                Some(size),
-                            )
-                        };
-
-                        stack.add_def_symbol(updated_symbol)?;
-                    }
-                    None => {}
-                },
-                var_type => {
-                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
-                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
-                    return Err(CompilerError::SemanticErrorStringToX {
-                        invalid_type: var_type.to_str().to_string(),
-                        line,
-                        col,
-                        highlight,
-                    });
-                }
-            },
-            (SymbolType::Char(_), var_type) => match var_type {
-                SymbolType::Char(_) => {}
-                var_type => {
-                    let value_span = self.var_value.get_id();
-                    let ((line, col), (_, _)) = lexer.line_col(value_span.get_id());
-                    let highlight = ScopeStack::form_string_highlight(value_span.get_id(), lexer);
-                    return Err(CompilerError::SemanticErrorCharToX {
-                        invalid_type: var_type.to_str().to_string(),
-                        line,
-                        col,
-                        highlight,
-                    });
-                }
-            },
-            (SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_), var_type) => {
-                match var_type {
-                    SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {}
-                    var_type => {
-                        let value_span = self.var_value.get_id();
-                        let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                        return Err(CompilerError::SemanticErrorWrongType {
-                            valid_types: "int, float or bool".to_string(),
-                            received_type: var_type.to_str().to_string(),
-                            highlight,
-                            line,
-                            col,
-                        });
-                    }
-                }
-            }
-        };
+        let symbol_type = &var_symbol.type_value;
+        let updated_symbol = def_symbol.cast_or_scream(symbol_type, self.node_id, lexer, false)?;
+        stack.add_def_symbol(updated_symbol)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -617,7 +532,12 @@ impl AstNode for VarDefInitLit {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_def.evaluate_node(stack, lexer)?;
-        let value = self.var_value.evaluate_node(stack, lexer)?;
+        let lit_symbol_type =
+            self.var_value
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "VarDefInitLit found no SymbolType (on self.var_value.evaluate_node())"
+                )))?;
 
         let def_symbol = {
             let span = self.var_def.get_id();
@@ -625,81 +545,9 @@ impl AstNode for VarDefInitLit {
             def_symbol.clone()
         };
 
-        match value {
-            Some(value) => match (def_symbol.type_value.clone(), value) {
-                (SymbolType::String(_), var_type) => match var_type {
-                    SymbolType::String(var_option) => match var_option {
-                        Some(var_value) => {
-                            let updated_symbol = {
-                                let clone = SymbolType::String(Some(var_value));
-                                let size = get_symbol_type_size(&clone);
-                                DefSymbol::new(
-                                    def_symbol.id.clone(),
-                                    def_symbol.span,
-                                    def_symbol.line,
-                                    def_symbol.col,
-                                    def_symbol.type_value.clone(),
-                                    def_symbol.class,
-                                    Some(size),
-                                )
-                            };
-
-                            stack.add_def_symbol(updated_symbol)?;
-                        }
-                        None => {}
-                    },
-                    var_type => {
-                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
-                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
-                        return Err(CompilerError::SemanticErrorStringToX {
-                            invalid_type: var_type.to_str().to_string(),
-                            line,
-                            col,
-                            highlight,
-                        });
-                    }
-                },
-                (SymbolType::Char(_), var_type) => match var_type {
-                    SymbolType::Char(_) => {}
-                    var_type => {
-                        let value_span = self.var_value.get_id();
-                        let ((line, col), (_, _)) = lexer.line_col(value_span.get_id());
-                        let highlight =
-                            ScopeStack::form_string_highlight(value_span.get_id(), lexer);
-                        return Err(CompilerError::SemanticErrorCharToX {
-                            invalid_type: var_type.to_str().to_string(),
-                            line,
-                            col,
-                            highlight,
-                        });
-                    }
-                },
-                (SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_), var_type) => {
-                    match var_type {
-                        SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {}
-                        var_type => {
-                            let value_span = self.var_value.get_id();
-                            let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                            let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                            return Err(CompilerError::SemanticErrorWrongType {
-                                valid_types: "int, float or bool".to_string(),
-                                received_type: var_type.to_str().to_string(),
-                                highlight,
-                                line,
-                                col,
-                            });
-                        }
-                    }
-                }
-            },
-
-            None => {
-                return Err(CompilerError::SanityError(format!(
-                    "No symbol type on value init (on VarDefInitLit.evaluate_node())"
-                )))
-            }
-        };
+        let updated_symbol =
+            def_symbol.cast_or_scream(&lit_symbol_type, self.node_id, lexer, false)?;
+        stack.add_def_symbol(updated_symbol)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1223,92 +1071,17 @@ impl AstNode for VarSet {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
         self.var_name.evaluate_node(stack, lexer)?;
-        let new_value = self.new_value.evaluate_node(stack, lexer)?;
-
-        let def = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::Var)?;
-        let def_size = match def.size {
-            Some(size) => size,
-            None => {
-                return Err(CompilerError::SanityError(format!(
-                    "variable_definition with no memory size (on VarSet.evaluate_node())"
-                )))
-            }
-        };
-
-        match new_value {
-            None => {
-                return Err(CompilerError::SanityError(format!(
+        let new_value_symbol =
+            self.new_value
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
                     "New value has no SymbolType (on VarSet.evaluate_node())"
-                )))
-            }
-            Some(symbol_type) => match def.type_value {
-                SymbolType::String(_) => match symbol_type {
-                    SymbolType::String(option_string) => match option_string {
-                        Some(string) => {
-                            let string_size = string.len() as u32;
-                            if string_size > def_size {
-                                let span = self.new_value.get_id();
-                                let highlight = ScopeStack::form_string_highlight(span, lexer);
-                                let ((line, col), (_, _)) = lexer.line_col(span);
+                )))?;
 
-                                return Err(CompilerError::SemanticErrorStringMax {
-                                    highlight,
-                                    line,
-                                    col,
-                                    string_size,
-                                    variable_size: def_size,
-                                });
-                            }
-                        }
-                        None => {}
-                    },
-                    var_type => {
-                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
-                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
-                        return Err(CompilerError::SemanticErrorStringToX {
-                            invalid_type: var_type.to_str().to_string(),
-                            line,
-                            col,
-                            highlight,
-                        });
-                    }
-                },
-                SymbolType::Char(_) => match symbol_type {
-                    SymbolType::Char(_) => {}
-                    symbol_type => {
-                        let ((line, col), (_, _)) = lexer.line_col(self.new_value.get_id());
-                        let highlight =
-                            ScopeStack::form_string_highlight(self.new_value.get_id(), lexer);
-                        return Err(CompilerError::SemanticErrorCharToX {
-                            invalid_type: symbol_type.to_str().to_string(),
-                            line,
-                            col,
-                            highlight,
-                        });
-                    }
-                },
-                SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {
-                    match symbol_type {
-                        SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {}
-                        symbol_type => {
-                            let value_span = self.new_value.get_id();
-                            let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                            let ((line, col), (_, _)) = lexer.line_col(value_span);
+        let def_symbol = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::Var)?;
 
-                            return Err(CompilerError::SemanticErrorWrongType {
-                                valid_types: "int, float or bool".to_string(),
-                                received_type: symbol_type.to_str().to_string(),
-                                highlight,
-                                line,
-                                col,
-                            });
-                        }
-                    }
-                }
-            },
-        }
-
-        // TO DO: Add symbol and check type.
+        let _updated_symbol =
+            def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true);
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1380,9 +1153,20 @@ impl AstNode for VecSet {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.vec_access.evaluate_node(stack, lexer)?;
+        let _vec_type_value = self.vec_access.evaluate_node(stack, lexer)?;
 
-        self.new_value.evaluate_node(stack, lexer)?;
+        let new_value_symbol =
+            self.new_value
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "New value has no SymbolType (on VecSet.evaluate_node())"
+                )))?;
+
+        let def_symbol =
+            stack.get_previous_def(self.vec_access.get_id(), lexer, SymbolClass::Var)?;
+
+        let _updated_symbol =
+            def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true);
 
         // TO DO: Add symbol and check type.
 
@@ -3059,7 +2843,7 @@ impl AstNode for VecAccess {
         Ok(Some(our_type_value))
     }
     fn get_id(&self) -> Span {
-        self.node_id
+        self.vec_name.get_id()
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         &self.next
