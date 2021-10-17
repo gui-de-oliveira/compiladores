@@ -91,9 +91,9 @@ pub enum CompilerError {
         second_highlight: String,
     },
 
-    #[error("Incompatible type in attribution.\nExpected {valid_types} but received a \"{received_type}\".\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    #[error("Incompatible type in attribution.\nExpected {valid_type} but received a \"{received_type}\".\nOccurrence at line {line}, column {col}:\n{highlight}")]
     SemanticErrorWrongType {
-        valid_types: String,
+        valid_type: String,
         received_type: String,
         line: usize,
         col: usize,

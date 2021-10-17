@@ -35,6 +35,137 @@ impl DefSymbol {
             size,
         }
     }
+    pub fn cast_or_scream(
+        &self,
+        friend: &SymbolType,
+        span: Span,
+        lexer: &dyn NonStreamingLexer<u32>,
+        check_string_size: bool,
+    ) -> Result<DefSymbol, CompilerError> {
+        match (&self.type_value, friend) {
+            (SymbolType::String(_), right_type @ SymbolType::String(None)) => Ok(DefSymbol::new(
+                self.id.clone(),
+                self.span,
+                self.line,
+                self.col,
+                right_type.clone(),
+                self.class,
+                self.size,
+            )),
+            (SymbolType::String(_), right_type @ SymbolType::String(Some(_))) => {
+                let incoming_size = right_type.get_symbol_type_size();
+                let our_size = self.size.unwrap_or(0) as u32;
+                if check_string_size && our_size < incoming_size {
+                    let highlight = ScopeStack::form_string_highlight(span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(span);
+                    Err(CompilerError::SemanticErrorStringMax {
+                        highlight,
+                        line,
+                        col,
+                        variable_size: our_size,
+                        string_size: incoming_size,
+                    })
+                } else {
+                    Ok(DefSymbol::new(
+                        self.id.clone(),
+                        self.span,
+                        self.line,
+                        self.col,
+                        self.type_value.clone(),
+                        self.class,
+                        self.size,
+                    ))
+                }
+            }
+            (SymbolType::String(_), bad_type) => {
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type: bad_type.to_str().to_string(),
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            (SymbolType::Char(_), right_type @ SymbolType::Char(_)) => Ok(DefSymbol::new(
+                self.id.clone(),
+                self.span,
+                self.line,
+                self.col,
+                right_type.clone(),
+                self.class,
+                self.size,
+            )),
+            (SymbolType::Char(_), bad_type) => {
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type: bad_type.to_str().to_string(),
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            (
+                SymbolType::Float(_),
+                right_type @ SymbolType::Float(_)
+                | right_type @ SymbolType::Int(_)
+                | right_type @ SymbolType::Bool(_),
+            ) => Ok(DefSymbol::new(
+                self.id.clone(),
+                self.span,
+                self.line,
+                self.col,
+                SymbolType::Float(right_type.to_float(span, lexer)?),
+                self.class,
+                self.size,
+            )),
+            (
+                SymbolType::Int(_),
+                right_type @ SymbolType::Float(_)
+                | right_type @ SymbolType::Int(_)
+                | right_type @ SymbolType::Bool(_),
+            ) => Ok(DefSymbol::new(
+                self.id.clone(),
+                self.span,
+                self.line,
+                self.col,
+                SymbolType::Int(right_type.to_int(span, lexer)?),
+                self.class,
+                self.size,
+            )),
+            (
+                SymbolType::Bool(_),
+                right_type @ SymbolType::Float(_)
+                | right_type @ SymbolType::Int(_)
+                | right_type @ SymbolType::Bool(_),
+            ) => Ok(DefSymbol::new(
+                self.id.clone(),
+                self.span,
+                self.line,
+                self.col,
+                SymbolType::Bool(right_type.to_bool(span, lexer)?),
+                self.class,
+                self.size,
+            )),
+            (
+                our_type @ SymbolType::Float(_)
+                | our_type @ SymbolType::Int(_)
+                | our_type @ SymbolType::Bool(_),
+                bad_type,
+            ) => {
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorWrongType {
+                    valid_type: our_type.to_str().to_string(),
+                    received_type: bad_type.to_str().to_string(),
+                    highlight,
+                    line,
+                    col,
+                })
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -263,6 +394,27 @@ impl SymbolType {
                     highlight,
                 })
             }
+        }
+    }
+
+    // Tamanho.
+    // O tamanho dos tipos da linguagem é definido da seguinte forma.
+    // Um char ocupa 1 byte.
+    // Um string ocupa 1 byte para cada caractere.
+    // Um int ocupa 4 bytes.
+    // Um float ocupa 8 bytes.
+    // Um bool ocupa 1 byte.
+    // Um vetor ocupa o seu tamanho vezes o seu tipo.
+    pub fn get_symbol_type_size(&self) -> u32 {
+        match self {
+            SymbolType::Char(_) => 1,
+            SymbolType::Int(_) => 4,
+            SymbolType::Float(_) => 8,
+            SymbolType::Bool(_) => 1,
+            SymbolType::String(maybe_string) => match maybe_string {
+                Some(string) => (string.len() as u32),
+                None => 0,
+            },
         }
     }
 }
