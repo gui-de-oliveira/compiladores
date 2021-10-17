@@ -1528,13 +1528,22 @@ Occurrence at line 4, column 11:
   // Prevalece o tipo do identificador que recebe um valor em um comando de atribuição.
   // O erro ERR_WRONG_TYPE deve ser lançado quando o tipo do valor a ser atribuído a um identificador for incompatível com o tipo deste identificador.
 
+  for (const isInitialization of [true, false]) {
   for (const usingVariable of [true, false]) {
     for (const type of ["int", "bool", "float"]) {
       await testInvalidInput(
-        `Initializing a ${type} variable with an literal char`,
+          `Initializing a ${type} variable with an literal char [${isInitialization}, ${usingVariable}]`,
         `
     int main() {
-      ${usingVariable ? `char c <= 'c'; ${type} a <= c;` : `${type} a <= 'c';`}
+      ${
+        isInitialization
+          ? usingVariable
+            ? `char c <= 'c'; ${type} a <= c;`
+            : `${type} a <= 'c';`
+          : usingVariable
+          ? `char c <= 'c'; ${type} a; a = c;`
+          : `${type} a; a = 'c';`
+      }
       return 0;
     }
     `,
@@ -1544,13 +1553,17 @@ Expected int, float or bool but received a "char".`
       );
 
       await testInvalidInput(
-        `Initializing a ${type} variable with an literal string`,
+          `Initializing a ${type} variable with an literal string [${isInitialization}, ${usingVariable}]`,
         `
     int main() {
       ${
-        usingVariable
+        isInitialization
+          ? usingVariable
           ? `string s <= "string"; ${type} a <= s;`
           : `${type} a <= "string";`
+          : usingVariable
+          ? `string s <= "string"; ${type} a; a = s;`
+          : `${type} a; a = "string";`
       }
       return 0;
     }
@@ -1567,13 +1580,17 @@ Expected int, float or bool but received a "string".`
         { type: "float", value: "0.0" },
       ]) {
         await testValidInput(
-          `Initializing a int variable with an literal ${value.type}`,
+            `Initializing a int variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
           `
       int main() {
         ${
-          usingVariable
+          isInitialization
+            ? usingVariable
             ? `${value.type} v <= ${value.value}; ${type} a <= v;`
             : `${type} a <= ${value.value};`
+            : usingVariable
+            ? `${value.type} v <= ${value.value}; ${type} a; a = v;`
+            : `${type} a; a = ${value.value};`
         }
         return 0;
       }
@@ -1590,31 +1607,38 @@ Expected int, float or bool but received a "string".`
       { type: "char", value: "'c'" },
     ]) {
       await testInvalidInput(
-        `Initializing a string variable with an literal ${value.type}`,
+          `Initializing a string variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
         `
     int main() {
       ${
-        usingVariable
+        isInitialization
+          ? usingVariable
           ? `${value.type} v <= ${value.value}; string s <= v;`
           : `string s <= ${value.value};`
+          : usingVariable
+          ? `${value.type} v <= ${value.value}; string s <= "123456"; s = v;`
+          : `string s <= "123456"; s = ${value.value};`
       }
       return 0;
     }
     `,
-        ERROR_CODE.ERR_WRONG_TYPE,
-        `Incompatible type in attribution.
-Expected string but received a "${value.type}".`
+          ERROR_CODE.ERR_STRING_TO_X,
+          `Invalid type conversion from "string" to "${value.type}"`
       );
     }
 
     await testValidInput(
-      `Initializing a string variable with an literal string`,
+        `Initializing a string variable with an literal string [${isInitialization}, ${usingVariable}]`,
       `
   int main() {
     ${
-      usingVariable
+      isInitialization
+        ? usingVariable
         ? `string x <= "string"; string y <= x;`
         : `string s <= "string";`
+        : usingVariable
+        ? `string x <= "string"; string y <= "string"; x = y;`
+        : `string s <= "string"; s = "string";`
     }
     return 0;
   }
@@ -1629,13 +1653,17 @@ Expected string but received a "${value.type}".`
       { type: "string", value: '"string"' },
     ]) {
       await testInvalidInput(
-        `Initializing a char variable with an literal ${value.type}`,
+          `Initializing a char variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
         `
     int main() {
       ${
-        usingVariable
+        isInitialization
+          ? usingVariable
           ? `${value.type} v <= ${value.value}; char c <= v;`
           : `char c <= ${value.value};`
+          : usingVariable
+          ? `${value.type} v <= ${value.value}; char c; c = v;`
+          : `char c; c = ${value.value};`
       }
       return 0;
     }
@@ -1647,10 +1675,25 @@ Expected char but received a "${value.type}".`
     }
 
     await testValidInput(
-      `Initializing a char variable with an literal char`,
+        `Initializing a char variable with an literal char [${isInitialization}, ${usingVariable}]`,
       `
   int main() {
-    ${usingVariable ? `char x <= 'c'; char y <= x;` : `char c <= 'c';`}
+    ${
+      isInitialization
+        ? usingVariable
+          ? `char x <= 'c'; char y <= x;`
+          : `char c <= 'c';`
+        : usingVariable
+        ? `char x <= 'c'; char y; y = x;`
+        : `char c; c = 'c';`
+    }
+    return 0;
+  }
+  `
+      );
+    }
+  }
+
     return 0;
   }
   `

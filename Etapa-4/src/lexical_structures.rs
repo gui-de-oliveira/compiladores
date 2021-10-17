@@ -488,16 +488,13 @@ impl AstNode for VarDefInitId {
                     None => {}
                 },
                 var_type => {
-                    let value_span = self.var_value.get_id();
-                    let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                    let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                    return Err(CompilerError::SemanticErrorWrongType {
-                        valid_types: "string".to_string(),
-                        received_type: var_type.to_str().to_string(),
-                        highlight,
+                    let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                    let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                    return Err(CompilerError::SemanticErrorStringToX {
+                        invalid_type: var_type.to_str().to_string(),
                         line,
                         col,
+                        highlight,
                     });
                 }
             },
@@ -640,16 +637,13 @@ impl AstNode for VarDefInitLit {
                         None => {}
                     },
                     var_type => {
-                        let value_span = self.var_value.get_id();
-                        let highlight = ScopeStack::form_string_highlight(value_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(value_span);
-
-                        return Err(CompilerError::SemanticErrorWrongType {
-                            valid_types: "string".to_string(),
-                            received_type: var_type.to_str().to_string(),
-                            highlight,
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        return Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type: var_type.to_str().to_string(),
                             line,
                             col,
+                            highlight,
                         });
                     }
                 },
@@ -1217,8 +1211,9 @@ impl AstNode for VarSet {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
-
         self.var_name.evaluate_node(stack, lexer)?;
+        let new_value = self.new_value.evaluate_node(stack, lexer)?;
+
         let def = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::Var)?;
         let def_size = match def.size {
             Some(size) => size,
@@ -1229,34 +1224,80 @@ impl AstNode for VarSet {
             }
         };
 
-        let new_value = self.new_value.evaluate_node(stack, lexer)?;
-
         match new_value {
-            Some(symbol_type) => {
-                if let SymbolType::String(option_string) = symbol_type {
-                    if let Some(string) = option_string {
-                        let string_size = string.len() as u32;
-                        if string_size > def_size {
-                            let span = self.new_value.get_id();
-                            let highlight = ScopeStack::form_string_highlight(span, lexer);
-                            let ((line, col), (_, _)) = lexer.line_col(span);
-
-                            return Err(CompilerError::SemanticErrorStringMax {
-                                highlight,
-                                line,
-                                col,
-                                string_size,
-                                variable_size: def_size,
-                            });
-                        }
-                    }
-                }
-            }
             None => {
                 return Err(CompilerError::SanityError(format!(
                     "New value has no SymbolType (on VarSet.evaluate_node())"
                 )))
             }
+            Some(symbol_type) => match def.type_value {
+                SymbolType::String(_) => match symbol_type {
+                    SymbolType::String(option_string) => match option_string {
+                        Some(string) => {
+                            let string_size = string.len() as u32;
+                            if string_size > def_size {
+                                let span = self.new_value.get_id();
+                                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                                let ((line, col), (_, _)) = lexer.line_col(span);
+
+                                return Err(CompilerError::SemanticErrorStringMax {
+                                    highlight,
+                                    line,
+                                    col,
+                                    string_size,
+                                    variable_size: def_size,
+                                });
+                            }
+                        }
+                        None => {}
+                    },
+                    var_type => {
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        return Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type: var_type.to_str().to_string(),
+                            line,
+                            col,
+                            highlight,
+                        });
+                    }
+                },
+                SymbolType::Char(_) => match symbol_type {
+                    SymbolType::Char(_) => {}
+                    symbol_type => {
+                        let value_span = self.new_value.get_id();
+                        let highlight = ScopeStack::form_string_highlight(value_span, lexer);
+                        let ((line, col), (_, _)) = lexer.line_col(value_span);
+
+                        return Err(CompilerError::SemanticErrorWrongType {
+                            valid_types: "char".to_string(),
+                            received_type: symbol_type.to_str().to_string(),
+                            highlight,
+                            line,
+                            col,
+                        });
+                    }
+                },
+                SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {
+                    match symbol_type {
+                        SymbolType::Int(_) | SymbolType::Float(_) | SymbolType::Bool(_) => {}
+                        symbol_type => {
+                            let value_span = self.new_value.get_id();
+                            let highlight = ScopeStack::form_string_highlight(value_span, lexer);
+                            let ((line, col), (_, _)) = lexer.line_col(value_span);
+
+                            return Err(CompilerError::SemanticErrorWrongType {
+                                valid_types: "int, float or bool".to_string(),
+                                received_type: symbol_type.to_str().to_string(),
+                                highlight,
+                                line,
+                                col,
+                            });
+                        }
+                    }
+                }
+                _ => {}
+            },
         }
 
         // TO DO: Add symbol and check type.
