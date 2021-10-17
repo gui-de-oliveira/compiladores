@@ -2240,6 +2240,11 @@ impl AstNode for CommandBlock {
             command.evaluate_node(stack, lexer)?;
             stack.remove_scope()?;
         };
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2572,6 +2577,14 @@ impl AstNode for Binary {
                 )))
             }
         };
+
+        if let Some(node) = &self.next {
+            return Err(CompilerError::SanityError(format!(
+                "Binary {:?} has a self.next node: {:?}",
+                self.op_type, node
+            )));
+        };
+
         Ok(Some(self.binary_evaluation(
             left_value_type,
             right_value_type,
@@ -2848,6 +2861,13 @@ impl AstNode for Unary {
         };
 
         let type_value = self.unary_evaluation(type_value.clone(), lexer)?;
+
+        if let Some(node) = &self.next {
+            return Err(CompilerError::SanityError(format!(
+                "Unary {:?} has a self.next node: {:?}",
+                self.op_type, node
+            )));
+        };
 
         Ok(Some(type_value))
     }
