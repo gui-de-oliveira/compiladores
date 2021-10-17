@@ -291,6 +291,10 @@ impl AstNode for FnDef {
         let class = SymbolClass::Fn(self.params.clone());
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, None);
 
+        for param in self.params.iter() {
+            param.evaluate_param(lexer)?;
+        }
+
         stack.add_def_symbol(our_symbol)?;
 
         self.commands.evaluate_node(stack, lexer)?;
@@ -321,7 +325,22 @@ impl Parameter {
         &self,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<SymbolType, CompilerError> {
-        SymbolType::from_str(lexer.span_str(self.param_type))
+        let symbol = SymbolType::from_str(lexer.span_str(self.param_type))?;
+
+        match symbol {
+            SymbolType::String(_) => {
+                let span = self.node_id;
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorFunctionString {
+                    id: lexer.span_str(self.node_id).to_string(),
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            _ => Ok(symbol),
+        }
     }
 }
 

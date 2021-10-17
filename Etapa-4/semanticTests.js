@@ -2043,29 +2043,29 @@ Called at line 4, column 7:
   //   ""
   // );
 
-  // insertInvalidTestInput(
-  //   `function with string argument`,
-  //   `
-  //   int main(string a) {
-  //     return 0;
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_FUNCTION_STRING,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `function with string argument`,
+    `
+    int main(string a) {
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_FUNCTION_STRING,
+    'Function argument or parameter of invalid type "string": "a"'
+  );
 
-  // insertInvalidTestInput(
-  //   `function receiving string as a parameter`,
-  //   `
-  //   int f (string a) { return 0; }
-  //   int main() {
-  //     f("string");
-  //     return 0;
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_FUNCTION_STRING,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `function receiving string as a parameter`,
+    `
+    int f (string a) { return 0; }
+    int main() {
+      f("string");
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_FUNCTION_STRING,
+    'Function argument or parameter of invalid type "string": "a"'
+  );
 
   // 2. Verificação de tipos em comandos
 
