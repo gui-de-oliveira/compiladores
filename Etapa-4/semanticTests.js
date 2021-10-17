@@ -1524,6 +1524,111 @@ Occurrence at line 4, column 11:
     }
     `
   );
+
+  // Prevalece o tipo do identificador que recebe um valor em um comando de atribuição.
+  // O erro ERR_WRONG_TYPE deve ser lançado quando o tipo do valor a ser atribuído a um identificador for incompatível com o tipo deste identificador.
+
+  for (const type of ["int", "bool", "float"]) {
+    await testInvalidInput(
+      `Initializing a ${type} variable with an literal char`,
+      `
+    int main() {
+      ${type} a <= 'c';
+      return 0;
+    }
+    `,
+      ERROR_CODE.ERR_WRONG_TYPE,
+      `Incompatible type in attribution.
+Expected int, float or bool but received a "char".`
+    );
+
+    await testInvalidInput(
+      `Initializing a ${type} variable with an literal string`,
+      `
+    int main() {
+      ${type} a <= "string";
+      return 0;
+    }
+    `,
+      ERROR_CODE.ERR_WRONG_TYPE,
+      `Incompatible type in attribution.
+Expected int, float or bool but received a "string".`
+    );
+
+    for (const iterator of ["0", "true", "false", "0.0"]) {
+      await testValidInput(
+        `Initializing a int variable with an literal ${iterator}`,
+        `
+      int main() {
+        ${type} a <= ${iterator};
+        return 0;
+      }
+      `
+      );
+    }
+  }
+
+  for (const value of [
+    { type: "int", value: "0" },
+    { type: "bool", value: "true" },
+    { type: "bool", value: "false" },
+    { type: "float", value: "0.0" },
+    { type: "char", value: "'c'" },
+  ]) {
+    await testInvalidInput(
+      `Initializing a string variable with an literal ${value.type}`,
+      `
+    int main() {
+      string s <= ${value.value};
+      return 0;
+    }
+    `,
+      ERROR_CODE.ERR_WRONG_TYPE,
+      `Incompatible type in attribution.
+Expected string but received a "${value.type}".`
+    );
+  }
+
+  await testValidInput(
+    `Initializing a string variable with an literal string`,
+    `
+  int main() {
+    string s <= "string";
+    return 0;
+  }
+  `
+  );
+
+  for (const value of [
+    { type: "int", value: "0" },
+    { type: "bool", value: "true" },
+    { type: "bool", value: "false" },
+    { type: "float", value: "0.0" },
+    { type: "string", value: '"string"' },
+  ]) {
+    await testInvalidInput(
+      `Initializing a char variable with an literal ${value.type}`,
+      `
+    int main() {
+      char c <= ${value.value};
+      return 0;
+    }
+    `,
+      ERROR_CODE.ERR_WRONG_TYPE,
+      `Incompatible type in attribution.
+Expected char but received a "${value.type}".`
+    );
+  }
+
+  await testValidInput(
+    `Initializing a char variable with an literal char`,
+    `
+  int main() {
+    char c <= 'c';
+    return 0;
+  }
+  `
+  );
 }
 
 main();
@@ -1547,8 +1652,7 @@ main();
   Quando estes casos acontecerem, lançar o erro ERR_FUNCTION_STRING.
 
   2. Verificação de tipos em comandos
-  Prevalece o tipo do identificador que recebe um valor em um comando de atribuição.
-  O erro ERR_WRONG_TYPE deve ser lançado quando o tipo do valor a ser atribuído a um identificador for incompatível com o tipo deste identificador.
+ 
   Os demais comandos simples da linguagem devem ser verificados semanticamente para obedecer as seguintes regras.
   O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.

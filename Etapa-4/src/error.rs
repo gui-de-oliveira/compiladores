@@ -91,8 +91,14 @@ pub enum CompilerError {
         second_highlight: String,
     },
 
-    #[error("incompatible type in attribution")]
-    SemanticErrorWrongType,
+    #[error("Incompatible type in attribution.\nExpected {valid_types} but received a \"{received_type}\".\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorWrongType {
+        valid_types: String,
+        received_type: String,
+        line: usize,
+        col: usize,
+        highlight: String,
+    },
 
     #[error("Invalid type conversion from \"string\" to \"{invalid_type}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
     SemanticErrorStringToX {
@@ -197,7 +203,7 @@ impl CompilerError {
             CompilerError::SemanticErrorVariable { .. } => 20,
             CompilerError::SemanticErrorVector { .. } => 21,
             CompilerError::SemanticErrorFunction { .. } => 22,
-            CompilerError::SemanticErrorWrongType => 30,
+            CompilerError::SemanticErrorWrongType { .. } => 30,
             CompilerError::SemanticErrorStringToX { .. } => 31,
             CompilerError::SemanticErrorCharToX { .. } => 32,
             CompilerError::SemanticErrorStringMax { .. } => 33,
