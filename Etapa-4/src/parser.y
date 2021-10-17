@@ -359,17 +359,17 @@ functionCall -> Result<Box<dyn AstNode>, CompilerError>:
     }
     ;
 
-optionalExpressionList -> Result<Option<Box<dyn AstNode>>, CompilerError>:
-      { /* %empty */ Ok(None) }
-    | expressionList { Ok(Some($1?)) } 
+optionalExpressionList -> Result<Vec<Box<dyn AstNode>>, CompilerError>:
+      { /* %empty */ Ok(vec![]) }
+    | expressionList { Ok($1?) }
     ;
 
-expressionList -> Result<Box<dyn AstNode>, CompilerError>:
-    expression { Ok(Box::new($1?)) }
+expressionList -> Result<Vec<Box<dyn AstNode>>, CompilerError>:
+    expression { Ok(vec![Box::new($1?)]) }
     | expressionList ',' expression {
-        let mut expr = $1?;
-        expr.append_to_next(Box::new($3?));
-        Ok(expr)
+        let mut list = $1?;
+        list.push(Box::new($3?));
+        Ok(list)
     }
     ;
 
