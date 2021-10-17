@@ -1982,18 +1982,24 @@ Called at line 4, column 7:
 
   // Enfim, quando o número de argumentos é correto, mas os tipos dos argumentos são incompatíveis com os tipos registrados na tabela de símbolo, deve-se lançar o erro ERR_WRONG_TYPE_ARGS.
 
-  // insertInvalidTestInput(
-  //   `ERR_WRONG_TYPE_ARGS`,
-  //   `
-  //   int f (int a, int b) { return 0; }
-  //   int main() {
-  //     f('a', 'b');
-  //     return 0;
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_WRONG_TYPE_ARGS,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `ERR_WRONG_TYPE_ARGS`,
+    `
+    int f (int a, int b) { return 0; }
+    int main() {
+      f('a', 'b');
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_TYPE_ARGS,
+    `Invalid type in function call arguments: "f"
+Function definition at line 2, column 9:
+    int f (int a, int b) { return 0; }
+        ^
+Called at line 4, column 7:
+      f('a', 'b');
+      ^`
+  );
 
   // insertValidInputTest(
   //   `Valid function call`,
