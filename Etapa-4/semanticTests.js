@@ -792,6 +792,29 @@ And again at line 7, column 15:
               ^^^`
   );
 
+  await testInvalidInput(
+    "Variable redefinition inside command block.",
+    `
+      int aaa;
+      int main( ) {
+        int aaa;
+        {
+          int aaa;
+        };
+        int aaa;
+        return 0;
+      }
+      `,
+    ERROR_CODE.ERR_DECLARED,
+    `Same-scope identifier redeclaration: "aaa"
+First occurrence at line 4, column 13:
+        int aaa;
+            ^^^
+And again at line 8, column 13:
+        int aaa;
+            ^^^`
+  );
+
   // Enfim, vetores não podem ser do tipo string.
   // Caso um vetor tenha sido declarado com o tipo string, o erro ERR_STRING_VECTOR deve ser lançado.
 
