@@ -64,7 +64,7 @@ function logError(messageError) {
 
 let testsCounter = 0;
 function acceptTest() {
-  console.log(Color.Green + `Test ${++testsCounter} passed!` + Color.Reset);
+  console.log(Color.Green + `${++testsCounter} tests passed!` + Color.Reset);
 }
 
 function rejectTest(testName, reason) {
@@ -1631,7 +1631,12 @@ Expected char but received a "${value.type}".`
   );
 }
 
-main();
+var start = new Date().getTime();
+main().then(() => {
+  var end = new Date().getTime();
+  var totalInMs = end - start;
+  console.log(`Completed in ${(totalInMs / 1000.0).toFixed(1)} seconds.`);
+});
 
 /*
   TODO = EACH NEW TEST SHOULD REMOVE A SPECIFICATION LINE BELOW.
