@@ -1,3 +1,8 @@
+// Grupo L
+
+// Guilherme de Oliveira (00278301)
+// Jean Pierre Comerlatto Darricarrere (00182408)
+
 use lrpar::Span;
 
 use crate::lexical_structures::LiteralInt;

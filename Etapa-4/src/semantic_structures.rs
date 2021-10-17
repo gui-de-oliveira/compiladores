@@ -1,3 +1,8 @@
+// Grupo L
+
+// Guilherme de Oliveira (00278301)
+// Jean Pierre Comerlatto Darricarrere (00182408)
+
 use std::collections::HashMap;
 
 use lrpar::{NonStreamingLexer, Span};

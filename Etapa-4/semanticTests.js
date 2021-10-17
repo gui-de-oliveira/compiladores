@@ -1,3 +1,8 @@
+// Grupo L
+
+// Guilherme de Oliveira (00278301)
+// Jean Pierre Comerlatto Darricarrere (00182408)
+
 const fs = require("fs").promises;
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
