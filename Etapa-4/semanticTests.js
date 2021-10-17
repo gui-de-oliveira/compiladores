@@ -76,6 +76,10 @@ function rejectTest(testName, reason) {
 
 const promises = [];
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function insertInvalidTestInput(
   testName,
   input,
@@ -88,6 +92,20 @@ async function insertInvalidTestInput(
 }
 
 let fileCounter = 0;
+let openFiles = 0;
+const MAX_OPEN_FILES = 500;
+
+async function writeFile(input) {
+  while (openFiles > MAX_OPEN_FILES) {
+    await sleep(10);
+  }
+
+  openFiles++;
+  const filePath = `testFiles/${++fileCounter}.temp`;
+  await fs.writeFile(filePath, input);
+
+  return filePath;
+}
 
 async function testInvalidInput(
   testName,
@@ -95,8 +113,7 @@ async function testInvalidInput(
   expectedReturnCode,
   expectedOutput
 ) {
-  const filePath = `testFiles/${++fileCounter}.temp`;
-  await fs.writeFile(filePath, input);
+  const filePath = await writeFile(input);
 
   try {
     const value = await exec(`./etapa4 < ${filePath}`);
@@ -133,6 +150,8 @@ async function testInvalidInput(
     }
 
     await exec(`rm ${filePath}`);
+    openFiles--;
+
     acceptTest();
   }
 }
@@ -142,8 +161,7 @@ async function insertValidInputTest(testName, input) {
 }
 
 async function testValidInput(testName, input) {
-  const filePath = `testFiles/${++fileCounter}.temp`;
-  await fs.writeFile(filePath, input);
+  const filePath = await writeFile(input);
 
   await exec(`./etapa4 < ${filePath}`).catch((error) => {
     console.log("Error:", error);
@@ -151,6 +169,8 @@ async function testValidInput(testName, input) {
   });
 
   await exec(`rm ${filePath}`);
+  openFiles--;
+
   acceptTest();
 }
 
@@ -1746,23 +1766,51 @@ Expected int, float or bool but received a "string".`
   const values = ["0", "true", "false", "0.0"];
   const types = ["int", "bool", "float"];
 
-  for (const binaryOperator of [
-    ...binaryOperators,
-    ...logicalOperators,
-    ...comparisonOperators,
-  ]) {
-    for (const type of types) {
+  if (process.argv[2] === "ALL") {
+    for (const binaryOperator of [
+      ...binaryOperators,
+      ...logicalOperators,
+      ...comparisonOperators,
+    ]) {
       for (const leftLiteral of values) {
         for (const rightLiteral of values) {
-          insertValidInputTest(
-            `Set a ${type} variable with a ${leftLiteral} ${binaryOperator} ${rightLiteral}`,
-            `
+          for (const type of types) {
+            insertValidInputTest(
+              `Set a ${type} variable with a ${leftLiteral} ${binaryOperator} ${rightLiteral}`,
+              `
           int main() {
             ${type} i;
             i = ${leftLiteral} ${binaryOperator} ${rightLiteral};
           return 0;
           }
           `
+            );
+          }
+
+          insertInvalidTestInput(
+            `Set a char variable with a ${leftLiteral} ${binaryOperator} ${rightLiteral}`,
+            `
+        int main() {
+          char i;
+          i = ${leftLiteral} ${binaryOperator} ${rightLiteral};
+          return 0;
+        }
+        `,
+            ERROR_CODE.ERR_CHAR_TO_X,
+            `Invalid type conversion from "char" to `
+          );
+
+          insertInvalidTestInput(
+            `Set a string variable with a ${leftLiteral} ${binaryOperator} ${rightLiteral}`,
+            `
+            int main() {
+              string s <= "123456";
+              s = ${leftLiteral} ${binaryOperator} ${rightLiteral};
+              return 0;
+            }
+            `,
+            ERROR_CODE.ERR_STRING_TO_X,
+            `Invalid type conversion from "string" to `
           );
         }
       }

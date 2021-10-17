@@ -19,10 +19,8 @@ zip:
 
 allTests:
 	make
-	node semanticTests.js
-	node aslTests.js
-	node runSpecialTests.js
-	python runSyntaxTests.py
+	mkdir -p testFiles
+	node semanticTests.js ALL
 
 test:
 	make
