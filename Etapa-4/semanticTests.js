@@ -2073,28 +2073,63 @@ Called at line 4, column 7:
   // O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   // Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
 
-  // insertInvalidTestInput(
-  //   `int function returning literal char`,
-  //   `
-  //   int main() {
-  //     return 'c';
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_WRONG_PAR_RETURN,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `int function returning literal char`,
+    `
+    int main() {
+      return 'c';
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_RETURN,
+    `Invalid return for function; expected "int", found "char";
+Occurrence at line 3, column 14:
+      return 'c';
+             ^^^`
+  );
 
-  // insertInvalidTestInput(
-  //   `int function returning variable char`,
-  //   `
-  //   int main() {
-  //     char c <= 'c';
-  //     return c;
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_WRONG_PAR_RETURN,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `int function returning variable char`,
+    `
+    int main() {
+      char c <= 'c';
+      return c;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_RETURN,
+    `Invalid return for function; expected "int", found "char";
+Occurrence at line 4, column 14:
+      return c;
+             ^`
+  );
+
+  insertInvalidTestInput(
+    `char function returning literal int`,
+    `
+    char main() {
+      return 1;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_RETURN,
+    `Invalid return for function; expected "char", found "int";
+Occurrence at line 3, column 14:
+      return 1;
+             ^`
+  );
+
+  insertInvalidTestInput(
+    `char function returning variable int`,
+    `
+    char main() {
+      int i <= 1;
+      return i;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_PAR_RETURN,
+    `Invalid return for function; expected "char", found "int";
+Occurrence at line 4, column 14:
+      return i;
+             ^`
+  );
 
   await Promise.all(promises);
 }

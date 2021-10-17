@@ -209,8 +209,14 @@ pub enum CompilerError {
         second_col: usize,
     },
 
-    #[error("invalid return for function; expected \"return\" command with compatible type")]
-    SemanticErrorWrrongParReturn,
+    #[error("Invalid return for function; expected \"{expected_type}\", found \"{received_type}\";\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorWrrongParReturn {
+        expected_type: String,
+        received_type: String,
+        line: usize,
+        col: usize,
+        highlight: String,
+    },
 
     #[error("Invalid number parameter on shift command; expected number lower or equal to 16, found \"{received_value}\";\nOccurrence at line {line}, column {col}:\n{highlight}")]
     SemanticErrorWrongParShift {
@@ -249,7 +255,7 @@ impl CompilerError {
             CompilerError::SemanticErrorWrongParInput { .. } => 50,
             CompilerError::SemanticErrorWrongParOutputLit { .. }
             | CompilerError::SemanticErrorWrongParOutputId { .. } => 51,
-            CompilerError::SemanticErrorWrrongParReturn => 52,
+            CompilerError::SemanticErrorWrrongParReturn { .. } => 52,
             CompilerError::SemanticErrorWrongParShift { .. } => 53,
         }
     }

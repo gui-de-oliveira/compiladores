@@ -1608,9 +1608,37 @@ impl AstNode for Return {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        let current_scope_type = stack.get_current_scope_type()?;
+        let return_value_type =
+            &self
+                .ret_value
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "Return got no return_value_type from ret_value.evaluate_node(): {:?}",
+                    self.ret_value
+                )))?;
+
+        if let Some(_) = current_scope_type
+            .associate_with(return_value_type, self.node_id, lexer)
+            .err()
+        {
+            let id = self.ret_value.get_id();
+            let expected_type = current_scope_type.to_str().to_string();
+            let received_type = return_value_type.to_str().to_string();
+            let highlight = ScopeStack::form_string_highlight(id, lexer);
+            let ((line, col), (_, _)) = lexer.line_col(id);
+            return Err(CompilerError::SemanticErrorWrrongParReturn {
+                expected_type,
+                received_type,
+                line,
+                col,
+                highlight,
+            });
+        }
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2106,19 +2134,22 @@ impl AstNode for While {
 
 #[derive(Debug)]
 pub struct CommandBlock {
-    node_id: Span,
-    first_command: Option<Box<dyn AstNode>>,
-    next: Option<Box<dyn AstNode>>,
+    pub node_id: Span,
+    pub scope_type: Option<Span>,
+    pub first_command: Option<Box<dyn AstNode>>,
+    pub next: Option<Box<dyn AstNode>>,
 }
 
 impl CommandBlock {
     pub fn new(
         node_id: Span,
+        scope_type: Option<Span>,
         first_command: Option<Box<dyn AstNode>>,
         next: Option<Box<dyn AstNode>>,
     ) -> CommandBlock {
         CommandBlock {
             node_id,
+            scope_type,
             first_command,
             next,
         }
@@ -2148,7 +2179,11 @@ impl AstNode for CommandBlock {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         if let Some(command) = &self.first_command {
-            stack.add_scope();
+            let scope_type = match self.scope_type {
+                Some(span) => Some(SymbolType::from_str(lexer.span_str(span))?),
+                None => None,
+            };
+            stack.add_scope(scope_type);
             command.evaluate_node(stack, lexer)?;
             stack.remove_scope()?;
         };
