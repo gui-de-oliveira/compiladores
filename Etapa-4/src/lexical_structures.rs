@@ -1291,7 +1291,6 @@ impl AstNode for VarSet {
                         }
                     }
                 }
-                _ => {}
             },
         }
 
