@@ -1,5 +1,3 @@
-%expect 0
-
 %start program
 
 %left 'TK_OC_OR'
