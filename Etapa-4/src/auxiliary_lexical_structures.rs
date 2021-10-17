@@ -1,5 +1,7 @@
 use lrpar::Span;
 
+use crate::lexical_structures::LiteralInt;
+
 use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::lexical_structures::{
@@ -10,7 +12,7 @@ use super::lexical_structures::{
 #[derive(Debug)]
 pub enum AuxVarOrVecName {
     Var(Span),
-    Vec { name: Span, size: Span },
+    Vec { name: Span, size: Box<LiteralInt> },
 }
 
 #[derive(Debug)]
@@ -36,7 +38,7 @@ pub enum AuxTopDefEnd {
     },
     SingleGlob,
     GlobList(Vec<AuxVarOrVecName>),
-    VecAndGlobList(Span, Vec<AuxVarOrVecName>),
+    VecAndGlobList(Box<LiteralInt>, Vec<AuxVarOrVecName>),
 }
 
 pub fn top_level_def_assembler(

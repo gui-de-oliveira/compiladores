@@ -12,6 +12,7 @@ pub struct DefSymbol {
     pub col: usize,
     pub type_value: SymbolType,
     pub class: SymbolClass,
+    pub size: Option<u32>,
 }
 
 impl DefSymbol {
@@ -22,6 +23,7 @@ impl DefSymbol {
         col: usize,
         type_value: SymbolType,
         class: SymbolClass,
+        size: Option<u32>,
     ) -> DefSymbol {
         DefSymbol {
             id,
@@ -30,6 +32,7 @@ impl DefSymbol {
             col,
             type_value,
             class,
+            size,
         }
     }
 }

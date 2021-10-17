@@ -63,7 +63,10 @@ topDefEnd -> Result<AuxTopDefEnd, CompilerError>:
     '(' optionalParamList ')' commandBlock { Ok(AuxTopDefEnd::FnDefEnd{params: $2?, commands: $4?}) }
     | ';' { Ok(AuxTopDefEnd::SingleGlob) }
     | ',' globDefEndList ';' { Ok(AuxTopDefEnd::GlobList($2?)) }
-    | '[' literal_int ']' endOrGlobDefEndList { Ok(AuxTopDefEnd::VecAndGlobList($2?, $4?)) }
+    | '[' literal_int ']' endOrGlobDefEndList {
+        let int = Box::new(LiteralInt::new($2?, None));
+        Ok(AuxTopDefEnd::VecAndGlobList(int, $4?))
+    }
     ;
 
 endOrGlobDefEndList -> Result<Vec<AuxVarOrVecName>, CompilerError>:
@@ -101,9 +104,12 @@ varOrVecName -> Result<AuxVarOrVecName, CompilerError>:
     }
     ;
 
-optionalArray -> Result<Option<Span>, CompilerError>:
+optionalArray -> Result<Option<Box<LiteralInt>>, CompilerError>:
       { /* %empty */ Ok(None) }
-    | '[' literal_int ']' { Ok(Some($2?)) }
+    | '[' literal_int ']' { 
+        let int = Box::new(LiteralInt::new($2?, None));
+        Ok(Some(int))
+    }
     ;
 
 optionalStatic -> Result<bool, CompilerError>:

@@ -110,10 +110,14 @@ pub enum CompilerError {
         highlight: String,
     },
 
-    #[error(
-        "invalid attribution of type \"string\" value, size exceeds that of variable declaration"
-    )]
-    SemanticErrorStringMax,
+    #[error("Invalid attribution of type \"string\" value, size exceeds that of variable declaration.\nVariable declaration size is {variable_size} and string size is {string_size}.\nOccurrence at line {line}, column {col}:\n{highlight}")]
+    SemanticErrorStringMax {
+        line: usize,
+        col: usize,
+        highlight: String,
+        variable_size: u32,
+        string_size: u32,
+    },
 
     #[error("Invalid usage of \"string\" type for vector declaration: \"{id}\"\nOccurrence at line {line}, column {col}:\n{highlight}")]
     SemanticErrorStringVector {
@@ -196,7 +200,7 @@ impl CompilerError {
             CompilerError::SemanticErrorWrongType => 30,
             CompilerError::SemanticErrorStringToX { .. } => 31,
             CompilerError::SemanticErrorCharToX { .. } => 32,
-            CompilerError::SemanticErrorStringMax => 33,
+            CompilerError::SemanticErrorStringMax { .. } => 33,
             CompilerError::SemanticErrorStringVector { .. } => 34,
             CompilerError::SemanticErrorMissingArgs(_) => 40,
             CompilerError::SemanticErrorExcessArgs(_) => 41,

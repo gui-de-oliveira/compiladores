@@ -30,6 +30,28 @@ impl GlobalVarDef {
     }
 }
 
+// Tamanho.
+// O tamanho dos tipos da linguagem é definido da seguinte forma.
+// Um char ocupa 1 byte.
+// Um string ocupa 1 byte para cada caractere.
+// Um int ocupa 4 bytes.
+// Um float ocupa 8 bytes.
+// Um bool ocupa 1 byte.
+// Um vetor ocupa o seu tamanho vezes o seu tipo.
+
+fn get_symbol_type_size(symbol_type: &SymbolType) -> u32 {
+    match symbol_type {
+        SymbolType::Char(_) => 1,
+        SymbolType::Int(_) => 4,
+        SymbolType::Float(_) => 8,
+        SymbolType::Bool(_) => 1,
+        SymbolType::String(maybe_string) => match maybe_string {
+            Some(string) => (string.len() as u32),
+            None => 0,
+        },
+    }
+}
+
 impl AstNode for GlobalVarDef {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool) {
         if let Some(next_node) = &self.next {
@@ -59,7 +81,9 @@ impl AstNode for GlobalVarDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
+        let size = get_symbol_type_size(&var_type);
+
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -82,7 +106,7 @@ pub struct GlobalVecDef {
     is_static: bool,
     var_type: Span,
     node_id: Span,
-    vec_size: Span,
+    vec_size: Box<LiteralInt>,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -91,7 +115,7 @@ impl GlobalVecDef {
         is_static: bool,
         var_type: Span,
         node_id: Span,
-        vec_size: Span,
+        vec_size: Box<LiteralInt>,
         next: Option<Box<dyn AstNode>>,
     ) -> GlobalVecDef {
         GlobalVecDef {
@@ -133,7 +157,7 @@ impl AstNode for GlobalVecDef {
         let var_type = match SymbolType::from_str(lexer.span_str(self.var_type))? {
             SymbolType::String(_) => {
                 let start = self.var_type.start();
-                let end = self.vec_size.end() + 1;
+                let end = self.vec_size.get_id().end() + 1;
                 if end < start {
                     return Err(CompilerError::SanityError(format!(
                         "evaluate_node() found unlawful spans on GlobalVecDef for \"{}\"",
@@ -154,7 +178,35 @@ impl AstNode for GlobalVecDef {
         };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Vec;
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
+
+        let vec_size = self.vec_size.evaluate_node(stack, lexer)?;
+
+        let size_int = match vec_size {
+            Some(value) => match value {
+                SymbolType::Int(int) => match int {
+                    Some(size_int) => size_int as u32,
+                    None => {
+                        return Err(CompilerError::SanityError(format!(
+                            "Int from vec_size symbol as None (on GlobalVecDef.evaluate_node())",
+                        )))
+                    }
+                },
+                _ => {
+                    return Err(CompilerError::SanityError(format!(
+                        "Vec_size symbol_type is not Int (on GlobalVecDef.evaluate_node())",
+                    )))
+                }
+            },
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "Vec_size symbol is None (on GlobalVecDef.evaluate_node())",
+                )))
+            }
+        };
+
+        let size = get_symbol_type_size(&var_type) * size_int;
+
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -240,7 +292,7 @@ impl AstNode for FnDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Fn;
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, None);
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -331,7 +383,8 @@ impl AstNode for LocalVarDef {
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Var;
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class);
+        let size = get_symbol_type_size(&var_type);
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
         stack.add_def_symbol(our_symbol)?;
 
@@ -480,10 +533,34 @@ impl AstNode for VarDefInitLit {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_def.evaluate_node(stack, lexer)?;
+        let value = self.var_value.evaluate_node(stack, lexer)?;
 
-        self.var_value.evaluate_node(stack, lexer)?;
+        match value {
+            Some(value) => {
+                let new_symbol = {
+                    let span = self.var_def.get_id();
+                    let def_symbol = stack.get_previous_def(span, lexer, SymbolClass::Var)?;
 
-        // TO DO: Add symbol.
+                    let size = get_symbol_type_size(&value);
+
+                    DefSymbol::new(
+                        def_symbol.id.clone(),
+                        def_symbol.span,
+                        def_symbol.line,
+                        def_symbol.col,
+                        def_symbol.type_value.clone(),
+                        def_symbol.class,
+                        Some(size),
+                    )
+                };
+                stack.add_def_symbol(new_symbol);
+            }
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "No symbol type on value init (on VarDefInitLit.evaluate_node())"
+                )))
+            }
+        };
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1007,7 +1084,46 @@ impl AstNode for VarSet {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.node_id.evaluate_node(stack, lexer)?;
 
-        self.new_value.evaluate_node(stack, lexer)?;
+        let var = self.var_name.evaluate_node(stack, lexer)?;
+        let def = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::Var)?;
+        let def_size = match def.size {
+            Some(size) => size,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "variable_definition with no memory size (on VarSet.evaluate_node())"
+                )))
+            }
+        };
+
+        let new_value = self.new_value.evaluate_node(stack, lexer)?;
+
+        match new_value {
+            Some(symbol_type) => {
+                if let SymbolType::String(option_string) = symbol_type {
+                    if let Some(string) = option_string {
+                        let string_size = string.len() as u32;
+                        if string_size > def_size {
+                            let span = self.new_value.get_id();
+                            let highlight = ScopeStack::form_string_highlight(span, lexer);
+                            let ((line, col), (_, _)) = lexer.line_col(span);
+
+                            return Err(CompilerError::SemanticErrorStringMax {
+                                highlight,
+                                line,
+                                col,
+                                string_size,
+                                variable_size: def_size,
+                            });
+                        }
+                    }
+                }
+            }
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "New value has no SymbolType (on VarSet.evaluate_node())"
+                )))
+            }
+        }
 
         // TO DO: Add symbol and check type.
 

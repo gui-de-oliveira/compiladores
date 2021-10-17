@@ -1466,6 +1466,64 @@ Occurrence at line 4, column 15:
     }
     `
   );
+
+  // Tamanho.
+  // O tamanho dos tipos da linguagem é definido da seguinte forma.
+  // Um char ocupa 1 byte.
+  // Um string ocupa 1 byte para cada caractere.
+  // Um int ocupa 4 bytes.
+  // Um float ocupa 8 bytes.
+  // Um bool ocupa 1 byte.
+  // Um vetor ocupa o seu tamanho vezes o seu tipo.
+
+  // O tamanho máximo de um string é definido na sua inicialização (com o operador de inicialização).
+  // Uma string não inicializada ocupa 0 bytes e não pode receber valores cujo tamanho excede àquele máximo da inicialização.
+  // Caso o tamanho de um string a ser atribuído exceder o máximo, deve-se emitir o erro ERR_STRING_MAX.
+
+  await testInvalidInput(
+    "Setting a literal string larger than its allocation",
+    `
+    int main() {
+      string s <= "123";
+      s = "1234";
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_STRING_MAX,
+    `Invalid attribution of type "string" value, size exceeds that of variable declaration.
+Variable declaration size is 3 and string size is 4.
+Occurrence at line 4, column 11:
+      s = "1234";
+          ^^^^^^`
+  );
+
+  await testInvalidInput(
+    "Setting a literal string to an unintialized string",
+    `
+    int main() {
+      string s;
+      s = "1";
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_STRING_MAX,
+    `Invalid attribution of type "string" value, size exceeds that of variable declaration.
+Variable declaration size is 0 and string size is 1.
+Occurrence at line 4, column 11:
+      s = "1";
+          ^^^`
+  );
+
+  await testValidInput(
+    "Setting a literal valid string to a string variable",
+    `
+    int main() {
+      string s <= "1";
+      s = "0";
+      return 0;
+    }
+    `
+  );
 }
 
 main();
@@ -1495,17 +1553,7 @@ main();
   O comando de retorno return deve ser seguido obrigatoriamente por uma expressão cujo tipo é compatível com o tipo de retorno da função.
   Caso não seja o caso, o erro ERR_WRONG_PAR_RETURN deve ser lançado pelo compilador.
 
-  Tamanho.
-  O tamanho dos tipos da linguagem é definido da seguinte forma.
-  Um char ocupa 1 byte.
-  Um string ocupa 1 byte para cada caractere.
-  O tamanho máximo de um string é definido na sua inicialização (com o operador de inicialização).
-  Uma string não inicializada ocupa 0 bytes e não pode receber valores cujo tamanho excede àquele máximo da inicialização.
-  Caso o tamanho de um string a ser atribuído exceder o máximo, deve-se emitir o erro ERR_STRING_MAX.
-  Um int ocupa 4 bytes.
-  Um float ocupa 8 bytes.
-  Um bool ocupa 1 byte.
-  Um vetor ocupa o seu tamanho vezes o seu tipo.
+
 */
 
 /*
