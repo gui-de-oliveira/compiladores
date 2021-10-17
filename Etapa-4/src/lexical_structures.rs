@@ -2230,6 +2230,126 @@ impl Binary {
             next,
         }
     }
+
+    fn binary_evaluation(
+        &self,
+        left_value: SymbolType,
+        right_value: SymbolType,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<SymbolType, CompilerError> {
+        match &self.op_type {
+            BinaryType::BoolOr => match (
+                left_value.to_bool(self.node_id, lexer)?,
+                right_value.to_bool(self.node_id, lexer)?,
+            ) {
+                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
+                (Some(left_value), Some(right_value)) => {
+                    Ok(SymbolType::Bool(Some(left_value || right_value)))
+                }
+            },
+            BinaryType::BoolAnd => match (
+                left_value.to_bool(self.node_id, lexer)?,
+                right_value.to_bool(self.node_id, lexer)?,
+            ) {
+                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
+                (Some(left_value), Some(right_value)) => {
+                    Ok(SymbolType::Bool(Some(left_value && right_value)))
+                }
+            },
+            BinaryType::BitOr => match (
+                left_value.to_int(self.node_id, lexer)?,
+                right_value.to_int(self.node_id, lexer)?,
+            ) {
+                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
+                (Some(left_value), Some(right_value)) => {
+                    Ok(SymbolType::Int(Some(left_value | right_value)))
+                }
+            },
+            BinaryType::BitXor => match (
+                left_value.to_int(self.node_id, lexer)?,
+                right_value.to_int(self.node_id, lexer)?,
+            ) {
+                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
+                (Some(left_value), Some(right_value)) => {
+                    Ok(SymbolType::Int(Some(left_value ^ right_value)))
+                }
+            },
+            BinaryType::BitAnd => match (
+                left_value.to_int(self.node_id, lexer)?,
+                right_value.to_int(self.node_id, lexer)?,
+            ) {
+                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
+                (Some(left_value), Some(right_value)) => {
+                    Ok(SymbolType::Int(Some(left_value & right_value)))
+                }
+            },
+            BinaryType::Add => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => match (left_value, right_value) {
+                        (SymbolType::String(left_maybe), SymbolType::String(right_maybe)) => {
+                            match (left_maybe, right_maybe) {
+                                (Some(left_value), Some(right_value)) => Ok(SymbolType::String(
+                                    Some(format!("{}{}", left_value, right_value)),
+                                )),
+                                (Some(left_value), None) => {
+                                    Ok(SymbolType::String(Some(format!("{}", left_value))))
+                                }
+                                (None, Some(right_value)) => {
+                                    Ok(SymbolType::String(Some(format!("{}", right_value))))
+                                }
+                                (None, None) => Ok(SymbolType::String(None)),
+                            }
+                        }
+                        (_, _) => Err(CompilerError::SanityError(
+                            "binary_evaluation() on BinaryType::Add found non (String, String)"
+                                .to_string(),
+                        )),
+                    },
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Int(Some(left_value + right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Int(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Float(Some(left_value + right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Float(None)),
+                    },
+                }
+            }
+            BinaryType::Sub => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Mult => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Div => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Mod => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Equal => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::NotEqual => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Lesser => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Greater => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::LesserEqual => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::GreaterEqual => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+        }
+    }
 }
 
 impl AstNode for Binary {
@@ -2261,11 +2381,32 @@ impl AstNode for Binary {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        // TO DO: Implement a return value here.
-        Ok(None)
+        let left_value_type = match self.lhs.evaluate_node(stack, lexer)? {
+            Some(value) => value,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "lhs.evaluate_node() returned None for Binary of type {:?}",
+                    self.op_type
+                )))
+            }
+        };
+        let right_value_type = match self.rhs.evaluate_node(stack, lexer)? {
+            Some(value) => value,
+            None => {
+                return Err(CompilerError::SanityError(format!(
+                    "rhs.evaluate_node() returned None for Binary of type {:?}",
+                    self.op_type
+                )))
+            }
+        };
+        Ok(Some(self.binary_evaluation(
+            left_value_type,
+            right_value_type,
+            lexer,
+        )?))
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -2273,6 +2414,26 @@ impl AstNode for Binary {
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         &self.next
     }
+}
+
+#[derive(Debug)]
+pub enum BinaryType {
+    BoolOr,
+    BoolAnd,
+    BitOr,
+    BitXor,
+    BitAnd,
+    Equal,
+    NotEqual,
+    Lesser,
+    Greater,
+    LesserEqual,
+    GreaterEqual,
+    Add,
+    Sub,
+    Mult,
+    Div,
+    Mod,
 }
 
 #[derive(Debug)]
@@ -3157,26 +3318,6 @@ impl AstNode for LiteralString {
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         &self.next
     }
-}
-
-#[derive(Debug)]
-pub enum BinaryType {
-    BoolOr,
-    BoolAnd,
-    BitOr,
-    BitXor,
-    BitAnd,
-    Equal,
-    NotEqual,
-    Lesser,
-    Greater,
-    LesserEqual,
-    GreaterEqual,
-    Add,
-    Sub,
-    Mult,
-    Div,
-    Mod,
 }
 
 fn print_dependencies_ripple(next_node: &(dyn AstNode), own_address: *const c_void, ripple: bool) {

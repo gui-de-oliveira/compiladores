@@ -99,6 +99,172 @@ impl SymbolType {
             ))),
         }
     }
+    pub fn to_bool(
+        &self,
+        span: Span,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<Option<bool>, CompilerError> {
+        match self {
+            SymbolType::Bool(Some(value)) => Ok(Some(*value)),
+            SymbolType::Int(Some(value)) => Ok(Some(*value != 0)),
+            SymbolType::Float(Some(value)) => Ok(Some(*value != 0.0)),
+            SymbolType::Char(_) => {
+                let invalid_type = "boolean".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            SymbolType::String(_) => {
+                let invalid_type = "boolean".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            _ => Ok(None),
+        }
+    }
+    pub fn to_int(
+        &self,
+        span: Span,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<Option<i32>, CompilerError> {
+        match self {
+            SymbolType::Int(Some(value)) => Ok(Some(*value)),
+            SymbolType::Bool(Some(value)) => Ok(Some(*value as i32)),
+            SymbolType::Float(Some(value)) => Ok(Some(*value as i32)),
+            SymbolType::Char(_) => {
+                let invalid_type = "int".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            SymbolType::String(_) => {
+                let invalid_type = "int".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            _ => Ok(None),
+        }
+    }
+    pub fn to_float(
+        &self,
+        span: Span,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<Option<f64>, CompilerError> {
+        match self {
+            SymbolType::Float(Some(value)) => Ok(Some(*value)),
+            SymbolType::Int(Some(value)) => Ok(Some(*value as f64)),
+            SymbolType::Bool(Some(value)) => Ok(Some((*value as u32) as f64)),
+            SymbolType::Char(_) => {
+                let invalid_type = "float".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            SymbolType::String(_) => {
+                let invalid_type = "float".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            _ => Ok(None),
+        }
+    }
+    pub fn associate_with(
+        &self,
+        friend: &SymbolType,
+        span: Span,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<SymbolType, CompilerError> {
+        match (self, friend) {
+            (SymbolType::Int(_), SymbolType::Int(_)) => Ok(SymbolType::Int(None)),
+            (SymbolType::Float(_), SymbolType::Float(_)) => Ok(SymbolType::Float(None)),
+            (SymbolType::Bool(_), SymbolType::Bool(_)) => Ok(SymbolType::Bool(None)),
+            (SymbolType::Bool(_), SymbolType::Int(_))
+            | (SymbolType::Int(_), SymbolType::Bool(_)) => Ok(SymbolType::Int(None)),
+            (SymbolType::Float(_), SymbolType::Int(_))
+            | (SymbolType::Int(_), SymbolType::Float(_))
+            | (SymbolType::Bool(_), SymbolType::Float(_))
+            | (SymbolType::Float(_), SymbolType::Bool(_)) => Ok(SymbolType::Float(None)),
+            (SymbolType::String(_), SymbolType::String(_)) => Ok(SymbolType::String(None)),
+            (SymbolType::Char(_), SymbolType::Char(_)) => Ok(SymbolType::Char(None)),
+            (SymbolType::String(_), _) => {
+                let invalid_type = "int or float".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            (SymbolType::Char(_), _) => {
+                let invalid_type = "int or float".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            (_, SymbolType::String(_)) => {
+                let invalid_type = "int or float".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorStringToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+            (_, SymbolType::Char(_)) => {
+                let invalid_type = "int or float".to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                Err(CompilerError::SemanticErrorCharToX {
+                    invalid_type,
+                    line,
+                    col,
+                    highlight,
+                })
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
