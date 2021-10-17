@@ -18,7 +18,7 @@ clean:
 	rm -f -r target
 
 zip:
-	tar cvzf etapa4.tgz Makefile Cargo.toml build.rs semanticTests.js src/ 
+	tar cvzf etapa4.tgz Makefile Cargo.toml build.rs semanticTests.js src/ README.md
 
 allTests:
 	make debug
