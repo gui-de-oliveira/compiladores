@@ -1529,11 +1529,11 @@ Occurrence at line 4, column 11:
   // O erro ERR_WRONG_TYPE deve ser lançado quando o tipo do valor a ser atribuído a um identificador for incompatível com o tipo deste identificador.
 
   for (const isInitialization of [true, false]) {
-  for (const usingVariable of [true, false]) {
-    for (const type of ["int", "bool", "float"]) {
-      await testInvalidInput(
+    for (const usingVariable of [true, false]) {
+      for (const type of ["int", "bool", "float"]) {
+        await testInvalidInput(
           `Initializing a ${type} variable with an literal char [${isInitialization}, ${usingVariable}]`,
-        `
+          `
     int main() {
       ${
         isInitialization
@@ -1547,20 +1547,20 @@ Occurrence at line 4, column 11:
       return 0;
     }
     `,
-        ERROR_CODE.ERR_WRONG_TYPE,
-        `Incompatible type in attribution.
+          ERROR_CODE.ERR_WRONG_TYPE,
+          `Incompatible type in attribution.
 Expected int, float or bool but received a "char".`
-      );
+        );
 
-      await testInvalidInput(
+        await testInvalidInput(
           `Initializing a ${type} variable with an literal string [${isInitialization}, ${usingVariable}]`,
-        `
+          `
     int main() {
       ${
         isInitialization
           ? usingVariable
-          ? `string s <= "string"; ${type} a <= s;`
-          : `${type} a <= "string";`
+            ? `string s <= "string"; ${type} a <= s;`
+            : `${type} a <= "string";`
           : usingVariable
           ? `string s <= "string"; ${type} a; a = s;`
           : `${type} a; a = "string";`
@@ -1568,26 +1568,26 @@ Expected int, float or bool but received a "char".`
       return 0;
     }
     `,
-        ERROR_CODE.ERR_WRONG_TYPE,
-        `Incompatible type in attribution.
+          ERROR_CODE.ERR_WRONG_TYPE,
+          `Incompatible type in attribution.
 Expected int, float or bool but received a "string".`
-      );
+        );
 
-      for (const value of [
-        { type: "int", value: "0" },
-        { type: "bool", value: "true" },
-        { type: "bool", value: "false" },
-        { type: "float", value: "0.0" },
-      ]) {
-        await testValidInput(
+        for (const value of [
+          { type: "int", value: "0" },
+          { type: "bool", value: "true" },
+          { type: "bool", value: "false" },
+          { type: "float", value: "0.0" },
+        ]) {
+          await testValidInput(
             `Initializing a int variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
-          `
+            `
       int main() {
         ${
           isInitialization
             ? usingVariable
-            ? `${value.type} v <= ${value.value}; ${type} a <= v;`
-            : `${type} a <= ${value.value};`
+              ? `${value.type} v <= ${value.value}; ${type} a <= v;`
+              : `${type} a <= ${value.value};`
             : usingVariable
             ? `${value.type} v <= ${value.value}; ${type} a; a = v;`
             : `${type} a; a = ${value.value};`
@@ -1595,26 +1595,26 @@ Expected int, float or bool but received a "string".`
         return 0;
       }
       `
-        );
+          );
+        }
       }
-    }
 
-    for (const value of [
-      { type: "int", value: "0" },
-      { type: "bool", value: "true" },
-      { type: "bool", value: "false" },
-      { type: "float", value: "0.0" },
-      { type: "char", value: "'c'" },
-    ]) {
-      await testInvalidInput(
+      for (const value of [
+        { type: "int", value: "0" },
+        { type: "bool", value: "true" },
+        { type: "bool", value: "false" },
+        { type: "float", value: "0.0" },
+        { type: "char", value: "'c'" },
+      ]) {
+        await testInvalidInput(
           `Initializing a string variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
-        `
+          `
     int main() {
       ${
         isInitialization
           ? usingVariable
-          ? `${value.type} v <= ${value.value}; string s <= v;`
-          : `string s <= ${value.value};`
+            ? `${value.type} v <= ${value.value}; string s <= v;`
+            : `string s <= ${value.value};`
           : usingVariable
           ? `${value.type} v <= ${value.value}; string s <= "123456"; s = v;`
           : `string s <= "123456"; s = ${value.value};`
@@ -1624,18 +1624,18 @@ Expected int, float or bool but received a "string".`
     `,
           ERROR_CODE.ERR_STRING_TO_X,
           `Invalid type conversion from "string" to "${value.type}"`
-      );
-    }
+        );
+      }
 
-    await testValidInput(
+      await testValidInput(
         `Initializing a string variable with an literal string [${isInitialization}, ${usingVariable}]`,
-      `
+        `
   int main() {
     ${
       isInitialization
         ? usingVariable
-        ? `string x <= "string"; string y <= x;`
-        : `string s <= "string";`
+          ? `string x <= "string"; string y <= x;`
+          : `string s <= "string";`
         : usingVariable
         ? `string x <= "string"; string y <= "string"; x = y;`
         : `string s <= "string"; s = "string";`
@@ -1643,24 +1643,24 @@ Expected int, float or bool but received a "string".`
     return 0;
   }
   `
-    );
+      );
 
-    for (const value of [
-      { type: "int", value: "0" },
-      { type: "bool", value: "true" },
-      { type: "bool", value: "false" },
-      { type: "float", value: "0.0" },
-      { type: "string", value: '"string"' },
-    ]) {
-      await testInvalidInput(
+      for (const value of [
+        { type: "int", value: "0" },
+        { type: "bool", value: "true" },
+        { type: "bool", value: "false" },
+        { type: "float", value: "0.0" },
+        { type: "string", value: '"string"' },
+      ]) {
+        await testInvalidInput(
           `Initializing a char variable with an literal ${value.type} [${isInitialization}, ${usingVariable}]`,
-        `
+          `
     int main() {
       ${
         isInitialization
           ? usingVariable
-          ? `${value.type} v <= ${value.value}; char c <= v;`
-          : `char c <= ${value.value};`
+            ? `${value.type} v <= ${value.value}; char c <= v;`
+            : `char c <= ${value.value};`
           : usingVariable
           ? `${value.type} v <= ${value.value}; char c; c = v;`
           : `char c; c = ${value.value};`
@@ -1670,12 +1670,12 @@ Expected int, float or bool but received a "string".`
     `,
           ERROR_CODE.ERR_CHAR_TO_X,
           `Invalid type conversion from "char" to "${value.type}"`
-      );
-    }
+        );
+      }
 
-    await testValidInput(
+      await testValidInput(
         `Initializing a char variable with an literal char [${isInitialization}, ${usingVariable}]`,
-      `
+        `
   int main() {
     ${
       isInitialization
@@ -1691,12 +1691,6 @@ Expected int, float or bool but received a "string".`
   `
       );
     }
-  }
-
-    return 0;
-  }
-  `
-    );
   }
 }
 
