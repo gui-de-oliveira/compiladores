@@ -1536,9 +1536,9 @@ Occurrence at line 4, column 15:
     ERROR_CODE.ERR_STRING_MAX,
     `Invalid attribution of type "string" value, size exceeds that of variable declaration.
 Variable declaration size is 3 and string size is 4.
-Occurrence at line 4, column 11:
+Occurrence at line 4, column 9:
       s = "1234";
-          ^^^^^^`
+        ^`
   );
 
   insertInvalidTestInput(
@@ -1553,9 +1553,9 @@ Occurrence at line 4, column 11:
     ERROR_CODE.ERR_STRING_MAX,
     `Invalid attribution of type "string" value, size exceeds that of variable declaration.
 Variable declaration size is 0 and string size is 1.
-Occurrence at line 4, column 11:
+Occurrence at line 4, column 9:
       s = "1";
-          ^^^`
+        ^`
   );
 
   insertValidInputTest(

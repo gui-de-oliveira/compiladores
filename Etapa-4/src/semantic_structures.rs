@@ -73,7 +73,11 @@ impl DefSymbol {
                         self.col,
                         self.type_value.clone(),
                         self.class,
-                        self.size,
+                        Some(if check_string_size {
+                            our_size
+                        } else {
+                            incoming_size
+                        }),
                     ))
                 }
             }
@@ -157,7 +161,7 @@ impl DefSymbol {
                 let ((line, col), (_, _)) = lexer.line_col(span);
                 let highlight = ScopeStack::form_string_highlight(span, lexer);
                 Err(CompilerError::SemanticErrorWrongType {
-                    valid_type: our_type.to_str().to_string(),
+                    valid_type: "int, float or bool".to_string(),
                     received_type: bad_type.to_str().to_string(),
                     highlight,
                     line,
