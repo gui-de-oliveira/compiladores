@@ -21,11 +21,11 @@ pub enum CompilerError {
     #[error("Lexical error: {0}")]
     LexicalError(String),
 
-    #[error("Semantic error: {0}")]
-    SemanticError(String),
-
     #[error("Parsing errors: {0}")]
     ParsingErrors(String),
+
+    #[error("Semantic error: {0}")]
+    SemanticError(String),
 
     #[error("Tree building error: {0}")]
     TreeBuildingError(String),
@@ -193,8 +193,8 @@ impl CompilerError {
             CompilerError::SanityError(_)
             | CompilerError::IoReadFailure(_)
             | CompilerError::LexicalError(_)
-            | CompilerError::SemanticError(_)
             | CompilerError::ParsingErrors(_)
+            | CompilerError::SemanticError(_)
             | CompilerError::TreeBuildingError(_)
             | CompilerError::EvalParserFailure
             | CompilerError::FailedScoping => 1,
