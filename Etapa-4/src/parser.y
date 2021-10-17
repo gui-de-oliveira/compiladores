@@ -144,9 +144,9 @@ paramList -> Result<Vec<Parameter>, CompilerError>:
 param -> Result<Parameter, CompilerError>:
     optionalConst type_rule identifier_rule {
         let is_const = $1?;
-        let node_id = $2?;
-        let param_name = $3?;
-        Ok(Parameter{is_const, node_id, param_name})
+        let param_type = $2?;
+        let node_id = $3?;
+        Ok(Parameter{is_const, param_type, node_id})
     }
     ;
 

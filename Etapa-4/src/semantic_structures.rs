@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use lrpar::{NonStreamingLexer, Span};
 
 use super::error::CompilerError;
+use super::lexical_structures::Parameter;
 
 #[derive(Debug)]
 pub struct DefSymbol {
@@ -49,7 +50,7 @@ impl DefSymbol {
                 self.line,
                 self.col,
                 right_type.clone(),
-                self.class,
+                self.class.clone(),
                 self.size,
             )),
             (SymbolType::String(_), right_type @ SymbolType::String(Some(_))) => {
@@ -72,7 +73,7 @@ impl DefSymbol {
                         self.line,
                         self.col,
                         self.type_value.clone(),
-                        self.class,
+                        self.class.clone(),
                         Some(if check_string_size {
                             our_size
                         } else {
@@ -98,7 +99,7 @@ impl DefSymbol {
                 self.line,
                 self.col,
                 right_type.clone(),
-                self.class,
+                self.class.clone(),
                 self.size,
             )),
             (SymbolType::Char(_), bad_type) => {
@@ -123,7 +124,7 @@ impl DefSymbol {
                 self.line,
                 self.col,
                 SymbolType::Float(right_type.to_float(span, lexer)?),
-                self.class,
+                self.class.clone(),
                 self.size,
             )),
             (
@@ -137,7 +138,7 @@ impl DefSymbol {
                 self.line,
                 self.col,
                 SymbolType::Int(right_type.to_int(span, lexer)?),
-                self.class,
+                self.class.clone(),
                 self.size,
             )),
             (
@@ -151,7 +152,7 @@ impl DefSymbol {
                 self.line,
                 self.col,
                 SymbolType::Bool(right_type.to_bool(span, lexer)?),
-                self.class,
+                self.class.clone(),
                 self.size,
             )),
             (
@@ -439,18 +440,43 @@ impl SymbolType {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+impl PartialEq for SymbolType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (SymbolType::Char(_), SymbolType::Char(_))
+            | (SymbolType::Int(_), SymbolType::Int(_))
+            | (SymbolType::Float(_), SymbolType::Float(_))
+            | (SymbolType::Bool(_), SymbolType::Bool(_))
+            | (SymbolType::String(_), SymbolType::String(_)) => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum SymbolClass {
-    Fn,
+    Fn(Vec<Parameter>),
     Var,
     Vec,
     Lit,
 }
 
+impl PartialEq for SymbolClass {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (SymbolClass::Fn(_), SymbolClass::Fn(_))
+            | (SymbolClass::Var, SymbolClass::Var)
+            | (SymbolClass::Vec, SymbolClass::Vec)
+            | (SymbolClass::Lit, SymbolClass::Lit) => true,
+            _ => false,
+        }
+    }
+}
+
 impl SymbolClass {
     pub fn to_str(&self) -> &str {
         match self {
-            SymbolClass::Fn => "function",
+            SymbolClass::Fn(_) => "function",
             SymbolClass::Var => "variable",
             SymbolClass::Vec => "vector",
             SymbolClass::Lit => "literal",
@@ -554,7 +580,7 @@ impl ScopeStack {
                             second_col,
                             second_highlight,
                         },
-                        SymbolClass::Fn => CompilerError::SemanticErrorFunction {
+                        SymbolClass::Fn(_) => CompilerError::SemanticErrorFunction {
                             id,
                             first_line,
                             first_col,

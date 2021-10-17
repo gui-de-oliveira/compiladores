@@ -133,16 +133,40 @@ pub enum CompilerError {
         highlight: String,
     },
 
-    #[error("missing args in function call \"{0}()\"")]
-    SemanticErrorMissingArgs(String),
+    #[error("Missing args in function call: \"{id}\"\nFunction definition at line {first_line}, column {first_col}:\n{first_highlight}\nCalled at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorMissingArgs {
+        id: String,
+        first_line: usize,
+        first_col: usize,
+        first_highlight: String,
+        second_line: usize,
+        second_col: usize,
+        second_highlight: String,
+    },
 
-    #[error("excess args in function call \"{0}()\"")]
-    SemanticErrorExcessArgs(String),
+    #[error("Excess args in function call: \"{id}\"\nFunction definition at line {first_line}, column {first_col}:\n{first_highlight}\nCalled at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorExcessArgs {
+        id: String,
+        first_line: usize,
+        first_col: usize,
+        first_highlight: String,
+        second_line: usize,
+        second_col: usize,
+        second_highlight: String,
+    },
 
-    #[error("invalid type in function call arguments")]
-    SemanticErrorWrongTypeArgs,
+    #[error("Invalid type in function call arguments: \"{id}\"\nFunction definition at line {first_line}, column {first_col}:\n{first_highlight}\nCalled at line {second_line}, column {second_col}:\n{second_highlight}")]
+    SemanticErrorWrongTypeArgs {
+        id: String,
+        first_line: usize,
+        first_col: usize,
+        first_highlight: String,
+        second_line: usize,
+        second_col: usize,
+        second_highlight: String,
+    },
 
-    #[error("function argument or parameter of invalid type \"string\" ")]
+    #[error("Function argument or parameter of invalid type \"string\"")]
     SemanticErrorFunctionString,
 
     #[error("Invalid argument for \"input\" command; expected variable of type \"int\" or \"float\", found \"{received_type}\";\nFirst occurrence at line {first_line}, column {first_col}:\n{first_highlight}\nAnd again at line {second_line}, column {second_col}:\n{second_highlight}")]
@@ -208,9 +232,9 @@ impl CompilerError {
             CompilerError::SemanticErrorCharToX { .. } => 32,
             CompilerError::SemanticErrorStringMax { .. } => 33,
             CompilerError::SemanticErrorStringVector { .. } => 34,
-            CompilerError::SemanticErrorMissingArgs(_) => 40,
-            CompilerError::SemanticErrorExcessArgs(_) => 41,
-            CompilerError::SemanticErrorWrongTypeArgs => 42,
+            CompilerError::SemanticErrorMissingArgs { .. } => 40,
+            CompilerError::SemanticErrorExcessArgs { .. } => 41,
+            CompilerError::SemanticErrorWrongTypeArgs { .. } => 42,
             CompilerError::SemanticErrorFunctionString => 43,
             CompilerError::SemanticErrorWrongParInput { .. } => 50,
             CompilerError::SemanticErrorWrongParOutputLit { .. }

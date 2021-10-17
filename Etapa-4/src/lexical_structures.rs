@@ -283,7 +283,7 @@ impl AstNode for FnDef {
         let var_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
-        let class = SymbolClass::Fn;
+        let class = SymbolClass::Fn(self.params.clone());
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, None);
 
         stack.add_def_symbol(our_symbol)?;
@@ -304,11 +304,20 @@ impl AstNode for FnDef {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Parameter {
     pub is_const: bool,
+    pub param_type: Span,
     pub node_id: Span,
-    pub param_name: Span,
+}
+
+impl Parameter {
+    fn evaluate_param(
+        &self,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<SymbolType, CompilerError> {
+        SymbolType::from_str(lexer.span_str(self.param_type))
+    }
 }
 
 #[derive(Debug)]
@@ -1672,10 +1681,87 @@ impl AstNode for FnCall {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
-        let class = SymbolClass::Fn;
-        //TO DO: Add args-checking.
-        let previous_def = stack.get_previous_def(span, lexer, class)?;
-        let type_value = previous_def.type_value.clone();
+        let class = SymbolClass::Fn(vec![]);
+        let (parameters, type_value) = {
+            let previous_def = stack.get_previous_def(span, lexer, class.clone())?;
+            match &previous_def.class {
+                SymbolClass::Fn(params) => (params.clone(), previous_def.type_value.clone()),
+                _ => {
+                    return Err(CompilerError::SanityError(
+                        "FnCall.evaluate_node() received an invalid class from previous def."
+                            .to_string(),
+                    ))
+                }
+            }
+        };
+        let args_num = self.args.len();
+        let params_num = parameters.len();
+
+        if args_num != params_num {
+            let previous_def = stack.get_previous_def(span, lexer, class)?;
+            let id = lexer.span_str(self.node_id).to_string();
+            let first_line = previous_def.line;
+            let first_col = previous_def.col;
+            let first_highlight = ScopeStack::form_string_highlight(previous_def.span, lexer);
+            let ((second_line, second_col), (_, _)) = lexer.line_col(self.node_id);
+            let second_highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+
+            return Err(if args_num < params_num {
+                CompilerError::SemanticErrorMissingArgs {
+                    id,
+                    first_line,
+                    first_col,
+                    first_highlight,
+                    second_line,
+                    second_col,
+                    second_highlight,
+                }
+            } else {
+                CompilerError::SemanticErrorExcessArgs {
+                    id,
+                    first_line,
+                    first_col,
+                    first_highlight,
+                    second_line,
+                    second_col,
+                    second_highlight,
+                }
+            });
+        }
+
+        if params_num > 1 {
+            let mut param_types = vec![];
+            for param in parameters {
+                param_types.push(param.evaluate_param(lexer)?);
+            }
+            for (i, arg) in self.args.iter().enumerate() {
+                let arg_type =
+                    arg.evaluate_node(stack, lexer)?
+                        .ok_or(CompilerError::SanityError(format!(
+                            "FnCall error; .evaluate_node() on arg returned no type: {:?}",
+                            arg
+                        )))?;
+                if arg_type == param_types[i] {
+                    continue;
+                }
+                let id = lexer.span_str(self.node_id).to_string();
+                let previous_def = stack.get_previous_def(span, lexer, class)?;
+                let first_line = previous_def.line;
+                let first_col = previous_def.col;
+                let first_highlight = ScopeStack::form_string_highlight(previous_def.span, lexer);
+                let ((second_line, second_col), (_, _)) = lexer.line_col(self.node_id);
+                let second_highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                return Err(CompilerError::SemanticErrorWrongTypeArgs {
+                    id,
+                    first_line,
+                    first_col,
+                    first_highlight,
+                    second_line,
+                    second_col,
+                    second_highlight,
+                });
+            }
+        }
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
