@@ -1881,6 +1881,46 @@ Occurrence at line 4, column 9:
     );
   }
 
+  insertValidInputTest(
+    `Set a int variable to a vector access`,
+    `
+    int i[1];
+    int main() {
+      int j;
+      j = i[0];
+      return 0;
+    }
+    `
+  );
+
+  insertInvalidTestInput(
+    `Set a int from a vec acess to a char variable`,
+    `
+    int i[1];
+    int main() {
+      char c;
+      c = i[0];
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_TYPE,
+    `Incompatible type in attribution.\nExpected char but received a "int"`
+  );
+
+  insertInvalidTestInput(
+    `Set a int from a vec acess to a char variable`,
+    `
+    int i[1];
+    int main() {
+      string s <= "123456";
+      s = i[0];
+      return 0;
+    }
+    `,
+    ERROR_CODE.ERR_WRONG_TYPE,
+    `Incompatible type in attribution.\nExpected string but received a "int"`
+  );
+
   await Promise.all(promises);
 }
 
