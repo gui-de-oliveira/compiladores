@@ -1081,7 +1081,7 @@ impl AstNode for VarSet {
         let def_symbol = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::Var)?;
 
         let _updated_symbol =
-            def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true);
+            def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -1166,7 +1166,7 @@ impl AstNode for VecSet {
             stack.get_previous_def(self.vec_access.get_id(), lexer, SymbolClass::Var)?;
 
         let _updated_symbol =
-            def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true);
+            def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
 
         // TO DO: Add symbol and check type.
 
