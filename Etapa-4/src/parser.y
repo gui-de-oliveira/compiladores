@@ -37,7 +37,8 @@ topLevelDef -> Result<Box<dyn AstNode>, CompilerError>:
         Ok(
             match $4? {
                 AuxTopDefEnd::FnDefEnd{params, commands} => {
-                    Box::new(FnDef::new(is_static, var_type, name, params, commands, None))
+                    let command_block = CommandBlock::new(commands.node_id, Some(var_type), commands.first_command, commands.next);
+                    Box::new(FnDef::new(is_static, var_type, name, params, command_block, None))
                 },
                 AuxTopDefEnd::SingleGlob => {
                     Box::new(GlobalVarDef::new(is_static, var_type, name, None))
@@ -161,7 +162,7 @@ commandBlock -> Result<CommandBlock, CompilerError>:
         let node_id = $span;
         let first_command = $2?;
         let next = None;
-        Ok(CommandBlock::new(node_id, first_command, next))
+        Ok(CommandBlock::new(node_id, None, first_command, next))
     }
     ;
 

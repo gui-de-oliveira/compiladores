@@ -490,23 +490,27 @@ impl SymbolClass {
 }
 
 pub struct ScopeStack {
-    stack: Vec<(HashMap<String, DefSymbol>, Vec<CallSymbol>)>,
+    stack: Vec<(
+        HashMap<String, DefSymbol>,
+        Option<SymbolType>,
+        Vec<CallSymbol>,
+    )>,
 }
 
 impl ScopeStack {
     pub fn new() -> ScopeStack {
         ScopeStack {
-            stack: vec![(HashMap::new(), vec![])],
+            stack: vec![(HashMap::new(), None, vec![])],
         }
     }
 
-    pub fn add_scope(&mut self) {
-        self.stack.push((HashMap::new(), vec![]))
+    pub fn add_scope(&mut self, scope_type: Option<SymbolType>) {
+        self.stack.push((HashMap::new(), scope_type, vec![]))
     }
 
     pub fn remove_scope(&mut self) -> Result<HashMap<String, DefSymbol>, CompilerError> {
         match self.stack.pop() {
-            Some((def_table, _symbols)) => Ok(def_table),
+            Some((def_table, _scope_type, _symbols)) => Ok(def_table),
             None => Err(CompilerError::FailedScoping),
         }
     }
@@ -517,7 +521,7 @@ impl ScopeStack {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<(), CompilerError> {
         match self.stack.last() {
-            Some((scope, _symbols)) => {
+            Some((scope, _scope_type, _symbols)) => {
                 let id = lexer.span_str(span).to_string();
                 match scope.get(&id) {
                     Some(older_symbol) => {
@@ -544,6 +548,19 @@ impl ScopeStack {
         }
     }
 
+    pub fn get_current_scope_type(&self) -> Result<SymbolType, CompilerError> {
+        for (_scope, scope_type, _symbols) in self.stack.iter().rev() {
+            match scope_type {
+                Some(thing) => return Ok(thing.clone()),
+                None => continue,
+            }
+        }
+        Err(CompilerError::SanityError(format!(
+            "get_current_scope_type() found no typed scopes: {:?}",
+            self.stack
+        )))
+    }
+
     pub fn get_previous_def(
         &self,
         span: Span,
@@ -552,7 +569,7 @@ impl ScopeStack {
     ) -> Result<&DefSymbol, CompilerError> {
         let id = lexer.span_str(span).to_string();
 
-        for (scope, _symbols) in self.stack.iter().rev() {
+        for (scope, _scope_type, _symbols) in self.stack.iter().rev() {
             if let Some(older_symbol) = scope.get(&id) {
                 if older_symbol.class == expected_class {
                     return Ok(&older_symbol);
@@ -623,7 +640,7 @@ impl ScopeStack {
     }
 
     pub fn get_previous_def_string_no_error(&self, id: &str) -> Option<&DefSymbol> {
-        for (scope, _symbols) in self.stack.iter().rev() {
+        for (scope, _scope_type, _symbols) in self.stack.iter().rev() {
             if let Some(older_symbol) = scope.get(id) {
                 return Some(&older_symbol);
             }
@@ -633,7 +650,7 @@ impl ScopeStack {
 
     pub fn add_def_symbol(&mut self, addition: DefSymbol) -> Result<(), CompilerError> {
         match self.stack.last_mut() {
-            Some((scope, _symbols)) => {
+            Some((scope, _scope_type, _symbols)) => {
                 scope.insert(addition.id.clone(), addition);
                 Ok(())
             }
@@ -643,7 +660,7 @@ impl ScopeStack {
 
     pub fn push_symbol(&mut self, addition: CallSymbol) -> Result<(), CompilerError> {
         match self.stack.last_mut() {
-            Some((_scope, symbols)) => {
+            Some((_scope, _scope_type, symbols)) => {
                 symbols.push(addition);
                 Ok(())
             }
@@ -653,7 +670,7 @@ impl ScopeStack {
 
     pub fn pop_symbol(&mut self) -> Result<Option<CallSymbol>, CompilerError> {
         match self.stack.last_mut() {
-            Some((_scope, symbols)) => Ok(symbols.pop()),
+            Some((_scope, _scope_type, symbols)) => Ok(symbols.pop()),
             None => Err(CompilerError::FailedScoping),
         }
     }
