@@ -3,26 +3,29 @@
 # Guilherme de Oliveira (00278301)
 # Jean Pierre Comerlatto Darricarrere (00182408)
 
-# !!!WIP!!!
-
 main:
+	cargo build --release
+	cp target/release/etapa_4 .
+	mv etapa_4 etapa4
+
+debug:
 	cargo build
 	cp target/debug/etapa_4 .
 	mv etapa_4 etapa4
 
 clean:
-	rm -f etapa4 Cargo.lock -lfl
-	rm -r src/target
+	rm -f etapa4 Cargo.lock
+	rm -f -r target
 
 zip:
-	tar cvzf etapa4.tgz Makefile Cargo.toml build.rs src/parser.y src/scanner.l src/lexical_structures.rs src/lexical_structures.rs src/ast_node.rs src/main.rs
+	tar cvzf etapa4.tgz Makefile Cargo.toml build.rs semanticTests.js src/ 
 
 allTests:
-	make
+	make debug
 	mkdir -p testFiles
 	node semanticTests.js ALL
 
 test:
-	make
+	make debug
 	mkdir -p testFiles
 	node semanticTests.js
