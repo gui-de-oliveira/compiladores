@@ -2614,7 +2614,11 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (Some(left_value), Some(right_value)) => {
-                                Ok(SymbolType::Int(Some(left_value / right_value)))
+                                if right_value == 0 {
+                                    Ok(SymbolType::Int(Some(0i32)))
+                                } else {
+                                    Ok(SymbolType::Int(Some(left_value / right_value)))
+                                }
                             }
                             (_, _) => Ok(SymbolType::Int(None)),
                         }
@@ -2624,7 +2628,11 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Float(Some(left_value / right_value)))
+                            if right_value == 0.0 {
+                                Ok(SymbolType::Float(Some(0f64)))
+                            } else {
+                                Ok(SymbolType::Float(Some(left_value / right_value)))
+                            }
                         }
                         (_, _) => Ok(SymbolType::Float(None)),
                     },
@@ -2660,7 +2668,11 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (Some(left_value), Some(right_value)) => {
-                                Ok(SymbolType::Int(Some(left_value % right_value)))
+                                if right_value == 0 {
+                                    Ok(SymbolType::Int(Some(0i32)))
+                                } else {
+                                    Ok(SymbolType::Int(Some(left_value % right_value)))
+                                }
                             }
                             (_, _) => Ok(SymbolType::Int(None)),
                         }
@@ -2670,7 +2682,11 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Float(Some(left_value % right_value)))
+                            if right_value == 0.0 {
+                                Ok(SymbolType::Float(Some(0f64)))
+                            } else {
+                                Ok(SymbolType::Float(Some(left_value % right_value)))
+                            }
                         }
                         (_, _) => Ok(SymbolType::Float(None)),
                     },
