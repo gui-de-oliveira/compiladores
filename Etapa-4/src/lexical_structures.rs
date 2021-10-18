@@ -1794,7 +1794,7 @@ impl AstNode for FnCall {
             });
         }
 
-        if params_num > 1 {
+        if params_num > 0 {
             let mut param_types = vec![];
             for param in &parameters {
                 param_types.push(param.evaluate_param(lexer)?);
