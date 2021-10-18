@@ -2020,28 +2020,28 @@ Called at line 4, column 7:
   //  Retorno, argumentos e parâmetros de funções não podem ser do tipo string.
   // Quando estes casos acontecerem, lançar o erro ERR_FUNCTION_STRING.
 
-  // insertInvalidTestInput(
-  //   `string function returning literal string`,
-  //   `
-  //   string main() {
-  //     return "string";
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_FUNCTION_STRING,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `string function returning literal string`,
+    `
+    string main() {
+      return "string";
+    }
+    `,
+    ERROR_CODE.ERR_FUNCTION_STRING,
+    ""
+  );
 
-  // insertInvalidTestInput(
-  //   `string function returning variable string`,
-  //   `
-  //   string main() {
-  //     string s <= "string";
-  //     return s;
-  //   }
-  //   `,
-  //   ERROR_CODE.ERR_FUNCTION_STRING,
-  //   ""
-  // );
+  insertInvalidTestInput(
+    `string function returning variable string`,
+    `
+    string main() {
+      string s <= "string";
+      return s;
+    }
+    `,
+    ERROR_CODE.ERR_FUNCTION_STRING,
+    ""
+  );
 
   insertInvalidTestInput(
     `function with string argument`,

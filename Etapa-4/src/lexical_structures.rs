@@ -1640,6 +1640,19 @@ impl AstNode for Return {
                     self.ret_value
                 )))?;
 
+        if let &SymbolType::String(_) = return_value_type {
+            let span = self.ret_value.get_id();
+            let id = lexer.span_str(span).to_string();
+            let ((line, col), (_, _)) = lexer.line_col(span);
+            let highlight = ScopeStack::form_string_highlight(span, lexer);
+            return Err(CompilerError::SemanticErrorFunctionString {
+                id,
+                line,
+                col,
+                highlight,
+            });
+        };
+
         if let Some(_) = current_scope_type
             .associate_with(return_value_type, self.node_id, lexer)
             .err()
