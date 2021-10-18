@@ -2492,16 +2492,466 @@ impl Binary {
                     },
                 }
             }
-            BinaryType::Sub => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::Mult => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::Div => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::Mod => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::Equal => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::NotEqual => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::Lesser => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::Greater => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::LesserEqual => Ok(SymbolType::Bool(Some(false))), // DUMMMY
-            BinaryType::GreaterEqual => Ok(SymbolType::Bool(Some(false))), // DUMMMY
+            BinaryType::Sub => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Int(Some(left_value - right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Int(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Float(Some(left_value - right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Float(None)),
+                    },
+                }
+            }
+            BinaryType::Mult => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Int(Some(left_value * right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Int(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Float(Some(left_value * right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Float(None)),
+                    },
+                }
+            }
+            BinaryType::Div => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Int(Some(left_value / right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Int(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Float(Some(left_value / right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Float(None)),
+                    },
+                }
+            }
+            BinaryType::Mod => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Int(Some(left_value % right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Int(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Float(Some(left_value % right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Float(None)),
+                    },
+                }
+            }
+            BinaryType::Equal => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Bool(Some(left_value == right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Bool(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Bool(Some(left_value == right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Bool(None)),
+                    },
+                }
+            }
+            BinaryType::NotEqual => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Bool(Some(left_value != right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Bool(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Bool(Some(left_value != right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Bool(None)),
+                    },
+                }
+            }
+            BinaryType::Lesser => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Bool(Some(left_value < right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Bool(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Bool(Some(left_value < right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Bool(None)),
+                    },
+                }
+            }
+            BinaryType::Greater => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Bool(Some(left_value > right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Bool(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Bool(Some(left_value > right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Bool(None)),
+                    },
+                }
+            }
+            BinaryType::LesserEqual => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Bool(Some(left_value <= right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Bool(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Bool(Some(left_value <= right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Bool(None)),
+                    },
+                }
+            }
+            BinaryType::GreaterEqual => {
+                match left_value.associate_with(&right_value, self.node_id, lexer)? {
+                    SymbolType::String(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorStringToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Char(_) => {
+                        let invalid_type = "int or float".to_string();
+                        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+                        let highlight = ScopeStack::form_string_highlight(self.node_id, lexer);
+                        Err(CompilerError::SemanticErrorCharToX {
+                            invalid_type,
+                            line,
+                            col,
+                            highlight,
+                        })
+                    }
+                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                        match (
+                            left_value.to_int(self.node_id, lexer)?,
+                            right_value.to_int(self.node_id, lexer)?,
+                        ) {
+                            (Some(left_value), Some(right_value)) => {
+                                Ok(SymbolType::Bool(Some(left_value >= right_value)))
+                            }
+                            (_, _) => Ok(SymbolType::Bool(None)),
+                        }
+                    }
+                    SymbolType::Float(_) => match (
+                        left_value.to_float(self.node_id, lexer)?,
+                        right_value.to_float(self.node_id, lexer)?,
+                    ) {
+                        (Some(left_value), Some(right_value)) => {
+                            Ok(SymbolType::Bool(Some(left_value >= right_value)))
+                        }
+                        (_, _) => Ok(SymbolType::Bool(None)),
+                    },
+                }
+            }
         }
     }
 }
