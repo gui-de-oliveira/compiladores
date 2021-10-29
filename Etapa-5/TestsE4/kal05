@@ -1,0 +1,6 @@
+//ERR_STRING_MAX
+string a;
+int f(){
+  a = "a";
+  return 0;
+}
