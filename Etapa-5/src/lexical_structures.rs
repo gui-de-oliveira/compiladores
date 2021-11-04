@@ -227,7 +227,7 @@ pub struct FnDef {
     return_type: Span,
     node_id: Span,
     params: Vec<Parameter>,
-    commands: CommandBlock,
+    first_command: Option<Box<dyn AstNode>>,
     next: Option<Box<dyn AstNode>>,
 }
 
@@ -237,7 +237,7 @@ impl FnDef {
         return_type: Span,
         node_id: Span,
         params: Vec<Parameter>,
-        commands: CommandBlock,
+        first_command: Option<Box<dyn AstNode>>,
         next: Option<Box<dyn AstNode>>,
     ) -> FnDef {
         FnDef {
@@ -245,7 +245,7 @@ impl FnDef {
             return_type,
             node_id,
             params,
-            commands,
+            first_command,
             next,
         }
     }
@@ -253,20 +253,24 @@ impl FnDef {
 
 impl AstNode for FnDef {
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        self.commands
-            .print_first_dependencies(print_dependencies_own, own_address);
+        if let Some(command) = &self.first_command {
+            print_dependencies_own(command.as_ref(), own_address);
+        }
         if let Some(next_node) = &self.next {
             print_dependencies_own_next(next_node.as_ref(), own_address);
         }
-        self.commands
-            .print_first_dependencies(print_dependencies_child, own_address);
+        if let Some(command) = &self.first_command {
+            print_dependencies_child(command.as_ref(), own_address);
+        }
         if let Some(next_node) = &self.next {
             print_dependencies_next(next_node.as_ref(), own_address);
         }
     }
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
         print_label_self(self.node_id, lexer, own_address);
-        self.commands.print_first_labels(print_labels_child, lexer);
+        if let Some(command) = &self.first_command {
+            print_labels_child(command.as_ref(), lexer)
+        }
         if let Some(next_node) = &self.next {
             print_labels_next(next_node.as_ref(), own_address, lexer)
         }
@@ -285,19 +289,25 @@ impl AstNode for FnDef {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
-        let var_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
+        let return_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
         let id = lexer.span_str(self.node_id).to_string();
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let class = SymbolClass::Fn(self.params.clone());
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, None);
+        let our_symbol = DefSymbol::new(id, span, line, col, return_type.clone(), class, None);
+
+        stack.add_scope(Some(return_type));
 
         for param in self.params.iter() {
-            param.evaluate_param(lexer)?;
+            param.evaluate_param(stack, lexer)?;
         }
 
-        stack.add_def_symbol(our_symbol)?;
+        if let Some(command) = &self.first_command {
+            command.evaluate_node(stack, lexer)?;
+        };
 
-        self.commands.evaluate_node(stack, lexer)?;
+        stack.remove_scope()?;
+
+        stack.add_def_symbol(our_symbol)?;
 
         if let Some(node) = &self.next {
             node.evaluate_node(stack, lexer)?;
@@ -323,24 +333,42 @@ pub struct Parameter {
 impl Parameter {
     fn evaluate_param(
         &self,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
+    ) -> Result<(), CompilerError> {
+        let span = self.node_id;
+
+        stack.check_duplicate(span, lexer)?;
+
+        let var_type = SymbolType::from_str(lexer.span_str(self.param_type))?;
+
+        if let SymbolType::String(_) = var_type {
+            let ((line, col), (_, _)) = lexer.line_col(span);
+            let highlight = ScopeStack::form_string_highlight(span, lexer);
+            return Err(CompilerError::SemanticErrorFunctionString {
+                id: lexer.span_str(span).to_string(),
+                line,
+                col,
+                highlight,
+            });
+        };
+
+        let id = lexer.span_str(self.node_id).to_string();
+        let ((line, col), (_, _)) = lexer.line_col(self.node_id);
+        let class = SymbolClass::Var;
+        let size = var_type.get_symbol_type_size();
+        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
+
+        stack.add_def_symbol(our_symbol)?;
+
+        Ok(())
+    }
+
+    fn get_symbol_type(
+        &self,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<SymbolType, CompilerError> {
-        let symbol = SymbolType::from_str(lexer.span_str(self.param_type))?;
-
-        match symbol {
-            SymbolType::String(_) => {
-                let span = self.node_id;
-                let ((line, col), (_, _)) = lexer.line_col(span);
-                let highlight = ScopeStack::form_string_highlight(span, lexer);
-                Err(CompilerError::SemanticErrorFunctionString {
-                    id: lexer.span_str(self.node_id).to_string(),
-                    line,
-                    col,
-                    highlight,
-                })
-            }
-            _ => Ok(symbol),
-        }
+        SymbolType::from_str(lexer.span_str(self.param_type))
     }
 }
 
@@ -1797,7 +1825,7 @@ impl AstNode for FnCall {
         if params_num > 0 {
             let mut param_types = vec![];
             for param in &parameters {
-                param_types.push(param.evaluate_param(lexer)?);
+                param_types.push(param.get_symbol_type(lexer)?);
             }
             for (i, arg) in self.args.iter().enumerate() {
                 let arg_type =
@@ -2167,7 +2195,6 @@ impl AstNode for While {
 #[derive(Debug)]
 pub struct CommandBlock {
     pub node_id: Span,
-    pub scope_type: Option<Span>,
     pub first_command: Option<Box<dyn AstNode>>,
     pub next: Option<Box<dyn AstNode>>,
 }
@@ -2175,13 +2202,11 @@ pub struct CommandBlock {
 impl CommandBlock {
     pub fn new(
         node_id: Span,
-        scope_type: Option<Span>,
         first_command: Option<Box<dyn AstNode>>,
         next: Option<Box<dyn AstNode>>,
     ) -> CommandBlock {
         CommandBlock {
             node_id,
-            scope_type,
             first_command,
             next,
         }
@@ -2211,11 +2236,7 @@ impl AstNode for CommandBlock {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         if let Some(command) = &self.first_command {
-            let scope_type = match self.scope_type {
-                Some(span) => Some(SymbolType::from_str(lexer.span_str(span))?),
-                None => None,
-            };
-            stack.add_scope(scope_type);
+            stack.add_scope(None);
             command.evaluate_node(stack, lexer)?;
             stack.remove_scope()?;
         };
