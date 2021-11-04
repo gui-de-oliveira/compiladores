@@ -1547,9 +1547,13 @@ impl AstNode for Continue {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -1595,9 +1599,13 @@ impl AstNode for Break {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -1698,6 +1706,10 @@ impl AstNode for Return {
                 highlight,
             });
         }
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
 
         Ok(None)
     }
@@ -1965,6 +1977,11 @@ impl AstNode for If {
                 )))?;
         condition_symbol.to_bool(self.node_id, lexer)?;
         self.consequence.evaluate_node(stack, lexer)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2050,6 +2067,11 @@ impl AstNode for IfElse {
         condition_symbol.to_bool(self.node_id, lexer)?;
         self.if_true.evaluate_node(stack, lexer)?;
         self.if_false.evaluate_node(stack, lexer)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2140,6 +2162,11 @@ impl AstNode for For {
         count_check_symbol.to_bool(self.node_id, lexer)?;
         self.count_iter.evaluate_node(stack, lexer)?;
         self.actions.evaluate_node(stack, lexer)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2217,6 +2244,11 @@ impl AstNode for While {
                 )))?;
         condition_symbol.to_bool(self.node_id, lexer)?;
         self.consequence.evaluate_node(stack, lexer)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2422,7 +2454,7 @@ impl AstNode for Ternary {
                 .ok_or(CompilerError::SanityError(format!(
                     "if_false has no SymbolType (on Ternary.evaluate_node())"
                 )))?;
-        match condition_symbol.to_bool(self.left_span, lexer)? {
+        let return_symbol = match condition_symbol.to_bool(self.left_span, lexer)? {
             Some(truthy_value) => {
                 if truthy_value {
                     Ok(Some(if_true_symbol))
@@ -2435,7 +2467,13 @@ impl AstNode for Ternary {
                 self.right_span,
                 lexer,
             )?)),
-        }
+        };
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
+        return_symbol
     }
     fn get_id(&self) -> Span {
         self.left_span
@@ -3116,11 +3154,17 @@ impl AstNode for Binary {
             )));
         };
 
-        Ok(Some(self.binary_evaluation(
+        let return_value = Ok(Some(self.binary_evaluation(
             left_value_type,
             right_value_type,
             lexer,
-        )?))
+        )?));
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
+        return_value
     }
     fn get_id(&self) -> Span {
         self.node_id
@@ -3773,6 +3817,10 @@ impl AstNode for LiteralFloat {
 
         stack.push_symbol(our_symbol)?;
 
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
+
         Ok(Some(var_type))
     }
     fn get_id(&self) -> Span {
@@ -3841,6 +3889,10 @@ impl AstNode for LiteralBool {
         let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
 
         Ok(Some(var_type))
     }
@@ -3918,6 +3970,10 @@ impl AstNode for LiteralChar {
         let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
 
         Ok(Some(var_type))
     }
@@ -3998,6 +4054,10 @@ impl AstNode for LiteralString {
         let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
 
         stack.push_symbol(our_symbol)?;
+
+        if let Some(node) = &self.next {
+            node.evaluate_node(stack, lexer)?;
+        };
 
         Ok(Some(var_type))
     }
