@@ -2366,11 +2366,41 @@ impl AstNode for Ternary {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        //TO DO: Implement a boolean return here.
-        Ok(None)
+        let condition_symbol =
+            self.condition
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "condition has no SymbolType (on Ternary.evaluate_node())"
+                )))?;
+        let if_true_symbol =
+            self.if_true
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "if_true has no SymbolType (on Ternary.evaluate_node())"
+                )))?;
+        let if_false_symbol =
+            self.if_false
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "if_false has no SymbolType (on Ternary.evaluate_node())"
+                )))?;
+        match condition_symbol.to_bool(self.left_span, lexer)? {
+            Some(truthy_value) => {
+                if truthy_value {
+                    Ok(Some(if_true_symbol))
+                } else {
+                    Ok(Some(if_false_symbol))
+                }
+            }
+            None => Ok(Some(if_true_symbol.associate_with(
+                &if_false_symbol,
+                self.right_span,
+                lexer,
+            )?)),
+        }
     }
     fn get_id(&self) -> Span {
         self.left_span
@@ -3354,63 +3384,6 @@ pub enum UnaryType {
     Hash,
     Address,
     Pointer,
-}
-
-#[derive(Debug)]
-pub struct VarAccess {
-    node_id: Span,
-    next: Option<Box<dyn AstNode>>,
-}
-
-impl VarAccess {
-    pub fn new(node_id: Span, next: Option<Box<dyn AstNode>>) -> VarAccess {
-        VarAccess { node_id, next }
-    }
-}
-
-impl AstNode for VarAccess {
-    fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
-        if let Some(next_node) = &self.next {
-            print_dependencies_own_next(next_node.as_ref(), own_address);
-        }
-        if let Some(next_node) = &self.next {
-            print_dependencies_next(next_node.as_ref(), own_address);
-        }
-    }
-    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        print_label_self(self.node_id, lexer, own_address);
-        if let Some(next_node) = &self.next {
-            print_labels_next(next_node.as_ref(), own_address, lexer)
-        }
-    }
-    fn is_tree_member(&self) -> bool {
-        true
-    }
-    fn append_to_next(&mut self, new_last: Box<dyn AstNode>) {
-        self.next = append_node(&mut self.next, new_last)
-    }
-    fn evaluate_node(
-        &self,
-        stack: &mut ScopeStack,
-        lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<Option<SymbolType>, CompilerError> {
-        let span = self.node_id;
-        let class = SymbolClass::Var;
-        let previous_def = stack.get_previous_def(span, lexer, class)?;
-        let type_value = previous_def.type_value.clone();
-
-        if let Some(node) = &self.next {
-            node.evaluate_node(stack, lexer)?;
-        };
-
-        Ok(Some(type_value))
-    }
-    fn get_id(&self) -> Span {
-        self.node_id
-    }
-    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
-        &self.next
-    }
 }
 
 #[derive(Debug)]
