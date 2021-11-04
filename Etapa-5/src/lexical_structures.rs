@@ -1954,9 +1954,17 @@ impl AstNode for If {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        let condition_symbol =
+            self.condition
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "condition has no SymbolType (on If.evaluate_node())"
+                )))?;
+        condition_symbol.to_bool(self.node_id, lexer)?;
+        self.consequence.evaluate_node(stack, lexer)?;
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2030,9 +2038,18 @@ impl AstNode for IfElse {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        let condition_symbol =
+            self.condition
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "condition has no SymbolType (on IfElse.evaluate_node())"
+                )))?;
+        condition_symbol.to_bool(self.node_id, lexer)?;
+        self.if_true.evaluate_node(stack, lexer)?;
+        self.if_false.evaluate_node(stack, lexer)?;
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2110,9 +2127,19 @@ impl AstNode for For {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        self.count_init.evaluate_node(stack, lexer)?;
+        let count_check_symbol =
+            self.count_check
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "count_check has no SymbolType (on For.evaluate_node())"
+                )))?;
+        count_check_symbol.to_bool(self.node_id, lexer)?;
+        self.count_iter.evaluate_node(stack, lexer)?;
+        self.actions.evaluate_node(stack, lexer)?;
         Ok(None)
     }
     fn get_id(&self) -> Span {
@@ -2179,9 +2206,17 @@ impl AstNode for While {
     }
     fn evaluate_node(
         &self,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
+        stack: &mut ScopeStack,
+        lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
+        let condition_symbol =
+            self.condition
+                .evaluate_node(stack, lexer)?
+                .ok_or(CompilerError::SanityError(format!(
+                    "condition has no SymbolType (on While.evaluate_node())"
+                )))?;
+        condition_symbol.to_bool(self.node_id, lexer)?;
+        self.consequence.evaluate_node(stack, lexer)?;
         Ok(None)
     }
     fn get_id(&self) -> Span {
