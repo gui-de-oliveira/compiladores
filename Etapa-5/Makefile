@@ -20,11 +20,6 @@ clean:
 zip:
 	tar cvzf etapa5.tgz Makefile Cargo.toml build.rs semanticTests.js src/ README.md
 
-allTests:
-	make debug
-	mkdir -p testFiles
-	node semanticTests.js ALL
-
 test:
 	make debug
-	python3 runSyntaxTests.py
+	node runSynthesisTests.js
