@@ -646,7 +646,7 @@ expressionOperand -> Result<Box<dyn AstNode>, CompilerError>:
     ;
 
 accessOrFnCall -> Result<Box<dyn AstNode>, CompilerError>:
-    identifier_rule { Ok(Box::new(VarAccess::new($1?, None))) }
+    identifier_rule { Ok(Box::new(VarInvoke::new($1?, None))) }
     | vecAccess { Ok(Box::new($1?)) }
     | functionCall { $1 }
     ;
