@@ -309,7 +309,8 @@ vecAccess -> Result<VecAccess, CompilerError>:
 
 varSet -> Result<Box<dyn AstNode>, CompilerError>:
     identifier_rule setTok expression {
-        let var_name = Box::new($1?);
+        let id_span = $1?;
+        let var_name = Box::new(VarInvoke::new(id_span, None));
         let op_name = $2?;
         let new_value = Box::new($3?);
         Ok(Box::new(VarSet::new(op_name, var_name, new_value, None)))
