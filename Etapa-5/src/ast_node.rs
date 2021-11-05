@@ -9,16 +9,17 @@ use std::ffi::c_void;
 use std::fmt::Debug;
 
 use super::error::CompilerError;
+use super::instructions::IlocCode;
 use super::semantic_structures::{ScopeStack, SymbolType};
 
 pub trait AstNode: Debug {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool);
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void);
-    fn print_code(&self) {}
     fn is_tree_member(&self) -> bool;
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>);
     fn evaluate_node(
         &self,
+        code: &mut IlocCode,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError>;
@@ -41,19 +42,17 @@ impl AstNode for Box<dyn AstNode> {
     }
     fn evaluate_node(
         &self,
+        code: &mut IlocCode,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.as_ref().evaluate_node(stack, lexer)
+        self.as_ref().evaluate_node(code, stack, lexer)
     }
     fn get_id(&self) -> Span {
         self.as_ref().get_id()
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         self.as_ref().get_next()
-    }
-    fn print_code(&self) {
-        self.as_ref().print_code()
     }
 }
 
@@ -69,6 +68,7 @@ impl AstNode for Span {
     //TO DO: remove Span from tree
     fn evaluate_node(
         &self,
+        _code: &mut IlocCode,
         _stack: &mut ScopeStack,
         _lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
