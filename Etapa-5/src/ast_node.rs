@@ -14,6 +14,7 @@ use super::semantic_structures::{ScopeStack, SymbolType};
 pub trait AstNode: Debug {
     fn print_dependencies(&self, own_address: *const c_void, ripple: bool);
     fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void);
+    fn print_code(&self) {}
     fn is_tree_member(&self) -> bool;
     fn append_to_next(&mut self, new_last: Box<dyn AstNode>);
     fn evaluate_node(
@@ -50,6 +51,9 @@ impl AstNode for Box<dyn AstNode> {
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         self.as_ref().get_next()
+    }
+    fn print_code(&self) {
+        self.as_ref().print_code()
     }
 }
 

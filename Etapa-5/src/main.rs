@@ -47,7 +47,8 @@ fn run_app() -> Result<(), CompilerError> {
         Some(Ok(abstract_syntax_tree)) => {
             abstract_syntax_tree.evaluate(&lexer)?;
 
-            abstract_syntax_tree.print_tree(&lexer);
+            abstract_syntax_tree.print_tree_code(&lexer);
+            // abstract_syntax_tree.print_tree(&lexer);
         }
         Some(Err(error)) => {
             return Err(error);

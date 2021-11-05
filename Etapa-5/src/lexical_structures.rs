@@ -229,6 +229,7 @@ pub struct FnDef {
     params: Vec<Parameter>,
     first_command: Option<Box<dyn AstNode>>,
     next: Option<Box<dyn AstNode>>,
+    code: Vec<String>,
 }
 
 impl FnDef {
@@ -240,6 +241,23 @@ impl FnDef {
         first_command: Option<Box<dyn AstNode>>,
         next: Option<Box<dyn AstNode>>,
     ) -> FnDef {
+        // FAKE VALUES!
+        let mut code: Vec<String> = Vec::new();
+        code.push("L0:".to_string()); // function label
+        code.push("i2i rsp => rfp".to_string()); // set rfp to rsp
+        code.push("addI rsp, 16 => rsp".to_string()); // updates rsp
+
+        // should copy command block's code here ><
+
+        code.push("loadAI rfp, 0 => r0".to_string()); // return address
+        code.push("loadAI rfp, 4 => r1".to_string()); // restore rsp
+        code.push("loadAI rfp, 8 => r2".to_string()); // restore rfp
+
+        code.push("i2i r1 => rsp".to_string()); // idk
+        code.push("i2i r2 => rfp".to_string()); // idk
+
+        code.push("jump -> r0".to_string()); // returns
+
         FnDef {
             is_static,
             return_type,
@@ -247,11 +265,18 @@ impl FnDef {
             params,
             first_command,
             next,
+            code,
         }
     }
 }
 
 impl AstNode for FnDef {
+    fn print_code(&self) {
+        for line in &self.code {
+            println!("{}", line)
+        }
+    }
+
     fn print_dependencies(&self, own_address: *const c_void, _ripple: bool) {
         if let Some(command) = &self.first_command {
             print_dependencies_own(command.as_ref(), own_address);

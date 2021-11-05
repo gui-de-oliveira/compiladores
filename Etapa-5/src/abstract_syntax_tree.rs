@@ -35,37 +35,25 @@ impl AbstractSyntaxTree {
 
         code.push("halt".to_string());
 
-        // FAKE VALUE (SHOULD GET FROM MAIN)
-
-        code.push("L0:".to_string()); // function label
-        code.push("i2i rsp => rfp".to_string()); // set rfp to rsp
-        code.push("addI rsp, 16 => rsp".to_string()); // updates rsp
-
-        // should copy command block's code here ><
-
-        code.push("loadAI rfp, 0 => r0".to_string()); // return address
-        code.push("loadAI rfp, 4 => r1".to_string()); // restore rsp
-        code.push("loadAI rfp, 8 => r2".to_string()); // restore rfp
-
-        code.push("i2i r1 => rsp".to_string()); // idk
-        code.push("i2i r2 => rfp".to_string()); // idk
-
-        code.push("jump -> r0".to_string()); // returns
-
         AbstractSyntaxTree { top_node, code }
     }
 
-    pub fn print_tree(&self, lexer: &dyn NonStreamingLexer<u32>) {
+    pub fn print_tree_code(&self, lexer: &dyn NonStreamingLexer<u32>) {
         for line in &self.code {
             println!("{}", line)
         }
 
-        // TO DELETE:
-        // if let Some(node) = &self.top_node {
-        //     let address = addr_of!(node) as *const c_void;
-        //     node.print_dependencies(address, false);
-        //     node.print_labels(lexer, address);
-        // }
+        if let Some(node) = &self.top_node {
+            node.print_code();
+        }
+    }
+
+    pub fn print_tree(&self, lexer: &dyn NonStreamingLexer<u32>) {
+        if let Some(node) = &self.top_node {
+            let address = addr_of!(node) as *const c_void;
+            node.print_dependencies(address, false);
+            node.print_labels(lexer, address);
+        }
     }
 
     pub fn evaluate(&self, lexer: &dyn NonStreamingLexer<u32>) -> Result<(), CompilerError> {
