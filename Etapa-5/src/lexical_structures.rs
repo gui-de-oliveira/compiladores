@@ -738,7 +738,6 @@ impl AstNode for VarLeftShift {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.node_id.evaluate_node(code, stack, lexer)?;
         self.var_name.evaluate_node(code, stack, lexer)?;
         self.shift_amount.evaluate_node(code, stack, lexer)?;
 
@@ -851,7 +850,6 @@ impl AstNode for VarRightShift {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.node_id.evaluate_node(code, stack, lexer)?;
         self.var_name.evaluate_node(code, stack, lexer)?;
         self.shift_amount.evaluate_node(code, stack, lexer)?;
 
@@ -964,7 +962,6 @@ impl AstNode for VecLeftShift {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.node_id.evaluate_node(code, stack, lexer)?;
         self.vec_access.evaluate_node(code, stack, lexer)?;
 
         self.shift_amount.evaluate_node(code, stack, lexer)?;
@@ -1078,7 +1075,6 @@ impl AstNode for VecRightShift {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.node_id.evaluate_node(code, stack, lexer)?;
         self.vec_access.evaluate_node(code, stack, lexer)?;
 
         self.shift_amount.evaluate_node(code, stack, lexer)?;
@@ -1138,7 +1134,7 @@ impl AstNode for VecRightShift {
 #[derive(Debug)]
 pub struct VarSet {
     node_id: Span,
-    var_name: Box<dyn AstNode>,
+    var_name: Box<VarInvoke>,
     new_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -1146,7 +1142,7 @@ pub struct VarSet {
 impl VarSet {
     pub fn new(
         node_id: Span,
-        var_name: Box<dyn AstNode>,
+        var_name: Box<VarInvoke>,
         new_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarSet {
@@ -1192,7 +1188,6 @@ impl AstNode for VarSet {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.node_id.evaluate_node(code, stack, lexer)?;
         self.var_name.evaluate_node(code, stack, lexer)?;
         let new_value_symbol =
             self.new_value

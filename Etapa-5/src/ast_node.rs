@@ -55,29 +55,3 @@ impl AstNode for Box<dyn AstNode> {
         self.as_ref().get_next()
     }
 }
-
-impl AstNode for Span {
-    fn print_dependencies(&self, _own_address: *const c_void, _ripple: bool) {}
-    fn print_labels(&self, lexer: &dyn NonStreamingLexer<u32>, own_address: *const c_void) {
-        println!("{:p} [label=\"{}\"];", own_address, lexer.span_str(*self))
-    }
-    fn is_tree_member(&self) -> bool {
-        true
-    }
-    fn append_to_next(&mut self, _new_last: Box<dyn AstNode>) {}
-    //TO DO: remove Span from tree
-    fn evaluate_node(
-        &self,
-        _code: &mut IlocCode,
-        _stack: &mut ScopeStack,
-        _lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<Option<SymbolType>, CompilerError> {
-        Ok(None)
-    }
-    fn get_id(&self) -> Span {
-        self.clone()
-    }
-    fn get_next(&self) -> &Option<Box<dyn AstNode>> {
-        &None
-    }
-}
