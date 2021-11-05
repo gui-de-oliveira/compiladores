@@ -6,6 +6,7 @@ mod abstract_syntax_tree;
 mod ast_node;
 mod auxiliary_lexical_structures;
 mod error;
+mod instructions;
 mod lexical_structures;
 mod semantic_structures;
 
@@ -45,9 +46,8 @@ fn run_app() -> Result<(), CompilerError> {
 
     match parsed {
         Some(Ok(abstract_syntax_tree)) => {
-            abstract_syntax_tree.evaluate(&lexer)?;
-
-            abstract_syntax_tree.print_tree_code(&lexer);
+            let iloc_code = abstract_syntax_tree.evaluate(&lexer)?;
+            iloc_code.print();
             // abstract_syntax_tree.print_tree(&lexer);
         }
         Some(Err(error)) => {
