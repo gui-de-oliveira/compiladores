@@ -309,25 +309,6 @@ impl AstNode for FnDef {
 
         stack.add_scope(Some(return_type));
 
-        /*
-        // FAKE VALUES!
-        let mut code: Vec<String> = Vec::new();
-        code.push("L0:".to_string()); // function label
-        code.push("i2i rsp => rfp".to_string()); // set rfp to rsp
-        code.push("addI rsp, 16 => rsp".to_string()); // updates rsp
-
-        // should copy command block's code here ><
-
-        code.push("loadAI rfp, 0 => r0".to_string()); // return address
-        code.push("loadAI rfp, 4 => r1".to_string()); // restore rsp
-        code.push("loadAI rfp, 8 => r2".to_string()); // restore rfp
-
-        code.push("i2i r1 => rsp".to_string()); // idk
-        code.push("i2i r2 => rfp".to_string()); // idk
-
-        code.push("jump -> r0".to_string()); // returns
-        */
-
         let mut starting_size = 16;
         for param in self.params.iter() {
             starting_size += param.evaluate_param(code, stack, lexer)?;
