@@ -25,3 +25,5 @@ Cargo.lock
 
 etapa5
 etapa5.tgz
+
+node_modules/
