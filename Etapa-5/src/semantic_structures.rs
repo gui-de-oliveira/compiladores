@@ -251,12 +251,19 @@ pub enum IntValue {
     Undefined,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum BoolValue {
+    Literal(bool),
+    Temp(Register),
+    Undefined,
+}
+
 #[derive(Clone, Debug)]
 pub enum SymbolType {
     Int(IntValue),
     Float(Option<f64>),
     Char(Option<u8>),
-    Bool(Option<bool>),
+    Bool(BoolValue),
     String(Option<String>),
 }
 
@@ -274,7 +281,7 @@ impl SymbolType {
         match str_type {
             "int" => Ok(SymbolType::Int(IntValue::Undefined)),
             "float" => Ok(SymbolType::Float(None)),
-            "bool" => Ok(SymbolType::Bool(None)),
+            "bool" => Ok(SymbolType::Bool(BoolValue::Undefined)),
             "char" => Ok(SymbolType::Char(None)),
             "string" => Ok(SymbolType::String(None)),
             _ => Err(CompilerError::LexicalError(format!(
@@ -287,11 +294,11 @@ impl SymbolType {
         &self,
         span: Span,
         lexer: &dyn NonStreamingLexer<u32>,
-    ) -> Result<Option<bool>, CompilerError> {
+    ) -> Result<BoolValue, CompilerError> {
         match self {
-            SymbolType::Bool(Some(value)) => Ok(Some(*value)),
-            SymbolType::Int(IntValue::Literal(value)) => Ok(Some(*value != 0)),
-            SymbolType::Float(Some(value)) => Ok(Some(*value != 0.0)),
+            SymbolType::Bool(value) => Ok(*value),
+            SymbolType::Int(IntValue::Literal(value)) => Ok(BoolValue::Literal(*value != 0)),
+            SymbolType::Float(Some(value)) => Ok(BoolValue::Literal(*value != 0.0)),
             SymbolType::Char(_) => {
                 let invalid_type = "boolean".to_string();
                 let ((line, col), (_, _)) = lexer.line_col(span);
@@ -314,7 +321,7 @@ impl SymbolType {
                     highlight,
                 })
             }
-            _ => Ok(None),
+            _ => Ok(BoolValue::Undefined),
         }
     }
     pub fn to_int(
@@ -324,7 +331,7 @@ impl SymbolType {
     ) -> Result<IntValue, CompilerError> {
         match &self {
             SymbolType::Int(int_type) => Ok(*int_type),
-            SymbolType::Bool(Some(value)) => Ok(IntValue::Literal(*value as i32)),
+            SymbolType::Bool(BoolValue::Literal(value)) => Ok(IntValue::Literal(*value as i32)),
             SymbolType::Float(Some(value)) => Ok(IntValue::Literal(*value as i32)),
             SymbolType::Char(_) => {
                 let invalid_type = "int".to_string();
@@ -359,7 +366,7 @@ impl SymbolType {
         match self {
             SymbolType::Float(Some(value)) => Ok(Some(*value)),
             SymbolType::Int(IntValue::Literal(value)) => Ok(Some(*value as f64)),
-            SymbolType::Bool(Some(value)) => Ok(Some((*value as u32) as f64)),
+            SymbolType::Bool(BoolValue::Literal(value)) => Ok(Some((*value as u32) as f64)),
             SymbolType::Char(_) => {
                 let invalid_type = "float".to_string();
                 let ((line, col), (_, _)) = lexer.line_col(span);
@@ -394,7 +401,9 @@ impl SymbolType {
         match (self, friend) {
             (SymbolType::Int(_), SymbolType::Int(_)) => Ok(SymbolType::Int(IntValue::Undefined)),
             (SymbolType::Float(_), SymbolType::Float(_)) => Ok(SymbolType::Float(None)),
-            (SymbolType::Bool(_), SymbolType::Bool(_)) => Ok(SymbolType::Bool(None)),
+            (SymbolType::Bool(_), SymbolType::Bool(_)) => {
+                Ok(SymbolType::Bool(BoolValue::Undefined))
+            }
             (SymbolType::Bool(_), SymbolType::Int(_))
             | (SymbolType::Int(_), SymbolType::Bool(_)) => Ok(SymbolType::Int(IntValue::Undefined)),
             (SymbolType::Float(_), SymbolType::Int(_))

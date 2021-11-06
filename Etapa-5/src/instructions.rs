@@ -91,6 +91,9 @@ pub enum Operation {
     MultI(Register, i32, Register),
     Div(Register, Register, Register),
     DivI(Register, i32, Register),
+    And(Register, Register),
+    Or(Register, Register),
+    Not(Register),
 }
 
 impl Operation {
@@ -195,6 +198,13 @@ impl Operation {
                     reg_b.to_string(),
                 )
             }
+            Operation::And(reg_a, reg_b) => {
+                format!("and {} => {}", reg_a.to_string(), reg_b.to_string())
+            }
+            Operation::Or(reg_a, reg_b) => {
+                format!("or {} => {}", reg_a.to_string(), reg_b.to_string())
+            }
+            Operation::Not(reg) => format!("not -> {}", reg.to_string()),
         })
     }
     pub fn pay_promises(
@@ -225,6 +235,9 @@ impl Operation {
             Operation::MultI(reg_a, num, reg_b) => Operation::MultI(*reg_a, *num, *reg_b),
             Operation::Div(reg_a, reg_b, reg_c) => Operation::Div(*reg_a, *reg_b, *reg_c),
             Operation::DivI(reg_a, num, reg_b) => Operation::DivI(*reg_a, *num, *reg_b),
+            Operation::And(reg_a, reg_b) => Operation::And(*reg_a, *reg_b),
+            Operation::Or(reg_a, reg_b) => Operation::Or(*reg_a, *reg_b),
+            Operation::Not(reg) => Operation::Not(*reg),
         })
     }
 }
