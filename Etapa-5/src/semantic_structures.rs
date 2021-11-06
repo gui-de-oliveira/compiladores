@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use lrpar::{NonStreamingLexer, Span};
 
 use super::error::CompilerError;
+use super::instructions::Register;
 use super::lexical_structures::Parameter;
 
 #[derive(Debug)]
@@ -19,6 +20,8 @@ pub struct DefSymbol {
     pub type_value: SymbolType,
     pub class: SymbolClass,
     pub size: Option<u32>,
+    pub offset_source: Register,
+    pub offset: u32,
 }
 
 impl DefSymbol {
@@ -30,6 +33,8 @@ impl DefSymbol {
         type_value: SymbolType,
         class: SymbolClass,
         size: Option<u32>,
+        offset_source: Register,
+        offset: u32,
     ) -> DefSymbol {
         DefSymbol {
             id,
@@ -39,6 +44,8 @@ impl DefSymbol {
             type_value,
             class,
             size,
+            offset_source,
+            offset,
         }
     }
     pub fn cast_or_scream(
@@ -57,6 +64,8 @@ impl DefSymbol {
                 right_type.clone(),
                 self.class.clone(),
                 self.size,
+                self.offset_source,
+                self.offset,
             )),
             (SymbolType::String(_), right_type @ SymbolType::String(Some(_))) => {
                 let incoming_size = right_type.get_symbol_type_size();
@@ -84,6 +93,8 @@ impl DefSymbol {
                         } else {
                             incoming_size
                         }),
+                        self.offset_source,
+                        self.offset,
                     ))
                 }
             }
@@ -106,6 +117,8 @@ impl DefSymbol {
                 right_type.clone(),
                 self.class.clone(),
                 self.size,
+                self.offset_source,
+                self.offset,
             )),
             (SymbolType::Char(_), bad_type) => {
                 let ((line, col), (_, _)) = lexer.line_col(span);
@@ -131,6 +144,8 @@ impl DefSymbol {
                 SymbolType::Float(right_type.to_float(span, lexer)?),
                 self.class.clone(),
                 self.size,
+                self.offset_source,
+                self.offset,
             )),
             (
                 SymbolType::Int(_),
@@ -145,6 +160,8 @@ impl DefSymbol {
                 SymbolType::Int(right_type.to_int(span, lexer)?),
                 self.class.clone(),
                 self.size,
+                self.offset_source,
+                self.offset,
             )),
             (
                 SymbolType::Bool(_),
@@ -159,6 +176,8 @@ impl DefSymbol {
                 SymbolType::Bool(right_type.to_bool(span, lexer)?),
                 self.class.clone(),
                 self.size,
+                self.offset_source,
+                self.offset,
             )),
             (
                 bad_type @ SymbolType::Int(_)
