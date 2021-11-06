@@ -61,10 +61,57 @@ async function testInput(input, expected) {
     if (formattedOutput !== formattedExpected) {
       console.log(FontColor.Fg.Red);
       console.log(`Test ${testsCounter} failed!`);
-      console.log(`Input: \n${input}\n`);
-      console.log(`Expected: \n${formattedExpected}\n`);
-      console.log(`Received: \n${formattedOutput}\n`);
-      console.log(FontColor.Reset);
+      console.log(`Input: \n${input}\n` + FontColor.Reset);
+
+      const expectedLines = formattedExpected.split("\n");
+      const receivedLines = formattedOutput.split("\n");
+
+      console.log(`Output:`);
+      for (
+        let expectedI = 0, receivedI = 0;
+        expectedI < expectedLines.length || receivedI < receivedLines.length;
+
+      ) {
+        if (receivedI > receivedLines.length) {
+          console.log(
+            FontColor.Fg.Green + `EXPECTED: ${expectedLines[expectedI]}`
+          );
+          expectedI++;
+        }
+
+        const receivedLine = receivedLines[receivedI];
+        const expectedLine = expectedLines[expectedI];
+
+        if (expectedLine === receivedLine) {
+          console.log(receivedLine);
+          expectedI += 1;
+          receivedI += 1;
+          continue;
+        }
+
+        const expectedLineOnReceivedLine = receivedLines.findIndex(
+          (line, i) => i > receivedI && line === expectedLine
+        );
+
+        const isExpectedLineOnReceivedArray = expectedLineOnReceivedLine !== -1;
+        if (!isExpectedLineOnReceivedArray) {
+          console.log(
+            FontColor.Fg.Green +
+              `EXPECTED: ${expectedLines[expectedI]}` +
+              FontColor.Reset
+          );
+          expectedI += 1;
+          continue;
+        }
+
+        for (; receivedI < expectedLineOnReceivedLine; receivedI++) {
+          console.log(
+            FontColor.Fg.Red +
+              `RECEIVED: ${receivedLines[receivedI]}` +
+              FontColor.Reset
+          );
+        }
+      }
 
       process.exit();
     }
