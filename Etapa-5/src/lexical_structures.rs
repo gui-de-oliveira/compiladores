@@ -10,7 +10,7 @@ use std::ptr::addr_of;
 use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::instructions::{Address, IlocCode, Instruction, Operation, Register};
-use super::semantic_structures::{
+use super::semantic_structures::{ BoolValue,
     CallSymbol, DefSymbol, IntValue, ScopeStack, SymbolClass, SymbolType,
 };
 
@@ -2644,14 +2644,14 @@ impl AstNode for Ternary {
                     "if_false has no SymbolType (on Ternary.evaluate_node())"
                 )))?;
         let return_symbol = match condition_symbol.to_bool(self.left_span, lexer)? {
-            Some(truthy_value) => {
+            BoolValue::Literal(truthy_value) => {
                 if truthy_value {
                     Ok(Some(if_true_symbol))
                 } else {
                     Ok(Some(if_false_symbol))
                 }
             }
-            None => Ok(Some(if_true_symbol.associate_with(
+            _ => Ok(Some(if_true_symbol.associate_with(
                 &if_false_symbol,
                 self.right_span,
                 lexer,
@@ -2710,18 +2710,46 @@ impl Binary {
                 left_value.to_bool(self.node_id, lexer)?,
                 right_value.to_bool(self.node_id, lexer)?,
             ) {
-                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
-                (Some(left_value), Some(right_value)) => {
-                    Ok(SymbolType::Bool(Some(left_value || right_value)))
+                (BoolValue::Undefined, _) | (_, BoolValue::Undefined) => Ok(SymbolType::Bool(BoolValue::Undefined)),
+                (BoolValue::Literal(left_value), BoolValue::Literal(right_value)) => {
+                    Ok(SymbolType::Bool(BoolValue::Literal(left_value || right_value)))
+                }
+                (BoolValue::Temp(register), BoolValue::Literal(value)) | (BoolValue::Literal(value), BoolValue::Temp(register)) => {
+                    if value {
+                        Ok(SymbolType::Bool(BoolValue::Literal(true)))
+                    } else {
+                        Ok(SymbolType::Bool(BoolValue::Temp(register)))
+                    }
+                }
+                (BoolValue::Temp(left_register), BoolValue::Temp(right_register)) => {
+                    code.push_instruction(Instruction::Unlabeled(Operation::Or(
+                        left_register,
+                        right_register,
+                    )));
+                    Ok(SymbolType::Bool(BoolValue::Temp(left_register)))
                 }
             },
             BinaryType::BoolAnd => match (
                 left_value.to_bool(self.node_id, lexer)?,
                 right_value.to_bool(self.node_id, lexer)?,
             ) {
-                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
-                (Some(left_value), Some(right_value)) => {
-                    Ok(SymbolType::Bool(Some(left_value && right_value)))
+                (BoolValue::Undefined, _) | (_, BoolValue::Undefined) => Ok(SymbolType::Bool(BoolValue::Undefined)),
+                (BoolValue::Literal(left_value), BoolValue::Literal(right_value)) => {
+                    Ok(SymbolType::Bool(BoolValue::Literal(left_value && right_value)))
+                }
+                (BoolValue::Temp(register), BoolValue::Literal(value)) | (BoolValue::Literal(value), BoolValue::Temp(register)) => {
+                    if !value {
+                        Ok(SymbolType::Bool(BoolValue::Literal(false)))
+                    } else {
+                        Ok(SymbolType::Bool(BoolValue::Temp(register)))
+                    }
+                }
+                (BoolValue::Temp(left_register), BoolValue::Temp(right_register)) => {
+                    code.push_instruction(Instruction::Unlabeled(Operation::And(
+                        left_register,
+                        right_register,
+                    )));
+                    Ok(SymbolType::Bool(BoolValue::Temp(left_register)))
                 }
             },
             BinaryType::BitOr => match (
@@ -2731,7 +2759,7 @@ impl Binary {
                 (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                     Ok(SymbolType::Int(IntValue::Literal(left_value | right_value)))
                 }
-                (_, _) => Ok(SymbolType::Bool(None)),
+                (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
             },
             BinaryType::BitXor => match (
                 left_value.to_int(self.node_id, lexer)?,
@@ -2740,7 +2768,7 @@ impl Binary {
                 (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                     Ok(SymbolType::Int(IntValue::Literal(left_value ^ right_value)))
                 }
-                (_, _) => Ok(SymbolType::Bool(None)),
+                (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
             },
             BinaryType::BitAnd => match (
                 left_value.to_int(self.node_id, lexer)?,
@@ -2749,7 +2777,7 @@ impl Binary {
                 (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                     Ok(SymbolType::Int(IntValue::Literal(left_value & right_value)))
                 }
-                (_, _) => Ok(SymbolType::Bool(None)),
+                (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
             },
             BinaryType::Add => {
                 match left_value.associate_with(&right_value, self.node_id, lexer)? {
@@ -3497,9 +3525,9 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
-                                Ok(SymbolType::Bool(Some(left_value == right_value)))
+                                Ok(SymbolType::Bool(BoolValue::Literal(left_value == right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Bool(None)),
+                            (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3507,9 +3535,9 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Bool(Some(left_value == right_value)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(left_value == right_value)))
                         }
-                        (_, _) => Ok(SymbolType::Bool(None)),
+                        (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                     },
                 }
             }
@@ -3543,9 +3571,9 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
-                                Ok(SymbolType::Bool(Some(left_value != right_value)))
+                                Ok(SymbolType::Bool(BoolValue::Literal(left_value != right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Bool(None)),
+                            (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3553,9 +3581,9 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Bool(Some(left_value != right_value)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(left_value != right_value)))
                         }
-                        (_, _) => Ok(SymbolType::Bool(None)),
+                        (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                     },
                 }
             }
@@ -3589,9 +3617,9 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
-                                Ok(SymbolType::Bool(Some(left_value < right_value)))
+                                Ok(SymbolType::Bool(BoolValue::Literal(left_value < right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Bool(None)),
+                            (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3599,9 +3627,9 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Bool(Some(left_value < right_value)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(left_value < right_value)))
                         }
-                        (_, _) => Ok(SymbolType::Bool(None)),
+                        (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                     },
                 }
             }
@@ -3635,9 +3663,9 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
-                                Ok(SymbolType::Bool(Some(left_value > right_value)))
+                                Ok(SymbolType::Bool(BoolValue::Literal(left_value > right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Bool(None)),
+                            (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3645,9 +3673,9 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Bool(Some(left_value > right_value)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(left_value > right_value)))
                         }
-                        (_, _) => Ok(SymbolType::Bool(None)),
+                        (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                     },
                 }
             }
@@ -3681,9 +3709,9 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
-                                Ok(SymbolType::Bool(Some(left_value <= right_value)))
+                                Ok(SymbolType::Bool(BoolValue::Literal(left_value <= right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Bool(None)),
+                            (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3691,9 +3719,9 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Bool(Some(left_value <= right_value)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(left_value <= right_value)))
                         }
-                        (_, _) => Ok(SymbolType::Bool(None)),
+                        (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                     },
                 }
             }
@@ -3727,9 +3755,9 @@ impl Binary {
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
                             (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
-                                Ok(SymbolType::Bool(Some(left_value >= right_value)))
+                                Ok(SymbolType::Bool(BoolValue::Literal(left_value >= right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Bool(None)),
+                            (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3737,9 +3765,9 @@ impl Binary {
                         right_value.to_float(self.node_id, lexer)?,
                     ) {
                         (Some(left_value), Some(right_value)) => {
-                            Ok(SymbolType::Bool(Some(left_value >= right_value)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(left_value >= right_value)))
                         }
-                        (_, _) => Ok(SymbolType::Bool(None)),
+                        (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                     },
                 }
             }
@@ -3883,13 +3911,14 @@ impl Unary {
                     Ok(symbol)
                 }
                 symbol @ SymbolType::Float(_) => Ok(symbol),
-                SymbolType::Bool(maybe_value) => match &maybe_value {
-                    Some(value) => match value {
+                SymbolType::Bool(BoolValue::Literal(value)) => {
+                    match value {
                         true => Ok(SymbolType::Int(IntValue::Literal(1))),
                         false => Ok(SymbolType::Int(IntValue::Literal(0))),
-                    },
-                    None => Ok(SymbolType::Int(IntValue::Undefined)),
+                    }
                 },
+                SymbolType::Bool(BoolValue::Temp(register)) => Ok(SymbolType::Int(IntValue::Temp(register))),
+                SymbolType::Bool(BoolValue::Undefined) => Ok(SymbolType::Int(IntValue::Undefined)),
                 SymbolType::Char(_) => {
                     let invalid_type = "int or float".to_string();
                     let ((line, col), (_, _)) = lexer.line_col(self.node_id);
@@ -3946,11 +3975,20 @@ impl Unary {
                 }
                 symbol @ SymbolType::Float(_) => Ok(symbol),
                 SymbolType::Bool(maybe_value) => match &maybe_value {
-                    Some(value) => match value {
+                    BoolValue::Literal(value) => match value {
                         true => Ok(SymbolType::Int(IntValue::Literal(-1))),
                         false => Ok(SymbolType::Int(IntValue::Literal(0))),
                     },
-                    None => Ok(SymbolType::Int(IntValue::Undefined)),
+                    BoolValue::Temp(register) => {
+                        let register_copy = *register;
+                        code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                            register_copy,
+                            -1,
+                            register_copy,
+                        )));
+                        Ok(SymbolType::Int(IntValue::Temp(register_copy)))
+                    }
+                    BoolValue::Undefined => Ok(SymbolType::Int(IntValue::Undefined)),
                 },
                 SymbolType::Char(_) => {
                     let invalid_type = "int or float".to_string();
@@ -3979,29 +4017,36 @@ impl Unary {
                 SymbolType::Int(maybe_value) => match &maybe_value {
                     IntValue::Literal(value) => {
                         if *value == 0i32 {
-                            Ok(SymbolType::Bool(Some(true)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(true)))
                         } else {
-                            Ok(SymbolType::Bool(Some(false)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(false)))
                         }
                     }
-                    _ => Ok(SymbolType::Bool(None)),
+                    _ => Ok(SymbolType::Bool(BoolValue::Undefined)),
                 },
                 SymbolType::Float(maybe_value) => match &maybe_value {
                     Some(value) => {
                         if *value == 0f64 {
-                            Ok(SymbolType::Bool(Some(true)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(true)))
                         } else {
-                            Ok(SymbolType::Bool(Some(false)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(false)))
                         }
                     }
-                    None => Ok(SymbolType::Bool(None)),
+                    None => Ok(SymbolType::Bool(BoolValue::Undefined)),
                 },
                 SymbolType::Bool(maybe_value) => match &maybe_value {
-                    Some(value) => match value {
-                        true => Ok(SymbolType::Bool(Some(false))),
-                        false => Ok(SymbolType::Bool(Some(true))),
+                    BoolValue::Literal(value) => match value {
+                        true => Ok(SymbolType::Bool(BoolValue::Literal(false))),
+                        false => Ok(SymbolType::Bool(BoolValue::Literal(true))),
                     },
-                    None => Ok(SymbolType::Bool(None)),
+                    BoolValue::Temp(register) => {
+                        let register_copy = *register;
+                        code.push_instruction(Instruction::Unlabeled(Operation::Not(
+                            register_copy,
+                        )));
+                        Ok(SymbolType::Bool(BoolValue::Temp(register_copy)))
+                    }
+                    BoolValue::Undefined => Ok(SymbolType::Bool(BoolValue::Undefined)),
                 },
                 SymbolType::Char(_) => {
                     let invalid_type = "bool".to_string();
@@ -4030,22 +4075,22 @@ impl Unary {
                 SymbolType::Int(maybe_value) => match &maybe_value {
                     IntValue::Literal(value) => {
                         if *value == 0i32 {
-                            Ok(SymbolType::Bool(Some(false)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(false)))
                         } else {
-                            Ok(SymbolType::Bool(Some(true)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(true)))
                         }
                     }
-                    _ => Ok(SymbolType::Bool(None)),
+                    _ => Ok(SymbolType::Bool(BoolValue::Undefined)),
                 },
                 SymbolType::Float(maybe_value) => match &maybe_value {
                     Some(value) => {
                         if *value == 0f64 {
-                            Ok(SymbolType::Bool(Some(false)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(false)))
                         } else {
-                            Ok(SymbolType::Bool(Some(true)))
+                            Ok(SymbolType::Bool(BoolValue::Literal(true)))
                         }
                     }
-                    None => Ok(SymbolType::Bool(None)),
+                    None => Ok(SymbolType::Bool(BoolValue::Undefined)),
                 },
                 symbol @ SymbolType::Bool(_) => Ok(symbol),
                 SymbolType::Char(_) => {
@@ -4582,7 +4627,7 @@ impl AstNode for LiteralBool {
                 )))
             }
         };
-        let var_type = SymbolType::Bool(Some(var_value));
+        let var_type = SymbolType::Bool(BoolValue::Literal(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
         let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
