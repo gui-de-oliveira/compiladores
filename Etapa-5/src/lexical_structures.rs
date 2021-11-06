@@ -70,7 +70,17 @@ impl AstNode for GlobalVarDef {
         let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
 
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
+        let our_symbol = DefSymbol::new(
+            id,
+            span,
+            line,
+            col,
+            var_type,
+            class,
+            Some(size),
+            Register::Rbss,
+            offset,
+        );
 
         stack.add_def_symbol(our_symbol)?;
         stack.add_offset(size)?;
@@ -207,11 +217,23 @@ impl AstNode for GlobalVecDef {
                 var_type.clone(),
                 class.clone(),
                 Some(base_size),
+                Register::Rbss,
+                offset + (i * base_size),
             );
             stack.add_def_symbol(index_symbol)?;
         }
 
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
+        let our_symbol = DefSymbol::new(
+            id,
+            span,
+            line,
+            col,
+            var_type,
+            class,
+            Some(size),
+            Register::Rbss,
+            offset,
+        );
         stack.add_def_symbol(our_symbol)?;
         stack.add_offset(size)?;
 
@@ -297,6 +319,7 @@ impl AstNode for FnDef {
     ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
+        let offset = stack.get_offset()?;
 
         let return_type = SymbolType::from_str(lexer.span_str(self.return_type))?;
         let id = lexer.span_str(self.node_id).to_string();
@@ -310,6 +333,8 @@ impl AstNode for FnDef {
             return_type.clone(),
             class,
             None,
+            Register::Rbss,
+            offset,
         );
 
         stack.add_scope(Some(return_type));
@@ -419,7 +444,17 @@ impl Parameter {
         let offset = stack.get_offset()?;
         let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
+        let our_symbol = DefSymbol::new(
+            id,
+            span,
+            line,
+            col,
+            var_type,
+            class,
+            Some(size),
+            Register::Rfp,
+            offset,
+        );
 
         stack.add_def_symbol(our_symbol)?;
         stack.add_offset(size)?;
@@ -503,7 +538,17 @@ impl AstNode for LocalVarDef {
         let offset = stack.get_offset()?;
         let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
-        let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
+        let our_symbol = DefSymbol::new(
+            id,
+            span,
+            line,
+            col,
+            var_type,
+            class,
+            Some(size),
+            Register::Rfp,
+            offset,
+        );
 
         stack.add_def_symbol(our_symbol)?;
         stack.add_offset(size)?;
