@@ -2704,7 +2704,6 @@ impl Binary {
         right_value: SymbolType,
         lexer: &dyn NonStreamingLexer<u32>,
         code: &mut IlocCode,
-        _stack: &mut ScopeStack,
     ) -> Result<SymbolType, CompilerError> {
         match &self.op_type {
             BinaryType::BoolOr => match (
@@ -3806,7 +3805,6 @@ impl AstNode for Binary {
             right_value_type,
             lexer,
             code,
-            stack,
         )?));
 
         if let Some(node) = &self.next {
@@ -3872,6 +3870,7 @@ impl Unary {
         &self,
         type_value: SymbolType,
         lexer: &dyn NonStreamingLexer<u32>,
+        code: &mut IlocCode,
     ) -> Result<SymbolType, CompilerError> {
         match &self.op_type {
             UnaryType::Positive => match type_value {
@@ -3915,7 +3914,37 @@ impl Unary {
                 }
             },
             UnaryType::Negative => match type_value {
-                symbol @ SymbolType::Int(_) | symbol @ SymbolType::Float(_) => Ok(symbol),
+                SymbolType::Int(IntValue::Undefined) => {
+                    Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                        "Unary operation Negative matched with undefined Int."
+                    )))
+                }
+                SymbolType::Int(IntValue::Literal(number)) => {
+                    Ok(SymbolType::Int(IntValue::Literal(-number)))
+                }
+                SymbolType::Int(IntValue::Temp(register)) => {
+                    code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                        register,
+                        -1,
+                        register,
+                    )));
+                    Ok(SymbolType::Int(IntValue::Temp(register)))
+                }
+                SymbolType::Int(IntValue::Memory(offset_source, offset)) => {
+                    let register = code.new_register();
+                    code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                        offset_source,
+                        offset as i32,
+                        register,
+                    )));
+                    code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                        register,
+                        -1,
+                        register,
+                    )));
+                    Ok(SymbolType::Int(IntValue::Temp(register)))
+                }
+                symbol @ SymbolType::Float(_) => Ok(symbol),
                 SymbolType::Bool(maybe_value) => match &maybe_value {
                     Some(value) => match value {
                         true => Ok(SymbolType::Int(IntValue::Literal(-1))),
@@ -4096,7 +4125,7 @@ impl AstNode for Unary {
             }
         };
 
-        let type_value = self.unary_evaluation(type_value.clone(), lexer)?;
+        let type_value = self.unary_evaluation(type_value.clone(), lexer, code)?;
 
         if let Some(node) = &self.next {
             return Err(CompilerError::SanityError(format!(
