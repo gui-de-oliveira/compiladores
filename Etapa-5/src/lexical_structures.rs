@@ -9,7 +9,7 @@ use std::ptr::addr_of;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::instructions::{IlocCode, Instruction, Operation, Register, Address};
+use super::instructions::{Address, IlocCode, Instruction, Operation, Register};
 use super::semantic_structures::{CallSymbol, DefSymbol, ScopeStack, SymbolClass, SymbolType};
 
 #[derive(Debug)]
@@ -67,7 +67,7 @@ impl AstNode for GlobalVarDef {
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let is_global = true;
         let offset = stack.get_offset()?;
-        let class = SymbolClass::Var{is_global, offset};
+        let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
 
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
@@ -167,7 +167,7 @@ impl AstNode for GlobalVecDef {
         };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let offset = stack.get_offset()?;
-        let class = SymbolClass::Vec{offset};
+        let class = SymbolClass::Vec { offset };
 
         let vec_size = self.vec_size.evaluate_node(code, stack, lexer)?;
 
@@ -417,7 +417,7 @@ impl Parameter {
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let is_global = false;
         let offset = stack.get_offset()?;
-        let class = SymbolClass::Var{is_global, offset};
+        let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
@@ -501,7 +501,7 @@ impl AstNode for LocalVarDef {
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let is_global = false;
         let offset = stack.get_offset()?;
-        let class = SymbolClass::Var{is_global, offset};
+        let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
         let our_symbol = DefSymbol::new(id, span, line, col, var_type, class, Some(size));
 
@@ -588,7 +588,8 @@ impl AstNode for VarDefInitId {
         self.var_def.evaluate_node(code, stack, lexer)?;
         self.var_value.evaluate_node(code, stack, lexer)?;
 
-        let def_symbol = stack.get_previous_def(self.var_def.get_id(), lexer, SymbolClass::default_var())?;
+        let def_symbol =
+            stack.get_previous_def(self.var_def.get_id(), lexer, SymbolClass::default_var())?;
         let var_symbol =
             stack.get_previous_def(self.var_value.get_id(), lexer, SymbolClass::default_var())?;
 
@@ -1237,12 +1238,15 @@ impl AstNode for VarSet {
                     "New value has no SymbolType (on VarSet.evaluate_node())"
                 )))?;
 
-        let def_symbol = stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::default_var())?;
+        let def_symbol =
+            stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::default_var())?;
 
         let updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
 
-        if let (SymbolType::Int(Some(num)), SymbolClass::Var{is_global, offset}) = (updated_symbol.type_value, updated_symbol.class) {
+        if let (SymbolType::Int(Some(num)), SymbolClass::Var { is_global, offset }) =
+            (updated_symbol.type_value, updated_symbol.class)
+        {
             let new_register = code.new_register();
             code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
                 Address::Number(num),
