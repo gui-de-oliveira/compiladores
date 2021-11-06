@@ -392,7 +392,7 @@ pub struct Parameter {
 impl Parameter {
     fn evaluate_param(
         &self,
-        code: &mut IlocCode,
+        _code: &mut IlocCode,
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<u32, CompilerError> {
@@ -3269,6 +3269,7 @@ impl AstNode for Binary {
                 )))
             }
         };
+
         let right_value_type = match self.rhs.evaluate_node(code, stack, lexer)? {
             Some(value) => value,
             None => {
@@ -3278,6 +3279,79 @@ impl AstNode for Binary {
                 )))
             }
         };
+
+        match (&left_value_type, &right_value_type) {
+            (SymbolType::Int(left_int), SymbolType::Int(right_int)) => {
+                match (left_int, right_int) {
+                    (Some(_), Some(_)) => {}
+                    (None, None) => {
+                        let left_def = stack.get_previous_def(
+                            self.lhs.get_id(),
+                            lexer,
+                            SymbolClass::default_var(),
+                        )?;
+                        let right_def = stack.get_previous_def(
+                            self.rhs.get_id(),
+                            lexer,
+                            SymbolClass::default_var(),
+                        )?;
+
+                        match (left_def.class.clone(), right_def.class.clone()) {
+                            (
+                                SymbolClass::Var {
+                                    is_global: is_left_global,
+                                    offset: left_offset,
+                                },
+                                SymbolClass::Var {
+                                    is_global: is_right_global,
+                                    offset: right_offset,
+                                },
+                            ) => {
+                                let left_register = code.new_register();
+                                let right_register = code.new_register();
+                                let result_register = code.new_register();
+
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    if is_left_global {
+                                        Register::Rbss
+                                    } else {
+                                        Register::Rfp
+                                    },
+                                    left_offset as i32,
+                                    left_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    if is_right_global {
+                                        Register::Rbss
+                                    } else {
+                                        Register::Rfp
+                                    },
+                                    right_offset as i32,
+                                    right_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                                    left_register,
+                                    right_register,
+                                    result_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                                    result_register,
+                                    Register::Rfp,
+                                    Address::Number(16),
+                                )));
+                            }
+                            _ => {
+                                return Err(CompilerError::SanityError(format!(
+                                    "One of the addition operands is neither a var, nor a literal"
+                                )))
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
 
         if let Some(node) = &self.next {
             return Err(CompilerError::SanityError(format!(

@@ -81,6 +81,7 @@ pub enum Operation {
     Nop,
     I2i(Register, Register),
     AddI(Register, i32, Register),
+    Add(Register, Register, Register),
 }
 
 impl Operation {
@@ -118,6 +119,14 @@ impl Operation {
                     reg_b.to_string()
                 )
             }
+            Operation::Add(reg_a, reg_b, reg_c) => {
+                format!(
+                    "add {}, {} => {}",
+                    reg_a.to_string(),
+                    reg_b.to_string(),
+                    reg_c.to_string()
+                )
+            }
         })
     }
     pub fn pay_promises(
@@ -139,6 +148,7 @@ impl Operation {
             Operation::Nop => Operation::Nop,
             Operation::I2i(reg_a, reg_b) => Operation::I2i(*reg_a, *reg_b),
             Operation::AddI(reg_a, num, reg_b) => Operation::AddI(*reg_a, *num, *reg_b),
+            Operation::Add(reg_a, reg_b, reg_c) => Operation::Add(*reg_a, *reg_b, *reg_c),
         })
     }
 }
