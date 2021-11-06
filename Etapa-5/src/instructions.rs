@@ -71,6 +71,7 @@ impl Address {
     }
 }
 
+#[allow(dead_code)]
 pub enum Operation {
     Load(Register, Register),
     LoadI(Address, Register),
@@ -82,8 +83,12 @@ pub enum Operation {
     Halt,
     Nop,
     I2i(Register, Register),
-    AddI(Register, i32, Register),
     Add(Register, Register, Register),
+    AddI(Register, i32, Register),
+    Sub(Register, Register, Register),
+    SubI(Register, i32, Register),
+    Mult(Register, Register, Register),
+    MultI(Register, i32, Register),
 }
 
 impl Operation {
@@ -124,6 +129,14 @@ impl Operation {
             Operation::I2i(reg_a, reg_b) => {
                 format!("i2i {} => {}", reg_a.to_string(), reg_b.to_string())
             }
+            Operation::Add(reg_a, reg_b, reg_c) => {
+                format!(
+                    "add {}, {} => {}",
+                    reg_a.to_string(),
+                    reg_b.to_string(),
+                    reg_c.to_string(),
+                )
+            }
             Operation::AddI(reg_a, num, reg_b) => {
                 format!(
                     "addI {}, {} => {}",
@@ -132,12 +145,36 @@ impl Operation {
                     reg_b.to_string(),
                 )
             }
-            Operation::Add(reg_a, reg_b, reg_c) => {
+            Operation::Sub(reg_a, reg_b, reg_c) => {
                 format!(
-                    "add {}, {} => {}",
+                    "sub {}, {} => {}",
                     reg_a.to_string(),
                     reg_b.to_string(),
                     reg_c.to_string(),
+                )
+            }
+            Operation::SubI(reg_a, num, reg_b) => {
+                format!(
+                    "subI {}, {} => {}",
+                    reg_a.to_string(),
+                    num,
+                    reg_b.to_string(),
+                )
+            }
+            Operation::Mult(reg_a, reg_b, reg_c) => {
+                format!(
+                    "mult {}, {} => {}",
+                    reg_a.to_string(),
+                    reg_b.to_string(),
+                    reg_c.to_string(),
+                )
+            }
+            Operation::MultI(reg_a, num, reg_b) => {
+                format!(
+                    "multI {}, {} => {}",
+                    reg_a.to_string(),
+                    num,
+                    reg_b.to_string(),
                 )
             }
         })
@@ -162,8 +199,12 @@ impl Operation {
             Operation::Halt => Operation::Halt,
             Operation::Nop => Operation::Nop,
             Operation::I2i(reg_a, reg_b) => Operation::I2i(*reg_a, *reg_b),
-            Operation::AddI(reg_a, num, reg_b) => Operation::AddI(*reg_a, *num, *reg_b),
             Operation::Add(reg_a, reg_b, reg_c) => Operation::Add(*reg_a, *reg_b, *reg_c),
+            Operation::AddI(reg_a, num, reg_b) => Operation::AddI(*reg_a, *num, *reg_b),
+            Operation::Sub(reg_a, reg_b, reg_c) => Operation::Sub(*reg_a, *reg_b, *reg_c),
+            Operation::SubI(reg_a, num, reg_b) => Operation::SubI(*reg_a, *num, *reg_b),
+            Operation::Mult(reg_a, reg_b, reg_c) => Operation::Mult(*reg_a, *reg_b, *reg_c),
+            Operation::MultI(reg_a, num, reg_b) => Operation::MultI(*reg_a, *num, *reg_b),
         })
     }
 }
