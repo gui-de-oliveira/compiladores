@@ -461,17 +461,20 @@ impl PartialEq for SymbolType {
 #[derive(Clone, Debug)]
 pub enum SymbolClass {
     Fn(Vec<Parameter>),
-    Var{is_global: bool, offset: u32},
-    Vec{offset: u32},
+    Var { is_global: bool, offset: u32 },
+    Vec { offset: u32 },
     Lit,
 }
 
 impl SymbolClass {
     pub fn default_var() -> SymbolClass {
-        SymbolClass::Var{is_global: false, offset: 0}
+        SymbolClass::Var {
+            is_global: false,
+            offset: 0,
+        }
     }
     pub fn default_vec() -> SymbolClass {
-        SymbolClass::Vec{offset: 0}
+        SymbolClass::Vec { offset: 0 }
     }
 }
 
@@ -479,8 +482,8 @@ impl PartialEq for SymbolClass {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (SymbolClass::Fn(_), SymbolClass::Fn(_))
-            | (SymbolClass::Var{ .. }, SymbolClass::Var{ .. })
-            | (SymbolClass::Vec{ .. }, SymbolClass::Vec{ .. })
+            | (SymbolClass::Var { .. }, SymbolClass::Var { .. })
+            | (SymbolClass::Vec { .. }, SymbolClass::Vec { .. })
             | (SymbolClass::Lit, SymbolClass::Lit) => true,
             _ => false,
         }
@@ -491,8 +494,8 @@ impl SymbolClass {
     pub fn to_str(&self) -> &str {
         match self {
             SymbolClass::Fn(_) => "function",
-            SymbolClass::Var{ .. } => "variable",
-            SymbolClass::Vec{ .. } => "vector",
+            SymbolClass::Var { .. } => "variable",
+            SymbolClass::Vec { .. } => "vector",
             SymbolClass::Lit => "literal",
         }
     }
@@ -697,12 +700,10 @@ impl ScopeStack {
             None => Err(CompilerError::FailedScoping),
         }
     }
-    
+
     pub fn get_offset(&self) -> Result<u32, CompilerError> {
         match self.offsets.last() {
-            Some(num) => {
-                Ok(*num)
-            }
+            Some(num) => Ok(*num),
             None => Err(CompilerError::FailedScoping),
         }
     }
