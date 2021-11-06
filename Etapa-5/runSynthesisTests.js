@@ -594,6 +594,49 @@ async function test() {
   `
   );
 
+  await testInput(
+    `
+  int main() {
+    int a;
+    int b <= 15;
+    int c <= 30;
+    int d <= 50;
+    a = b + c + d;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 30 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  loadI 15 => r1
+  storeAI r1 => rfp, 20
+  addI rsp, 4 => rsp
+  loadI 30 => r2
+  storeAI r2 => rfp, 24
+  addI rsp, 4 => rsp
+  loadI 50 => r3
+  storeAI r3 => rfp, 28
+  loadI 95 => r4
+  storeAI r4 => rfp, 16
+  loadAI rfp, 0 => r5
+  loadAI rfp, 4 => r6
+  loadAI rfp, 8 => r7
+  i2i r6 => rsp
+  i2i r7 => rfp
+  jump -> r5
+  `
+  );
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
