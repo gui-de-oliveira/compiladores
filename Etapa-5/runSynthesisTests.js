@@ -508,6 +508,92 @@ async function test() {
   `
   );
 
+  await testInput(
+    `
+  int main() {
+    int a;
+    int b <= 30;
+    int c;
+    c = 30;
+    a = b + c;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 29 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  loadI 30 => r1
+  storeAI r1 => rfp, 20
+  addI rsp, 4 => rsp
+  loadI 30 => r2
+  storeAI r2 => rfp, 24
+  loadAI rfp, 24 => r3
+  loadI 30 => r4
+  add r3, r4 => r5
+  storeAI r5 => rfp, 16
+  loadAI rfp, 0 => r6
+  loadAI rfp, 4 => r7
+  loadAI rfp, 8 => r8
+  i2i r7 => rsp
+  i2i r8 => rfp
+  jump -> r6
+  `
+  );
+
+  await testInput(
+    `
+  int main() {
+    int a;
+    int b;
+    int c <= 30;
+    b = 30;
+    a = b + c;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 29 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  loadI 30 => r1
+  storeAI r1 => rfp, 24
+  loadI 30 => r2
+  storeAI r2 => rfp, 20
+  loadAI rfp, 20 => r3
+  loadI 30 => r4
+  add r3, r4 => r5
+  storeAI r5 => rfp, 16
+  loadAI rfp, 0 => r6
+  loadAI rfp, 4 => r7
+  loadAI rfp, 8 => r8
+  i2i r7 => rsp
+  i2i r8 => rfp
+  jump -> r6
+  `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);

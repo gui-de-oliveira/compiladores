@@ -3280,77 +3280,150 @@ impl AstNode for Binary {
             }
         };
 
-        match (&left_value_type, &right_value_type) {
-            (SymbolType::Int(left_int), SymbolType::Int(right_int)) => {
-                match (left_int, right_int) {
-                    (Some(_), Some(_)) => {}
-                    (None, None) => {
-                        let left_def = stack.get_previous_def(
-                            self.lhs.get_id(),
-                            lexer,
-                            SymbolClass::default_var(),
-                        )?;
-                        let right_def = stack.get_previous_def(
-                            self.rhs.get_id(),
-                            lexer,
-                            SymbolClass::default_var(),
-                        )?;
+        let left_value = match &left_value_type {
+            SymbolType::Int(int_option) => match int_option {
+                Some(_) => None,
+                None => {
+                    let left_def = stack.get_previous_def(
+                        self.lhs.get_id(),
+                        lexer,
+                        SymbolClass::default_var(),
+                    )?;
 
-                        match (left_def.class.clone(), right_def.class.clone()) {
-                            (
-                                SymbolClass::Var {
-                                    is_global: is_left_global,
-                                    offset: left_offset,
-                                },
-                                SymbolClass::Var {
-                                    is_global: is_right_global,
-                                    offset: right_offset,
-                                },
-                            ) => {
-                                let left_register = code.new_register();
-                                let right_register = code.new_register();
-                                let result_register = code.new_register();
+                    match left_def.class.clone() {
+                        SymbolClass::Var { is_global, offset } => {
+                            let left_register = code.new_register();
 
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
-                                    if is_left_global {
-                                        Register::Rbss
-                                    } else {
-                                        Register::Rfp
-                                    },
-                                    left_offset as i32,
-                                    left_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
-                                    if is_right_global {
-                                        Register::Rbss
-                                    } else {
-                                        Register::Rfp
-                                    },
-                                    right_offset as i32,
-                                    right_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
-                                    left_register,
-                                    right_register,
-                                    result_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
-                                    result_register,
-                                    Register::Rfp,
-                                    Address::Number(16),
+                            code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                if is_global {
+                                    Register::Rbss
+                                } else {
+                                    Register::Rfp
+                                },
+                                offset as i32,
+                                left_register,
+                            )));
+
+                            Some(left_register)
+                        }
+                        _ => {
+                            return Err(CompilerError::SanityError(format!(
+                                "Left operand of addition not a variable nor a literal"
+                            )))
+                        }
+                    }
+                }
+            },
+            _ => {
+                return Err(CompilerError::SanityError(format!(
+                    "Left operand of addition is not an int"
+                )))
+            }
+        };
+
+        let right_value = match &right_value_type {
+            SymbolType::Int(int_option) => match int_option {
+                Some(_) => None,
+                None => {
+                    let right_def = stack.get_previous_def(
+                        self.rhs.get_id(),
+                        lexer,
+                        SymbolClass::default_var(),
+                    )?;
+
+                    match right_def.class.clone() {
+                        SymbolClass::Var { is_global, offset } => {
+                            let right_register = code.new_register();
+
+                            code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                if is_global {
+                                    Register::Rbss
+                                } else {
+                                    Register::Rfp
+                                },
+                                offset as i32,
+                                right_register,
+                            )));
+
+                            Some(right_register)
+                        }
+                        _ => {
+                            return Err(CompilerError::SanityError(format!(
+                                "Right operand of addition not a variable nor a literal"
+                            )))
+                        }
+                    }
+                }
+            },
+            _ => {
+                return Err(CompilerError::SanityError(format!(
+                    "Right operand of addition is not an int"
+                )))
+            }
+        };
+
+        match (left_value, right_value) {
+            (Some(left_register), Some(right_register)) => {
+                let result_register = code.new_register();
+
+                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                    left_register,
+                    right_register,
+                    result_register,
+                )));
+
+                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                    result_register,
+                    Register::Rfp,
+                    Address::Number(16),
+                )));
+            }
+            (None, Some(register)) | (Some(register), None) => {
+                let value_register = code.new_register();
+                let result_register = code.new_register();
+
+                match (&left_value_type, &right_value_type) {
+                    (SymbolType::Int(left_int), SymbolType::Int(right_int)) => {
+                        match (left_int, right_int) {
+                            (Some(value), None) | (None, Some(value)) => {
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                                    Address::Number(value.clone() as i32),
+                                    value_register,
                                 )));
                             }
-                            _ => {
+                            (None, None) => {
                                 return Err(CompilerError::SanityError(format!(
-                                    "One of the addition operands is neither a var, nor a literal"
+                                    "One of the registers was not initialized even though there is no value set in any operand"
+                                )))
+                            }
+                            (Some(_), Some(_)) => {
+                                return Err(CompilerError::SanityError(format!(
+                                    "Both addition operands have a value, but a register was initialized"
                                 )))
                             }
                         }
                     }
-                    _ => {}
+                    _ => {
+                        return Err(CompilerError::SanityError(format!(
+                            "One or more of the operands of the addition are not an int"
+                        )))
+                    }
                 }
+
+                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                    register,
+                    value_register,
+                    result_register,
+                )));
+
+                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                    result_register,
+                    Register::Rfp,
+                    Address::Number(16),
+                )));
             }
-            _ => {}
+
+            (None, None) => {}
         }
 
         if let Some(node) = &self.next {
