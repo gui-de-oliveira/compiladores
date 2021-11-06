@@ -22,4 +22,12 @@ zip:
 
 test:
 	make debug
-	node runSynthesisTests.js
+	yarn tsc --project tsconfig.json
+	node runTest.js
+	rm -f -r runTest.js
+
+setup:
+	sudo apt install nodejs npm -y
+	npm install yarn
+	rm -f -r package-lock.json
+	yarn
