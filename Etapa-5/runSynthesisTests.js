@@ -347,6 +347,123 @@ async function test() {
   `
   );
 
+  await testInput(
+    `
+  int main() {
+    int a;
+    int b <= 5;
+    int c <= 10;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 25 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  loadI 5 => r1
+  storeAI r1 => rfp, 20
+  addI rsp, 4 => rsp
+  loadI 10 => r2
+  storeAI r2 => rfp, 24
+  loadAI rfp, 0 => r3
+  loadAI rfp, 4 => r4
+  loadAI rfp, 8 => r5
+  i2i r4 => rsp
+  i2i r5 => rfp
+  jump -> r3
+  `
+  );
+
+  await testInput(
+    `
+  int main() {
+    int a;
+    int b <= 5;
+    int c <= 10;
+    a = b + c;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 27 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  loadI 5 => r1
+  storeAI r1 => rfp, 20
+  addI rsp, 4 => rsp
+  loadI 10 => r2
+  storeAI r2 => rfp, 24
+  loadI 15 => r3
+  storeAI r3 => rfp, 16
+  loadAI rfp, 0 => r4
+  loadAI rfp, 4 => r5
+  loadAI rfp, 8 => r6
+  i2i r5 => rsp
+  i2i r6 => rfp
+  jump -> r4
+  `
+  );
+
+  await testInput(
+    `
+  int main() {
+    int a;
+    int b <= 30;
+    int c <= 30;
+    a = b + c;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 27 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  addI rsp, 4 => rsp
+  loadI 30 => r1
+  storeAI r1 => rfp, 20
+  addI rsp, 4 => rsp
+  loadI 30 => r2
+  storeAI r2 => rfp, 24
+  loadI 60 => r3
+  storeAI r3 => rfp, 16
+  loadAI rfp, 0 => r4
+  loadAI rfp, 4 => r5
+  loadAI rfp, 8 => r6
+  i2i r5 => rsp
+  i2i r6 => rfp
+  jump -> r4
+  `
+  );
+
   process.stdout.write(FontColor.Fg.Green);
   console.log("ALL TESTS PASSED!");
   process.stdout.write(FontColor.Reset);
