@@ -70,7 +70,7 @@ async function testInput(input, expected) {
     }
 
     process.stdout.write(FontColor.Fg.Green);
-    process.stdout.write(`Test ${testsCounter} passed!`);
+    process.stdout.write(`Test ${testsCounter} passed!\n`);
     process.stdout.write(FontColor.Reset);
 
     await exec(`rm ${file}`);
@@ -107,6 +107,55 @@ i2i r2 => rsp
 i2i r3 => rfp
 jump -> r1
 `
+  );
+
+  await testInput(
+    "int main() { int a; }",
+    `loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 18 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  loadAI rfp, 0 => r1
+  loadAI rfp, 4 => r2
+  loadAI rfp, 8 => r3
+  i2i r2 => rsp
+  i2i r3 => rfp
+  jump -> r1
+  `
+  );
+
+  await testInput(
+    `
+    int global;
+    int main() { }
+    `,
+    `loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 18 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  loadAI rfp, 0 => r1
+  loadAI rfp, 4 => r2
+  loadAI rfp, 8 => r3
+  i2i r2 => rsp
+  i2i r3 => rfp
+  jump -> r1
+  `
   );
 
   process.stdout.write(FontColor.Fg.Green);
