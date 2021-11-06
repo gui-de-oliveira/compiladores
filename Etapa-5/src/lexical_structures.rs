@@ -10,7 +10,9 @@ use std::ptr::addr_of;
 use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::instructions::{Address, IlocCode, Instruction, Operation, Register};
-use super::semantic_structures::{CallSymbol, DefSymbol, ScopeStack, SymbolClass, SymbolType};
+use super::semantic_structures::{
+    CallSymbol, DefSymbol, IntValue, ScopeStack, SymbolClass, SymbolType,
+};
 
 #[derive(Debug)]
 pub struct GlobalVarDef {
@@ -62,11 +64,23 @@ impl AstNode for GlobalVarDef {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
-        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.node_id).to_string();
+        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
+        let offset = stack.get_offset()?;
+        let var_type = match var_type {
+            SymbolType::Int(IntValue::Undefined) => {
+                SymbolType::Int(IntValue::Memory(Register::Rbss, offset))
+            }
+            _ => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "Global variable of unsuported type declared: {} ({})",
+                    id,
+                    lexer.span_str(self.var_type)
+                )))
+            }
+        };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let is_global = true;
-        let offset = stack.get_offset()?;
         let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
 
@@ -152,6 +166,7 @@ impl AstNode for GlobalVecDef {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
         let id = lexer.span_str(self.node_id).to_string();
+        let offset = stack.get_offset()?;
 
         let var_type = match SymbolType::from_str(lexer.span_str(self.var_type))? {
             SymbolType::String(_) => {
@@ -173,33 +188,28 @@ impl AstNode for GlobalVecDef {
                     highlight,
                 });
             }
-            not_string @ _ => not_string,
+            SymbolType::Int(IntValue::Undefined) => {
+                SymbolType::Int(IntValue::Memory(Register::Rbss, offset))
+            }
+            _ => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "Global variable of unsuported type declared: {} ({})",
+                    id,
+                    lexer.span_str(self.var_type)
+                )))
+            }
         };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
-        let offset = stack.get_offset()?;
         let class = SymbolClass::Vec { offset };
 
         let vec_size = self.vec_size.evaluate_node(code, stack, lexer)?;
 
         let size_int = match vec_size {
-            Some(value) => match value {
-                SymbolType::Int(int) => match int {
-                    Some(size_int) => size_int as u32,
-                    None => {
-                        return Err(CompilerError::SanityError(format!(
-                            "Int from vec_size symbol as None (on GlobalVecDef.evaluate_node())",
-                        )))
-                    }
-                },
-                _ => {
-                    return Err(CompilerError::SanityError(format!(
-                        "Vec_size symbol_type is not Int (on GlobalVecDef.evaluate_node())",
-                    )))
-                }
-            },
-            None => {
+            Some(SymbolType::Int(IntValue::Literal(size_int))) => size_int as u32,
+            _ => {
                 return Err(CompilerError::SanityError(format!(
-                    "Vec_size symbol is None (on GlobalVecDef.evaluate_node())",
+                    "vec_size symbol invalid (on GlobalVecDef.evaluate_node()): {:?}",
+                    vec_size
                 )))
             }
         };
@@ -531,13 +541,26 @@ impl AstNode for LocalVarDef {
         let span = self.node_id;
         stack.check_duplicate(span, lexer)?;
 
-        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
         let id = lexer.span_str(self.node_id).to_string();
+        let var_type = SymbolType::from_str(lexer.span_str(self.var_type))?;
+        let offset = stack.get_offset()?;
+        let var_type = match var_type {
+            SymbolType::Int(IntValue::Undefined) => {
+                SymbolType::Int(IntValue::Memory(Register::Rfp, offset))
+            }
+            _ => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "Local variable of unsuported type declared: {} ({})",
+                    id,
+                    lexer.span_str(self.var_type)
+                )))
+            }
+        };
         let ((line, col), (_, _)) = lexer.line_col(self.node_id);
         let is_global = false;
-        let offset = stack.get_offset()?;
         let class = SymbolClass::Var { is_global, offset };
         let size = var_type.get_symbol_type_size();
+
         let our_symbol = DefSymbol::new(
             id,
             span,
@@ -659,7 +682,7 @@ impl AstNode for VarDefInitId {
 #[derive(Debug)]
 pub struct VarDefInitLit {
     node_id: Span,
-    var_def: Box<dyn AstNode>,
+    var_def: Box<LocalVarDef>,
     var_value: Box<dyn AstNode>,
     next: Option<Box<dyn AstNode>>,
 }
@@ -667,7 +690,7 @@ pub struct VarDefInitLit {
 impl VarDefInitLit {
     pub fn new(
         node_id: Span,
-        var_def: Box<dyn AstNode>,
+        var_def: Box<LocalVarDef>,
         var_value: Box<dyn AstNode>,
         next: Option<Box<dyn AstNode>>,
     ) -> VarDefInitLit {
@@ -714,12 +737,21 @@ impl AstNode for VarDefInitLit {
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_def.evaluate_node(code, stack, lexer)?;
-        let lit_symbol_type =
-            self.var_value
-                .evaluate_node(code, stack, lexer)?
-                .ok_or(CompilerError::SanityError(format!(
+
+        let lit_symbol_type = match self.var_value.evaluate_node(code, stack, lexer)? {
+            Some(good @ SymbolType::Int(IntValue::Literal(_))) => good,
+            Some(bad) => {
+                return Err(CompilerError::SanityError(format!(
+                    "VarDefInitLit found bad SymbolType (on self.var_value.evaluate_node()): {:?}",
+                    bad
+                )))
+            }
+            None => {
+                return Err(CompilerError::SanityError(format!(
                     "VarDefInitLit found no SymbolType (on self.var_value.evaluate_node())"
-                )))?;
+                )))
+            }
+        };
 
         let def_symbol = {
             let span = self.var_def.get_id();
@@ -727,32 +759,21 @@ impl AstNode for VarDefInitLit {
             def_symbol.clone()
         };
 
-        let updated_symbol =
-            def_symbol.cast_or_scream(&lit_symbol_type, self.node_id, lexer, false)?;
+        let _updated_symbol =
+            def_symbol.cast_or_scream(&lit_symbol_type, self.node_id, lexer, false)?; // Legacy from previous version.
 
-        if let (SymbolType::Int(Some(num)), SymbolClass::Var { is_global, offset }) = (
-            // REVIEW - Esses .clone() estão certos? adicionei ele pq o add_def_symbol precisa dele depois
-            updated_symbol.type_value.clone(),
-            updated_symbol.class.clone(),
-        ) {
+        if let SymbolType::Int(IntValue::Literal(num)) = lit_symbol_type {
             let new_register = code.new_register();
             code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
                 Address::Number(num),
                 new_register,
             )));
-            let offset_source = if is_global {
-                Register::Rbss
-            } else {
-                Register::Rfp
-            };
             code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
                 new_register,
-                offset_source,
-                Address::Number(offset as i32),
+                def_symbol.offset_source,
+                Address::Number(def_symbol.offset as i32),
             )));
-        }
-
-        stack.add_def_symbol(updated_symbol)?;
+        };
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -838,27 +859,20 @@ impl AstNode for VarLeftShift {
         };
 
         match symbol.type_value {
-            SymbolType::Int(option_value) => match option_value {
-                Some(value) => {
-                    if value > 16 {
-                        let shift_amount_span = self.shift_amount.get_id();
-                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+            SymbolType::Int(IntValue::Literal(value)) => {
+                if value > 16 {
+                    let shift_amount_span = self.shift_amount.get_id();
+                    let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
-                        return Err(CompilerError::SemanticErrorWrongParShift {
-                            received_value: value,
-                            highlight,
-                            line,
-                            col,
-                        });
-                    }
+                    return Err(CompilerError::SemanticErrorWrongParShift {
+                        received_value: value,
+                        highlight,
+                        line,
+                        col,
+                    });
                 }
-                None => {
-                    return Err(CompilerError::SanityError(format!(
-                        "shift_amount option received is None (on varLeftShift.evaluate_node())"
-                    )))
-                }
-            },
+            }
             _ => {
                 return Err(CompilerError::SanityError(format!(
                     "shift_amount received is NOT a literal int (on varLeftShift.evaluate_node())"
@@ -950,27 +964,20 @@ impl AstNode for VarRightShift {
         };
 
         match symbol.type_value {
-            SymbolType::Int(option_value) => match option_value {
-                Some(value) => {
-                    if value > 16 {
-                        let shift_amount_span = self.shift_amount.get_id();
-                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+            SymbolType::Int(IntValue::Literal(value)) => {
+                if value > 16 {
+                    let shift_amount_span = self.shift_amount.get_id();
+                    let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
-                        return Err(CompilerError::SemanticErrorWrongParShift {
-                            received_value: value,
-                            highlight,
-                            line,
-                            col,
-                        });
-                    }
+                    return Err(CompilerError::SemanticErrorWrongParShift {
+                        received_value: value,
+                        highlight,
+                        line,
+                        col,
+                    });
                 }
-                None => {
-                    return Err(CompilerError::SanityError(format!(
-                        "shift_amount option received is None (on varRightShift.evaluate_node())"
-                    )))
-                }
-            },
+            }
             _ => {
                 return Err(CompilerError::SanityError(format!(
                     "shift_amount received is NOT a literal int (on varRightShift.evaluate_node())"
@@ -1063,27 +1070,20 @@ impl AstNode for VecLeftShift {
         };
 
         match symbol.type_value {
-            SymbolType::Int(option_value) => match option_value {
-                Some(value) => {
-                    if value > 16 {
-                        let shift_amount_span = self.shift_amount.get_id();
-                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+            SymbolType::Int(IntValue::Literal(value)) => {
+                if value > 16 {
+                    let shift_amount_span = self.shift_amount.get_id();
+                    let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
-                        return Err(CompilerError::SemanticErrorWrongParShift {
-                            received_value: value,
-                            highlight,
-                            line,
-                            col,
-                        });
-                    }
+                    return Err(CompilerError::SemanticErrorWrongParShift {
+                        received_value: value,
+                        highlight,
+                        line,
+                        col,
+                    });
                 }
-                None => {
-                    return Err(CompilerError::SanityError(format!(
-                        "shift_amount option received is None (on vecLeftShift.evaluate_node())"
-                    )))
-                }
-            },
+            }
             _ => {
                 return Err(CompilerError::SanityError(format!(
                     "shift_amount received is NOT a literal int (on vecLeftShift.evaluate_node())"
@@ -1176,27 +1176,20 @@ impl AstNode for VecRightShift {
         };
 
         match symbol.type_value {
-            SymbolType::Int(option_value) => match option_value {
-                Some(value) => {
-                    if value > 16 {
-                        let shift_amount_span = self.shift_amount.get_id();
-                        let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
-                        let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
+            SymbolType::Int(IntValue::Literal(value)) => {
+                if value > 16 {
+                    let shift_amount_span = self.shift_amount.get_id();
+                    let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
+                    let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
-                        return Err(CompilerError::SemanticErrorWrongParShift {
-                            received_value: value,
-                            highlight,
-                            line,
-                            col,
-                        });
-                    }
+                    return Err(CompilerError::SemanticErrorWrongParShift {
+                        received_value: value,
+                        highlight,
+                        line,
+                        col,
+                    });
                 }
-                None => {
-                    return Err(CompilerError::SanityError(format!(
-                        "shift_amount option received is None (on vecRightShift.evaluate_node())"
-                    )))
-                }
-            },
+            }
             _ => {
                 return Err(CompilerError::SanityError(format!(
                     "shift_amount received is NOT a literal int (on vecRightShift.evaluate_node())"
@@ -1286,28 +1279,48 @@ impl AstNode for VarSet {
         let def_symbol =
             stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::default_var())?;
 
-        let updated_symbol =
+        let _updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
 
-        if let (SymbolType::Int(Some(num)), SymbolClass::Var { is_global, offset }) =
-            (updated_symbol.type_value, updated_symbol.class)
-        {
-            let new_register = code.new_register();
-            code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                Address::Number(num),
-                new_register,
-            )));
-            let offset_source = if is_global {
-                Register::Rbss
-            } else {
-                Register::Rfp
-            };
-            code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
-                new_register,
-                offset_source,
-                Address::Number(offset as i32),
-            )));
+        let new_register = code.new_register();
+        match new_value_symbol {
+            SymbolType::Int(IntValue::Temp(register)) => {
+                code.push_instruction(Instruction::Unlabeled(Operation::Load(
+                    register,
+                    new_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Literal(number)) => {
+                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                    Address::Number(number),
+                    new_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Memory(register, offset)) => {
+                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                    register,
+                    offset as i32,
+                    new_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Undefined) => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "VarSet called with uninitialized right value.\nLeft value: {:?}\n Right value: {:?}",
+                    def_symbol, new_value_symbol
+                )))
+            }
+            _ => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "VarSet called with unsuported type.\nLeft value: {:?}\n Right value: {:?}",
+                    def_symbol, new_value_symbol
+                )))
+            }
         }
+        code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+            new_register,
+            def_symbol.offset_source,
+            Address::Number(def_symbol.offset as i32),
+        )));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -2690,6 +2703,8 @@ impl Binary {
         left_value: SymbolType,
         right_value: SymbolType,
         lexer: &dyn NonStreamingLexer<u32>,
+        code: &mut IlocCode,
+        _stack: &mut ScopeStack,
     ) -> Result<SymbolType, CompilerError> {
         match &self.op_type {
             BinaryType::BoolOr => match (
@@ -2714,28 +2729,28 @@ impl Binary {
                 left_value.to_int(self.node_id, lexer)?,
                 right_value.to_int(self.node_id, lexer)?,
             ) {
-                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
-                (Some(left_value), Some(right_value)) => {
-                    Ok(SymbolType::Int(Some(left_value | right_value)))
+                (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
+                    Ok(SymbolType::Int(IntValue::Literal(left_value | right_value)))
                 }
+                (_, _) => Ok(SymbolType::Bool(None)),
             },
             BinaryType::BitXor => match (
                 left_value.to_int(self.node_id, lexer)?,
                 right_value.to_int(self.node_id, lexer)?,
             ) {
-                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
-                (Some(left_value), Some(right_value)) => {
-                    Ok(SymbolType::Int(Some(left_value ^ right_value)))
+                (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
+                    Ok(SymbolType::Int(IntValue::Literal(left_value ^ right_value)))
                 }
+                (_, _) => Ok(SymbolType::Bool(None)),
             },
             BinaryType::BitAnd => match (
                 left_value.to_int(self.node_id, lexer)?,
                 right_value.to_int(self.node_id, lexer)?,
             ) {
-                (None, _) | (_, None) => Ok(SymbolType::Bool(None)),
-                (Some(left_value), Some(right_value)) => {
-                    Ok(SymbolType::Int(Some(left_value & right_value)))
+                (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
+                    Ok(SymbolType::Int(IntValue::Literal(left_value & right_value)))
                 }
+                (_, _) => Ok(SymbolType::Bool(None)),
             },
             BinaryType::Add => {
                 match left_value.associate_with(&right_value, self.node_id, lexer)? {
@@ -2770,17 +2785,106 @@ impl Binary {
                             highlight,
                         })
                     }
-                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                    SymbolType::Bool(_) => {
                         match (
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
-                                Ok(SymbolType::Int(Some(left_value + right_value)))
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
+                                Ok(SymbolType::Int(IntValue::Literal(left_value + right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Int(None)),
+                            (_, _) => Ok(SymbolType::Int(IntValue::Undefined)),
                         }
                     }
+                    SymbolType::Int(_) => match (left_value, right_value) {
+                        (SymbolType::Int(left_value), SymbolType::Int(right_value)) => match (left_value, right_value) {
+                            bad @ (IntValue::Undefined, _)
+                            | bad @ (_, IntValue::Undefined) => {
+                                Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                                    "Binary operation Add matched undefined with something else: {:?}",
+                                    bad
+                                )))
+                            }
+                            (IntValue::Temp(register), IntValue::Literal(other_value)) | (IntValue::Literal(other_value), IntValue::Temp(register)) => {
+                                code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+                                    register,
+                                    other_value,
+                                    register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(register)))
+                            }
+                            (IntValue::Temp(register), IntValue::Memory(other_register, offset)) | (IntValue::Memory(other_register, offset), IntValue::Temp(register)) => {
+                                let new_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    other_register,
+                                    offset as i32,
+                                    new_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAO(
+                                    register,
+                                    new_register,
+                                    register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(register)))
+                            }
+                            (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) | (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
+                                let new_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_register,
+                                    offset as i32,
+                                    new_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+                                    new_register,
+                                    value,
+                                    new_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(new_register)))
+                            }
+                            (
+                                IntValue::Literal(left_value),
+                                IntValue::Literal(right_value),
+                            ) => Ok(SymbolType::Int(IntValue::Literal(left_value + right_value))),
+                            (
+                                IntValue::Memory(mem_left_register, left_offset),
+                                IntValue::Memory(mem_right_register, right_offset),
+                            ) => {
+                                let left_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_left_register,
+                                    left_offset as i32,
+                                    left_register,
+                                )));
+                                let right_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_right_register,
+                                    right_offset as i32,
+                                    right_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            },
+                            (
+                                IntValue::Temp(left_register),
+                                IntValue::Temp(right_register),
+                            ) => {
+                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            },
+                        }
+                        bad => Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                            "Binary operation Add with unsuported types: {:?}",
+                            bad
+                        ))),
+                    },
                     SymbolType::Float(_) => match (
                         left_value.to_float(self.node_id, lexer)?,
                         right_value.to_float(self.node_id, lexer)?,
@@ -2821,10 +2925,10 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
-                                Ok(SymbolType::Int(Some(left_value - right_value)))
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
+                                Ok(SymbolType::Int(IntValue::Literal(left_value - right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Int(None)),
+                            (_, _) => Ok(SymbolType::Int(IntValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -2867,10 +2971,10 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
-                                Ok(SymbolType::Int(Some(left_value * right_value)))
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
+                                Ok(SymbolType::Int(IntValue::Literal(left_value * right_value)))
                             }
-                            (_, _) => Ok(SymbolType::Int(None)),
+                            (_, _) => Ok(SymbolType::Int(IntValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -2913,14 +3017,14 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 if right_value == 0 {
-                                    Ok(SymbolType::Int(Some(0i32)))
+                                    Ok(SymbolType::Int(IntValue::Literal(0i32)))
                                 } else {
-                                    Ok(SymbolType::Int(Some(left_value / right_value)))
+                                    Ok(SymbolType::Int(IntValue::Literal(left_value / right_value)))
                                 }
                             }
-                            (_, _) => Ok(SymbolType::Int(None)),
+                            (_, _) => Ok(SymbolType::Int(IntValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -2967,14 +3071,14 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 if right_value == 0 {
-                                    Ok(SymbolType::Int(Some(0i32)))
+                                    Ok(SymbolType::Int(IntValue::Literal(0i32)))
                                 } else {
-                                    Ok(SymbolType::Int(Some(left_value % right_value)))
+                                    Ok(SymbolType::Int(IntValue::Literal(left_value % right_value)))
                                 }
                             }
-                            (_, _) => Ok(SymbolType::Int(None)),
+                            (_, _) => Ok(SymbolType::Int(IntValue::Undefined)),
                         }
                     }
                     SymbolType::Float(_) => match (
@@ -3021,7 +3125,7 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 Ok(SymbolType::Bool(Some(left_value == right_value)))
                             }
                             (_, _) => Ok(SymbolType::Bool(None)),
@@ -3067,7 +3171,7 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 Ok(SymbolType::Bool(Some(left_value != right_value)))
                             }
                             (_, _) => Ok(SymbolType::Bool(None)),
@@ -3113,7 +3217,7 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 Ok(SymbolType::Bool(Some(left_value < right_value)))
                             }
                             (_, _) => Ok(SymbolType::Bool(None)),
@@ -3159,7 +3263,7 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 Ok(SymbolType::Bool(Some(left_value > right_value)))
                             }
                             (_, _) => Ok(SymbolType::Bool(None)),
@@ -3205,7 +3309,7 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 Ok(SymbolType::Bool(Some(left_value <= right_value)))
                             }
                             (_, _) => Ok(SymbolType::Bool(None)),
@@ -3251,7 +3355,7 @@ impl Binary {
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
                         ) {
-                            (Some(left_value), Some(right_value)) => {
+                            (IntValue::Literal(left_value), IntValue::Literal(right_value)) => {
                                 Ok(SymbolType::Bool(Some(left_value >= right_value)))
                             }
                             (_, _) => Ok(SymbolType::Bool(None)),
@@ -3325,167 +3429,19 @@ impl AstNode for Binary {
             }
         };
 
-        let left_value = match &left_value_type {
-            SymbolType::Int(int_option) => match int_option {
-                Some(_) => None,
-                None => {
-                    let left_def = stack.get_previous_def(
-                        self.lhs.get_id(),
-                        lexer,
-                        SymbolClass::default_var(),
-                    )?;
-
-                    match left_def.class.clone() {
-                        SymbolClass::Var { is_global, offset } => {
-                            let left_register = code.new_register();
-
-                            code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
-                                if is_global {
-                                    Register::Rbss
-                                } else {
-                                    Register::Rfp
-                                },
-                                offset as i32,
-                                left_register,
-                            )));
-
-                            Some(left_register)
-                        }
-                        _ => {
-                            return Err(CompilerError::SanityError(format!(
-                                "Left operand of addition not a variable nor a literal"
-                            )))
-                        }
-                    }
-                }
-            },
-            _ => {
-                return Err(CompilerError::SanityError(format!(
-                    "Left operand of addition is not an int"
-                )))
-            }
-        };
-
-        let right_value = match &right_value_type {
-            SymbolType::Int(int_option) => match int_option {
-                Some(_) => None,
-                None => {
-                    let right_def = stack.get_previous_def(
-                        self.rhs.get_id(),
-                        lexer,
-                        SymbolClass::default_var(),
-                    )?;
-
-                    match right_def.class.clone() {
-                        SymbolClass::Var { is_global, offset } => {
-                            let right_register = code.new_register();
-
-                            code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
-                                if is_global {
-                                    Register::Rbss
-                                } else {
-                                    Register::Rfp
-                                },
-                                offset as i32,
-                                right_register,
-                            )));
-
-                            Some(right_register)
-                        }
-                        _ => {
-                            return Err(CompilerError::SanityError(format!(
-                                "Right operand of addition not a variable nor a literal"
-                            )))
-                        }
-                    }
-                }
-            },
-            _ => {
-                return Err(CompilerError::SanityError(format!(
-                    "Right operand of addition is not an int"
-                )))
-            }
-        };
-
-        match (left_value, right_value) {
-            (Some(left_register), Some(right_register)) => {
-                let result_register = code.new_register();
-
-                code.push_instruction(Instruction::Unlabeled(Operation::Add(
-                    left_register,
-                    right_register,
-                    result_register,
-                )));
-
-                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
-                    result_register,
-                    Register::Rfp,
-                    Address::Number(16),
-                )));
-            }
-            (None, Some(register)) | (Some(register), None) => {
-                let value_register = code.new_register();
-                let result_register = code.new_register();
-
-                match (&left_value_type, &right_value_type) {
-                    (SymbolType::Int(left_int), SymbolType::Int(right_int)) => {
-                        match (left_int, right_int) {
-                            (Some(value), None) | (None, Some(value)) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                                    Address::Number(value.clone() as i32),
-                                    value_register,
-                                )));
-                            }
-                            (None, None) => {
-                                return Err(CompilerError::SanityError(format!(
-                                    "One of the registers was not initialized even though there is no value set in any operand"
-                                )))
-                            }
-                            (Some(_), Some(_)) => {
-                                return Err(CompilerError::SanityError(format!(
-                                    "Both addition operands have a value, but a register was initialized"
-                                )))
-                            }
-                        }
-                    }
-                    _ => {
-                        return Err(CompilerError::SanityError(format!(
-                            "One or more of the operands of the addition are not an int"
-                        )))
-                    }
-                }
-
-                code.push_instruction(Instruction::Unlabeled(Operation::Add(
-                    register,
-                    value_register,
-                    result_register,
-                )));
-
-                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
-                    result_register,
-                    Register::Rfp,
-                    Address::Number(16),
-                )));
-            }
-
-            (None, None) => {}
-        }
+        let return_value = Ok(Some(self.binary_evaluation(
+            left_value_type,
+            right_value_type,
+            lexer,
+            code,
+            stack,
+        )?));
 
         if let Some(node) = &self.next {
             return Err(CompilerError::SanityError(format!(
                 "Binary {:?} has a self.next node: {:?}",
                 self.op_type, node
             )));
-        };
-
-        let return_value = Ok(Some(self.binary_evaluation(
-            left_value_type,
-            right_value_type,
-            lexer,
-        )?));
-
-        if let Some(node) = &self.next {
-            node.evaluate_node(code, stack, lexer)?;
         };
 
         return_value
@@ -3550,10 +3506,10 @@ impl Unary {
                 symbol @ SymbolType::Int(_) | symbol @ SymbolType::Float(_) => Ok(symbol),
                 SymbolType::Bool(maybe_value) => match &maybe_value {
                     Some(value) => match value {
-                        true => Ok(SymbolType::Int(Some(1))),
-                        false => Ok(SymbolType::Int(Some(0))),
+                        true => Ok(SymbolType::Int(IntValue::Literal(1))),
+                        false => Ok(SymbolType::Int(IntValue::Literal(0))),
                     },
-                    None => Ok(SymbolType::Int(None)),
+                    None => Ok(SymbolType::Int(IntValue::Undefined)),
                 },
                 SymbolType::Char(_) => {
                     let invalid_type = "int or float".to_string();
@@ -3582,10 +3538,10 @@ impl Unary {
                 symbol @ SymbolType::Int(_) | symbol @ SymbolType::Float(_) => Ok(symbol),
                 SymbolType::Bool(maybe_value) => match &maybe_value {
                     Some(value) => match value {
-                        true => Ok(SymbolType::Int(Some(-1))),
-                        false => Ok(SymbolType::Int(Some(0))),
+                        true => Ok(SymbolType::Int(IntValue::Literal(-1))),
+                        false => Ok(SymbolType::Int(IntValue::Literal(0))),
                     },
-                    None => Ok(SymbolType::Int(None)),
+                    None => Ok(SymbolType::Int(IntValue::Undefined)),
                 },
                 SymbolType::Char(_) => {
                     let invalid_type = "int or float".to_string();
@@ -3612,14 +3568,14 @@ impl Unary {
             },
             UnaryType::Not => match type_value {
                 SymbolType::Int(maybe_value) => match &maybe_value {
-                    Some(value) => {
+                    IntValue::Literal(value) => {
                         if *value == 0i32 {
                             Ok(SymbolType::Bool(Some(true)))
                         } else {
                             Ok(SymbolType::Bool(Some(false)))
                         }
                     }
-                    None => Ok(SymbolType::Bool(None)),
+                    _ => Ok(SymbolType::Bool(None)),
                 },
                 SymbolType::Float(maybe_value) => match &maybe_value {
                     Some(value) => {
@@ -3663,14 +3619,14 @@ impl Unary {
             },
             UnaryType::Boolean => match type_value {
                 SymbolType::Int(maybe_value) => match &maybe_value {
-                    Some(value) => {
+                    IntValue::Literal(value) => {
                         if *value == 0i32 {
                             Ok(SymbolType::Bool(Some(false)))
                         } else {
                             Ok(SymbolType::Bool(Some(true)))
                         }
                     }
-                    None => Ok(SymbolType::Bool(None)),
+                    _ => Ok(SymbolType::Bool(None)),
                 },
                 SymbolType::Float(maybe_value) => match &maybe_value {
                     Some(value) => {
@@ -3706,7 +3662,7 @@ impl Unary {
                     })
                 }
             },
-            UnaryType::Hash => Ok(SymbolType::Int(None)),
+            UnaryType::Hash => Ok(SymbolType::Int(IntValue::Undefined)),
             UnaryType::Address => Ok(type_value),
             UnaryType::Pointer => Ok(type_value),
         }
@@ -3861,9 +3817,12 @@ impl AstNode for VecAccess {
         let indexer_type_value = self.vec_index.evaluate_node(code, stack, lexer)?;
         let indexer_value = match indexer_type_value {
             Some(symbol_type) => {
-                symbol_type.to_int(self.node_id, lexer)?.ok_or(CompilerError::SanityError(format!(
-                    "VecAccess.evaluate_node() found no indexer_value from indexer_type_value -> to_int()"
-                    )))?
+                match symbol_type.to_int(self.node_id, lexer)? {
+                    IntValue::Literal(number) => number,
+                    _ => {return Err(CompilerError::SanityError(format!(
+                        "VecAccess.evaluate_node() found no indexer_value from indexer_type_value -> to_int()"
+                        )))}
+                }
             }
             None => {
                 return Err(CompilerError::SanityError(format!(
@@ -4066,7 +4025,7 @@ impl AstNode for LiteralInt {
                 )))
             }
         };
-        let var_type = SymbolType::Int(Some(var_value));
+        let var_type = SymbolType::Int(IntValue::Literal(var_value));
 
         let ((line, col), (_, _)) = lexer.line_col(span);
         let our_symbol = CallSymbol::new(id, span, line, col, var_type.clone(), class);
