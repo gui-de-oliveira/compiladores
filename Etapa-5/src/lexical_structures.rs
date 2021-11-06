@@ -3875,7 +3875,15 @@ impl Unary {
     ) -> Result<SymbolType, CompilerError> {
         match &self.op_type {
             UnaryType::Positive => match type_value {
-                symbol @ SymbolType::Int(_) | symbol @ SymbolType::Float(_) => Ok(symbol),
+                SymbolType::Int(IntValue::Undefined) => {
+                    Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                        "Unary operation Positive matched with undefined Int."
+                    )))
+                }
+                symbol @ SymbolType::Int(_) => {
+                    Ok(symbol)
+                }
+                symbol @ SymbolType::Float(_) => Ok(symbol),
                 SymbolType::Bool(maybe_value) => match &maybe_value {
                     Some(value) => match value {
                         true => Ok(SymbolType::Int(IntValue::Literal(1))),
