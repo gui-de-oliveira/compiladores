@@ -72,11 +72,14 @@ async function testInput(input, expected) {
         expectedI < expectedLines.length || receivedI < receivedLines.length;
 
       ) {
-        if (receivedI > receivedLines.length) {
+        if (expectedI >= expectedLines.length) {
           console.log(
-            FontColor.Fg.Green + `EXPECTED: ${expectedLines[expectedI]}`
+            FontColor.Fg.Red +
+              `RECEIVED: ${receivedLines[receivedI]}` +
+              FontColor.Reset
           );
-          expectedI++;
+          receivedI++;
+          continue;
         }
 
         const receivedLine = receivedLines[receivedI];
