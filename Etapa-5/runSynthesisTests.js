@@ -286,33 +286,64 @@ async function test() {
 
   await testInput(
     `
-    int main() {
-      int a;
-      a = 5;
-    }
+  int main() {
+    int a;
+    a = 5;
+  }
+  `,
+    `
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 21 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  loadI 5 => r1
+  storeAI r1 => rfp, 16
+  loadAI rfp, 0 => r2
+  loadAI rfp, 4 => r3
+  loadAI rfp, 8 => r4
+  i2i r3 => rsp
+  i2i r4 => rfp
+  jump -> r2
+  `
+  );
+
+  await testInput(
+    `
+  int main() {
+    int a <= 5;
+  }
     `,
     `
-    loadI 1024 => rfp
-    loadI 1024 => rsp
-    loadI 21 => rbss
-    loadI 8 => r0
-    storeAI r0 => rsp, 0
-    storeAI rsp => rsp, 4
-    storeAI rfp => rsp, 8
-    jumpI -> L0
-    halt
-    L0: nop
-    i2i rsp => rfp
-    addI rsp, 16 => rsp
-    addI rsp, 4 => rsp
-    loadI 5 => r1
-    storeAI r1 => rfp, 16
-    loadAI rfp, 0 => r2
-    loadAI rfp, 4 => r3
-    loadAI rfp, 8 => r4
-    i2i r3 => rsp
-    i2i r4 => rfp
-    jump -> r2
+  loadI 1024 => rfp
+  loadI 1024 => rsp
+  loadI 21 => rbss
+  loadI 8 => r0
+  storeAI r0 => rsp, 0
+  storeAI rsp => rsp, 4
+  storeAI rfp => rsp, 8
+  jumpI -> L0
+  halt
+  L0: nop
+  i2i rsp => rfp
+  addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
+  loadI 5 => r1
+  storeAI r1 => rfp, 16
+  loadAI rfp, 0 => r2
+  loadAI rfp, 4 => r3
+  loadAI rfp, 8 => r4
+  i2i r3 => rsp
+  i2i r4 => rfp
+  jump -> r2
   `
   );
 

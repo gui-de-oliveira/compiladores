@@ -683,6 +683,29 @@ impl AstNode for VarDefInitLit {
 
         let updated_symbol =
             def_symbol.cast_or_scream(&lit_symbol_type, self.node_id, lexer, false)?;
+
+        if let (SymbolType::Int(Some(num)), SymbolClass::Var { is_global, offset }) = (
+            // REVIEW - Esses .clone() estão certos? adicionei ele pq o add_def_symbol precisa dele depois
+            updated_symbol.type_value.clone(),
+            updated_symbol.class.clone(),
+        ) {
+            let new_register = code.new_register();
+            code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                Address::Number(num),
+                new_register,
+            )));
+            let offset_source = if is_global {
+                Register::Rbss
+            } else {
+                Register::Rfp
+            };
+            code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                new_register,
+                offset_source,
+                Address::Number(offset as i32),
+            )));
+        }
+
         stack.add_def_symbol(updated_symbol)?;
 
         if let Some(node) = &self.next {
