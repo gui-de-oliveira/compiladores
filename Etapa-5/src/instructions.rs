@@ -31,7 +31,7 @@ impl Register {
 }
 
 pub enum Address {
-    Number(u32),
+    Number(i32),
     Label(Label),
     NumLenPromise,
     LabelPromise(String),
@@ -53,7 +53,7 @@ impl Address {
     }
     pub fn pay_promises(
         &self,
-        code_len: u32,
+        code_len: i32,
         label_map: &HashMap<String, Label>,
     ) -> Result<Address, CompilerError> {
         match &self {
@@ -73,14 +73,14 @@ impl Address {
 
 pub enum Operation {
     LoadI(Address, Register),
-    LoadAI(Register, u32, Register),
+    LoadAI(Register, i32, Register),
     StoreAI(Register, Register, Address),
     Jump(Register),
     JumpI(Address),
     Halt,
     Nop,
     I2i(Register, Register),
-    AddI(Register, u32, Register),
+    AddI(Register, i32, Register),
 }
 
 impl Operation {
@@ -122,7 +122,7 @@ impl Operation {
     }
     pub fn pay_promises(
         &self,
-        code_len: u32,
+        code_len: i32,
         label_map: &HashMap<String, Label>,
     ) -> Result<Operation, CompilerError> {
         Ok(match &self {
@@ -159,7 +159,7 @@ impl Instruction {
     }
     pub fn pay_promises(
         &self,
-        code_len: u32,
+        code_len: i32,
         label_map: &HashMap<String, Label>,
     ) -> Result<Instruction, CompilerError> {
         Ok(match &self {
@@ -222,7 +222,7 @@ impl IlocCode {
 
     pub fn pay_promises(&mut self) -> Result<(), CompilerError> {
         let mut new_instructions = vec![];
-        let code_len = self.instructions.len() as u32;
+        let code_len = self.instructions.len() as i32;
         for instruction in &self.instructions {
             new_instructions.push(instruction.pay_promises(code_len, &self.label_map)?)
         }
