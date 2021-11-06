@@ -461,17 +461,26 @@ impl PartialEq for SymbolType {
 #[derive(Clone, Debug)]
 pub enum SymbolClass {
     Fn(Vec<Parameter>),
-    Var,
-    Vec,
+    Var{is_global: bool, offset: u32},
+    Vec{offset: u32},
     Lit,
+}
+
+impl SymbolClass {
+    pub fn default_var() -> SymbolClass {
+        SymbolClass::Var{is_global: false, offset: 0}
+    }
+    pub fn default_vec() -> SymbolClass {
+        SymbolClass::Vec{offset: 0}
+    }
 }
 
 impl PartialEq for SymbolClass {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (SymbolClass::Fn(_), SymbolClass::Fn(_))
-            | (SymbolClass::Var, SymbolClass::Var)
-            | (SymbolClass::Vec, SymbolClass::Vec)
+            | (SymbolClass::Var{ .. }, SymbolClass::Var{ .. })
+            | (SymbolClass::Vec{ .. }, SymbolClass::Vec{ .. })
             | (SymbolClass::Lit, SymbolClass::Lit) => true,
             _ => false,
         }
@@ -482,8 +491,8 @@ impl SymbolClass {
     pub fn to_str(&self) -> &str {
         match self {
             SymbolClass::Fn(_) => "function",
-            SymbolClass::Var => "variable",
-            SymbolClass::Vec => "vector",
+            SymbolClass::Var{ .. } => "variable",
+            SymbolClass::Vec{ .. } => "vector",
             SymbolClass::Lit => "literal",
         }
     }
@@ -495,20 +504,24 @@ pub struct ScopeStack {
         Option<SymbolType>,
         Vec<CallSymbol>,
     )>,
+    offsets: Vec<u32>,
 }
 
 impl ScopeStack {
     pub fn new() -> ScopeStack {
         ScopeStack {
             stack: vec![(HashMap::new(), None, vec![])],
+            offsets: vec![0],
         }
     }
 
     pub fn add_scope(&mut self, scope_type: Option<SymbolType>) {
+        self.offsets.push(0);
         self.stack.push((HashMap::new(), scope_type, vec![]))
     }
 
     pub fn remove_scope(&mut self) -> Result<HashMap<String, DefSymbol>, CompilerError> {
+        self.offsets.pop();
         match self.stack.pop() {
             Some((def_table, _scope_type, _symbols)) => Ok(def_table),
             None => Err(CompilerError::FailedScoping),
@@ -582,7 +595,7 @@ impl ScopeStack {
                     let ((second_line, second_col), (_, _)) = lexer.line_col(span);
                     let second_highlight = ScopeStack::form_string_highlight(span, lexer);
                     return Err(match older_symbol.class {
-                        SymbolClass::Var => CompilerError::SemanticErrorVariable {
+                        SymbolClass::Var{ .. } => CompilerError::SemanticErrorVariable {
                             id,
                             first_line,
                             first_col,
@@ -592,7 +605,7 @@ impl ScopeStack {
                             second_col,
                             second_highlight,
                         },
-                        SymbolClass::Vec => CompilerError::SemanticErrorVector {
+                        SymbolClass::Vec{ .. } => CompilerError::SemanticErrorVector {
                             id,
                             first_line,
                             first_col,
@@ -671,6 +684,25 @@ impl ScopeStack {
     pub fn pop_symbol(&mut self) -> Result<Option<CallSymbol>, CompilerError> {
         match self.stack.last_mut() {
             Some((_scope, _scope_type, symbols)) => Ok(symbols.pop()),
+            None => Err(CompilerError::FailedScoping),
+        }
+    }
+
+    pub fn add_offset(&mut self, extra_offset: u32) -> Result<(), CompilerError> {
+        match self.offsets.last_mut() {
+            Some(num) => {
+                *num += extra_offset;
+                Ok(())
+            }
+            None => Err(CompilerError::FailedScoping),
+        }
+    }
+    
+    pub fn get_offset(&self) -> Result<u32, CompilerError> {
+        match self.offsets.last() {
+            Some(num) => {
+                Ok(*num)
+            }
             None => Err(CompilerError::FailedScoping),
         }
     }

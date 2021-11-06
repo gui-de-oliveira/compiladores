@@ -115,7 +115,7 @@ async function test() {
     `
   loadI 1024 => rfp
   loadI 1024 => rsp
-  loadI 18 => rbss
+  loadI 19 => rbss
   loadI 8 => r0
   storeAI r0 => rsp, 0
   storeAI rsp => rsp, 4
@@ -125,6 +125,7 @@ async function test() {
   L0: nop
   i2i rsp => rfp
   addI rsp, 16 => rsp
+  addI rsp, 4 => rsp
   loadAI rfp, 0 => r1
   loadAI rfp, 4 => r2
   loadAI rfp, 8 => r3
@@ -253,15 +254,15 @@ async function test() {
     L0: nop
     i2i rsp => rfp
     addI rsp, 16 => rsp
-    addI 4, rsp => rsp
+    addI rsp, 4 => rsp
     loadI 5 => r1
     storeAI r1 => rfp, 16
-    loadAI rfp, 0 => r1
-    loadAI rfp, 4 => r2
-    loadAI rfp, 8 => r3
-    i2i r2 => rsp
-    i2i r3 => rfp
-    jump -> r1
+    loadAI rfp, 0 => r2
+    loadAI rfp, 4 => r3
+    loadAI rfp, 8 => r4
+    i2i r3 => rsp
+    i2i r4 => rfp
+    jump -> r2
   `
   );
 
