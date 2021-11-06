@@ -89,6 +89,8 @@ pub enum Operation {
     SubI(Register, i32, Register),
     Mult(Register, Register, Register),
     MultI(Register, i32, Register),
+    Div(Register, Register, Register),
+    DivI(Register, i32, Register),
 }
 
 impl Operation {
@@ -177,6 +179,22 @@ impl Operation {
                     reg_b.to_string(),
                 )
             }
+            Operation::Div(reg_a, reg_b, reg_c) => {
+                format!(
+                    "div {}, {} => {}",
+                    reg_a.to_string(),
+                    reg_b.to_string(),
+                    reg_c.to_string(),
+                )
+            }
+            Operation::DivI(reg_a, num, reg_b) => {
+                format!(
+                    "divI {}, {} => {}",
+                    reg_a.to_string(),
+                    num,
+                    reg_b.to_string(),
+                )
+            }
         })
     }
     pub fn pay_promises(
@@ -205,6 +223,8 @@ impl Operation {
             Operation::SubI(reg_a, num, reg_b) => Operation::SubI(*reg_a, *num, *reg_b),
             Operation::Mult(reg_a, reg_b, reg_c) => Operation::Mult(*reg_a, *reg_b, *reg_c),
             Operation::MultI(reg_a, num, reg_b) => Operation::MultI(*reg_a, *num, *reg_b),
+            Operation::Div(reg_a, reg_b, reg_c) => Operation::Div(*reg_a, *reg_b, *reg_c),
+            Operation::DivI(reg_a, num, reg_b) => Operation::DivI(*reg_a, *num, *reg_b),
         })
     }
 }

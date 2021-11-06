@@ -3117,7 +3117,7 @@ impl Binary {
                             bad @ (IntValue::Undefined, _)
                             | bad @ (_, IntValue::Undefined) => {
                                 Err(CompilerError::IlocErrorUndefinedBehavior(format!(
-                                    "Binary operation Add matched undefined with something else: {:?}",
+                                    "Binary operation Mult matched undefined with something else: {:?}",
                                     bad
                                 )))
                             }
@@ -3197,7 +3197,7 @@ impl Binary {
                             },
                         }
                         bad => Err(CompilerError::IlocErrorUndefinedBehavior(format!(
-                            "Binary operation Add with unsuported types: {:?}",
+                            "Binary operation Mult with unsuported types: {:?}",
                             bad
                         ))),
                     },
@@ -3236,7 +3236,7 @@ impl Binary {
                             highlight,
                         })
                     }
-                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                    SymbolType::Bool(_) => {
                         match (
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
@@ -3251,6 +3251,154 @@ impl Binary {
                             (_, _) => Ok(SymbolType::Int(IntValue::Undefined)),
                         }
                     }
+                    SymbolType::Int(_) => match (left_value, right_value) {
+                        (SymbolType::Int(left_value), SymbolType::Int(right_value)) => match (left_value, right_value) {
+                            bad @ (IntValue::Undefined, _)
+                            | bad @ (_, IntValue::Undefined) => {
+                                Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                                    "Binary operation Div matched undefined with something else: {:?}",
+                                    bad
+                                )))
+                            }
+                            (IntValue::Temp(register), IntValue::Literal(other_value)) => {
+                                if other_value == 0 {
+                                    return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Division of expression by literal 0")))
+                                }
+                                code.push_instruction(Instruction::Unlabeled(Operation::DivI(
+                                    register,
+                                    other_value,
+                                    register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(register)))
+                            }
+                            (IntValue::Literal(other_value), IntValue::Temp(register)) => {
+                                let new_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                                    Address::Number(other_value),
+                                    new_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                    new_register,
+                                    register,
+                                    new_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(register)))
+                            }
+                            (IntValue::Temp(register), IntValue::Memory(other_register, offset)) => {
+                                let new_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    other_register,
+                                    offset as i32,
+                                    new_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                    register,
+                                    new_register,
+                                    register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(register)))
+                            }
+                            (IntValue::Memory(other_register, offset), IntValue::Temp(register)) => {
+                                let new_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    other_register,
+                                    offset as i32,
+                                    new_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                    new_register,
+                                    register,
+                                    new_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(new_register)))
+                            }
+                            (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) => {
+                                let lit_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                                    Address::Number(value),
+                                    lit_register,
+                                )));
+                                let other_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_register,
+                                    offset as i32,
+                                    other_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                    lit_register,
+                                    other_register,
+                                    lit_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(lit_register)))
+                            }
+                            (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
+                                if value == 0 {
+                                    return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Division of variable by literal 0")))
+                                }
+                                let new_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_register,
+                                    offset as i32,
+                                    new_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::DivI(
+                                    new_register,
+                                    value,
+                                    new_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(new_register)))
+                            }
+                            (
+                                IntValue::Literal(left_value),
+                                IntValue::Literal(right_value),
+                            ) => {
+                                if right_value == 0 {
+                                    Err(CompilerError::IlocErrorUndefinedBehavior(format!("Division by literal 0: \"{} / 0\"", left_value)))
+                                } else {
+                                    Ok(SymbolType::Int(IntValue::Literal(left_value / right_value)))
+                                }
+                                
+                            },
+                            (
+                                IntValue::Memory(mem_left_register, left_offset),
+                                IntValue::Memory(mem_right_register, right_offset),
+                            ) => {
+                                let left_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_left_register,
+                                    left_offset as i32,
+                                    left_register,
+                                )));
+                                let right_register = code.new_register();
+                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_right_register,
+                                    right_offset as i32,
+                                    right_register,
+                                )));
+                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            },
+                            (
+                                IntValue::Temp(left_register),
+                                IntValue::Temp(right_register),
+                            ) => {
+                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                )));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            },
+                        }
+                        bad => Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                            "Binary operation Div with unsuported types: {:?}",
+                            bad
+                        ))),
+                    },
                     SymbolType::Float(_) => match (
                         left_value.to_float(self.node_id, lexer)?,
                         right_value.to_float(self.node_id, lexer)?,
