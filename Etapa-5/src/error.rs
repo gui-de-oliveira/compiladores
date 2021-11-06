@@ -225,6 +225,9 @@ pub enum CompilerError {
         line: usize,
         col: usize,
     },
+
+    #[error("Undefined behavior error: {0}")]
+    IlocErrorUndefinedBehavior(String),
 }
 
 impl CompilerError {
@@ -257,6 +260,7 @@ impl CompilerError {
             | CompilerError::SemanticErrorWrongParOutputId { .. } => 51,
             CompilerError::SemanticErrorWrrongParReturn { .. } => 52,
             CompilerError::SemanticErrorWrongParShift { .. } => 53,
+            CompilerError::IlocErrorUndefinedBehavior(_) => 60,
         }
     }
 }

@@ -72,8 +72,10 @@ impl Address {
 }
 
 pub enum Operation {
+    Load(Register, Register),
     LoadI(Address, Register),
     LoadAI(Register, i32, Register),
+    LoadAO(Register, Register, Register),
     StoreAI(Register, Register, Address),
     Jump(Register),
     JumpI(Address),
@@ -87,6 +89,9 @@ pub enum Operation {
 impl Operation {
     pub fn to_string(&self) -> Result<String, CompilerError> {
         Ok(match &self {
+            Operation::Load(reg_a, reg_b) => {
+                format!("load {} => {}", reg_a.to_string(), reg_b.to_string())
+            }
             Operation::LoadI(addr, reg) => {
                 format!("loadI {} => {}", addr.to_string()?, reg.to_string())
             }
@@ -95,14 +100,22 @@ impl Operation {
                     "loadAI {}, {} => {}",
                     reg_a.to_string(),
                     num,
-                    reg_b.to_string()
+                    reg_b.to_string(),
+                )
+            }
+            Operation::LoadAO(reg_a, reg_b, reg_c) => {
+                format!(
+                    "loadAO {}, {} => {}",
+                    reg_a.to_string(),
+                    reg_b.to_string(),
+                    reg_c.to_string(),
                 )
             }
             Operation::StoreAI(reg_a, reg_b, addr) => format!(
                 "storeAI {} => {}, {}",
                 reg_a.to_string(),
                 reg_b.to_string(),
-                addr.to_string()?
+                addr.to_string()?,
             ),
             Operation::Jump(reg) => format!("jump -> {}", reg.to_string()),
             Operation::JumpI(addr) => format!("jumpI -> {}", addr.to_string()?),
@@ -116,7 +129,7 @@ impl Operation {
                     "addI {}, {} => {}",
                     reg_a.to_string(),
                     num,
-                    reg_b.to_string()
+                    reg_b.to_string(),
                 )
             }
             Operation::Add(reg_a, reg_b, reg_c) => {
@@ -124,7 +137,7 @@ impl Operation {
                     "add {}, {} => {}",
                     reg_a.to_string(),
                     reg_b.to_string(),
-                    reg_c.to_string()
+                    reg_c.to_string(),
                 )
             }
         })
@@ -135,10 +148,12 @@ impl Operation {
         label_map: &HashMap<String, Label>,
     ) -> Result<Operation, CompilerError> {
         Ok(match &self {
+            Operation::Load(reg_a, reg_b) => Operation::Load(*reg_a, *reg_b),
             Operation::LoadI(addr, reg) => {
                 Operation::LoadI(addr.pay_promises(code_len, label_map)?, *reg)
             }
             Operation::LoadAI(reg_a, num, reg_b) => Operation::LoadAI(*reg_a, *num, *reg_b),
+            Operation::LoadAO(reg_a, reg_b, reg_c) => Operation::LoadAO(*reg_a, *reg_b, *reg_c),
             Operation::StoreAI(reg_a, reg_b, addr) => {
                 Operation::StoreAI(*reg_a, *reg_b, addr.pay_promises(code_len, label_map)?)
             }
