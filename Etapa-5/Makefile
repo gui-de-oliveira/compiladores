@@ -23,8 +23,8 @@ zip:
 test:
 	make debug
 	yarn tsc --project tsconfig.json
-	node runTest.js
-	rm -f -r runTest.js
+	node runSynthesisTests.js
+	rm -f -r runSynthesisTests.js
 
 setup:
 	sudo apt install nodejs npm -y

@@ -22,8 +22,6 @@ const LogColors = {
   White: "\x1b[37m",
 };
 
-let testsCounter = 0;
-
 function log(message: string, color?: keyof typeof LogColors) {
   if (color !== undefined) {
     process.stdout.write(LogColors[color]);
@@ -177,8 +175,10 @@ async function getIloc(
   return { success: true, value: { memoryValues: successfulLines } };
 }
 
+let testsCounter = 0;
+
 async function test(input: string, expectedValues: number[]) {
-  const outputFile = `output.temp`;
+  testsCounter++;
 
   const compileResult = await compile(input);
 
@@ -266,6 +266,38 @@ async function test(input: string, expectedValues: number[]) {
 
 async function runTests() {
   await test("int main() { }", []);
+  await test("int main() { int a <= 10; }", [10]);
+  await test("int main() { int a; a = 10; }", [10]);
+  await test("int main() { int a <= 10; int b <= 20;  }", [10, 20]);
+  await test("int main() { int a; a = 10; int b; b = 20;  }", [10, 20]);
+  await test(
+    "int main() { int a <= 10; int b <= 20; int c <= 30;  }",
+    [10, 20, 30]
+  );
+  await test(
+    "int main() { int a; a = 10; int b; b = 20; int c; c = 30;  }",
+    [10, 20, 30]
+  );
+  await test(
+    "int main() { int a; int b <= 20; int c <= 30; a = b + c;  }",
+    [50, 20, 30]
+  );
+  await test(
+    "int main() { int a; int b; b = 20; int c; c = 30; a = b + c;  }",
+    [50, 20, 30]
+  );
+  await test(
+    "int main() { int a; int b <= 20; int c; c = 30; a = b + c;  }",
+    [50, 20, 30]
+  );
+  await test(
+    "int main() { int a; int b; b = 20; int c <= 30; a = b + c;  }",
+    [50, 20, 30]
+  );
+  await test(
+    "int main() { int a; int b <= 20; int c <= 30; int d <= 30; a = b + c + d;  }",
+    [80, 20, 30, 30]
+  );
 
   log("ALL TESTS PASSED!", "Green");
 }
