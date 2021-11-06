@@ -72,7 +72,10 @@ type IlocErrors =
 async function getIloc(
   compilerOutput: string
 ): Promise<
-  Result<{ memoryValues: { memory: number; value: number }[] }, IlocErrors>
+  Result<
+    { ilocOutput: string; memoryValues: { memory: number; value: number }[] },
+    IlocErrors
+  >
 > {
   const inputFile = `iloc.temp`;
   writeFileSync(inputFile, compilerOutput);
@@ -172,7 +175,10 @@ async function getIloc(
     });
   }
 
-  return { success: true, value: { memoryValues: successfulLines } };
+  return {
+    success: true,
+    value: { ilocOutput: output, memoryValues: successfulLines },
+  };
 }
 
 let testsCounter = 0;
@@ -233,7 +239,7 @@ async function test(input: string, expectedValues: number[]) {
   const assert = <T>(expected: T, received: T) => {
     if (expected === received) return;
 
-    log(`TEST ${testsCounter} FAILED!`, "Red");
+    log(`\nTEST ${testsCounter} FAILED!`, "Red");
     log(`Input: "${input}"`, "Red");
 
     log(`ASSERT ERROR!`, "Red");
@@ -246,6 +252,8 @@ async function test(input: string, expectedValues: number[]) {
       )}`,
       "Red"
     );
+
+    log(`\nILOC output: ${ilocResult.value.ilocOutput}`, "Red");
 
     process.exit();
   };
