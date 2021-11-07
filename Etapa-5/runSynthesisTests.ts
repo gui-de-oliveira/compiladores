@@ -64,10 +64,10 @@ type IlocErrors =
   | { type: "NO_MEMORY_VALUES_SECTION_FIND"; ilocOutput: string }
   | { type: "COULDNT_SPLIT_LINES"; failedLines: string[]; ilocOutput: string }
   | {
-      type: "VALUE_IS_NOT_A_NUMBER";
-      failedLines: { memory: string; value: string }[];
-      ilocOutput: string;
-    };
+    type: "VALUE_IS_NOT_A_NUMBER";
+    failedLines: { memory: string; value: string }[];
+    ilocOutput: string;
+  };
 
 async function getIloc(
   compilerOutput: string
@@ -305,6 +305,10 @@ async function runTests() {
   await test(
     "int main() { int a; int b <= 20; int c <= 30; int d <= 30; a = b + c + d;  }",
     [80, 20, 30, 30]
+  );
+  await test(
+    "int main() { int a; int b <= 20; a = b; int c; c = 30; int d; d = a + b + c;  }",
+    [20, 20, 30, 70]
   );
 
   log("ALL TESTS PASSED!", "Green");
