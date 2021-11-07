@@ -401,6 +401,11 @@ async function runTests() {
     [],
     [3, 6]
   );
+  await test(
+    "int main() { int i <= 0; int a <= 0; while ( i < 3 ) do { i = i + 1; a = a + 2; }; }",
+    [],
+    [3, 6]
+  );
 
   log("ALL TESTS PASSED!", "Green");
 }
