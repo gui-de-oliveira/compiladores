@@ -1334,11 +1334,13 @@ impl AstNode for VarSet {
             def_symbol.offset as i32,
         ))));
 
+        let return_symbol = Some(SymbolType::Int(IntValue::Memory(def_symbol.offset_source, def_symbol.offset)));
+
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
         };
 
-        Ok(None)
+        Ok(return_symbol)
     }
     fn get_span(&self) -> Span {
         self.node_id
@@ -1453,8 +1455,11 @@ impl AstNode for VecSet {
             }
         }
 
+        let return_symbol;
+
         match self.vec_access.evaluate_node(code, stack, lexer)?.ok_or(CompilerError::ParsingErrors(format!("vec_access.evaluate_node() returned no type value for index expression in VecSet.evaluate_node()")))? {
             SymbolType::Int(IntValue::Memory(offset_source, offset)) => {
+                return_symbol = Some(SymbolType::Int(IntValue::Memory(offset_source, offset)));
                 code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
                     setter_register,
                     offset_source,
@@ -1470,7 +1475,7 @@ impl AstNode for VecSet {
             node.evaluate_node(code, stack, lexer)?;
         };
 
-        Ok(None)
+        Ok(return_symbol)
     }
     fn get_span(&self) -> Span {
         self.node_id
@@ -2214,7 +2219,7 @@ impl AstNode for If {
             self.condition
                 .evaluate_node(code, stack, lexer)?
                 .ok_or(CompilerError::SanityError(format!(
-                    "condition has no SymbolType (on IfElse.evaluate_node())"
+                    "condition has no SymbolType (on If.evaluate_node())"
                 )))?;
         condition_symbol.to_bool(self.node_id, lexer)?;
 
@@ -2242,10 +2247,10 @@ impl AstNode for If {
             },
             SymbolType::Int(IntValue::Memory(register, offset)) => {
                 let new_register = code.new_register();
-                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register))
-                    ,Instruction::Unlabeled(Operation::Cbr(new_register, before_true_label, after_true_label))]
+                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register)),
+                    Instruction::Unlabeled(Operation::Cbr(new_register, before_true_label, after_true_label))]
             },
-            _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("condition.evaluate_node() returned unsuported type for IfElse.evaluate(): {:?}", condition_symbol)))
+            _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("condition.evaluate_node() returned unsuported type for If.evaluate(): {:?}", condition_symbol)))
         };
         code.pay_promise(jump_if_true_voucher, promise_payment);
 
@@ -2366,8 +2371,8 @@ impl AstNode for IfElse {
             },
             SymbolType::Int(IntValue::Memory(register, offset)) => {
                 let new_register = code.new_register();
-                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register))
-                    ,Instruction::Unlabeled(Operation::Cbr(new_register, before_true_label, between_true_and_false_label))]
+                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register)),
+                    Instruction::Unlabeled(Operation::Cbr(new_register, before_true_label, between_true_and_false_label))]
             },
             _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("condition.evaluate_node() returned unsuported type for IfElse.evaluate(): {:?}", condition_symbol)))
         };
@@ -2467,15 +2472,54 @@ impl AstNode for For {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        self.count_init.evaluate_node(code, stack, lexer)?;
+        let _count_init_mem_loc = self.count_init.evaluate_node(code, stack, lexer)?;
+
+        let pre_check_label = code.new_label();
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(pre_check_label, Operation::Nop)));
+
         let count_check_symbol = self.count_check.evaluate_node(code, stack, lexer)?.ok_or(
             CompilerError::SanityError(format!(
                 "count_check has no SymbolType (on For.evaluate_node())"
             )),
         )?;
         count_check_symbol.to_bool(self.node_id, lexer)?;
-        self.count_iter.evaluate_node(code, stack, lexer)?;
+
+        let after_check_label = code.new_label();
+        let escape_label = code.new_label();
+
+        let due_instructions = match count_check_symbol {
+            SymbolType::Bool(BoolValue::Literal(boolean)) => {if boolean {
+                vec![Instruction::Unlabeled(Operation::Nop)]
+            } else {
+                vec![Instruction::Unlabeled(Operation::JumpI(escape_label))]
+            }},
+            SymbolType::Int(IntValue::Literal(number)) => {if number != 0 {
+                vec![Instruction::Unlabeled(Operation::Nop)]
+            } else {
+                vec![Instruction::Unlabeled(Operation::JumpI(escape_label))]
+            }},
+            SymbolType::Bool(BoolValue::Temp(register)) | SymbolType::Int(IntValue::Temp(register)) => {
+                vec![Instruction::Unlabeled(Operation::Cbr(register, after_check_label, escape_label))]
+            },
+            SymbolType::Int(IntValue::Memory(register, offset)) => {
+                let new_register = code.new_register();
+                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register)),
+                    Instruction::Unlabeled(Operation::Cbr(new_register, after_check_label, escape_label))]
+            },
+            _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("count_check.evaluate_node() returned unsuported type for For.evaluate(): {:?}", count_check_symbol)))
+        };
+        for instruction in due_instructions {
+            code.push_code(CodeLine::Deliver(instruction));
+        }
+
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(after_check_label, Operation::Nop)));
+
         self.actions.evaluate_node(code, stack, lexer)?;
+
+        let _count_iter_mem_loc = self.count_iter.evaluate_node(code, stack, lexer)?;
+
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::JumpI(pre_check_label))));
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(escape_label, Operation::Nop)));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
