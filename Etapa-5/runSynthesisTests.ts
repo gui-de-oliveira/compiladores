@@ -341,6 +341,11 @@ async function runTests() {
     [-6, -3],
     [3]
   );
+  await test(
+    "int a[2]; int main() { a[0] = 2; int b <= 3; a[1] = +b; a[0] = a[0] * 5 * b; }",
+    [30, 3],
+    [3]
+  );
 
   log("ALL TESTS PASSED!", "Green");
 }
