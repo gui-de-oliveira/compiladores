@@ -9,7 +9,7 @@ use std::ptr::addr_of;
 
 use super::ast_node::AstNode;
 use super::error::CompilerError;
-use super::instructions::{Address, IlocCode, Instruction, Operation, Register};
+use super::instructions::{CodeLine, IlocCode, Instruction, Operation, Register};
 use super::semantic_structures::{ BoolValue,
     CallSymbol, DefSymbol, IntValue, ScopeStack, SymbolClass, SymbolType,
 };
@@ -356,16 +356,16 @@ impl AstNode for FnDef {
         }
 
         let new_label = code.add_fn_label(id);
-        code.push_instruction(Instruction::Labeled(new_label, Operation::Nop));
-        code.push_instruction(Instruction::Unlabeled(Operation::I2i(
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(new_label, Operation::Nop)));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::I2i(
             Register::Rsp,
             Register::Rfp,
-        )));
-        code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
             Register::Rsp,
             starting_size as i32,
             Register::Rsp,
-        )));
+        ))));
 
         if let Some(command) = &self.first_command {
             command.evaluate_node(code, stack, lexer)?;
@@ -378,30 +378,30 @@ impl AstNode for FnDef {
         let return_addr_reg = code.new_register();
         let restore_rsp_reg = code.new_register();
         let restore_rfp_reg = code.new_register();
-        code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
             Register::Rfp,
             0,
             return_addr_reg,
-        )));
-        code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
             Register::Rfp,
             4,
             restore_rsp_reg,
-        )));
-        code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
             Register::Rfp,
             8,
             restore_rfp_reg,
-        )));
-        code.push_instruction(Instruction::Unlabeled(Operation::I2i(
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::I2i(
             restore_rsp_reg,
             Register::Rsp,
-        )));
-        code.push_instruction(Instruction::Unlabeled(Operation::I2i(
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::I2i(
             restore_rfp_reg,
             Register::Rfp,
-        )));
-        code.push_instruction(Instruction::Unlabeled(Operation::Jump(return_addr_reg)));
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Jump(return_addr_reg))));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -576,11 +576,11 @@ impl AstNode for LocalVarDef {
         stack.add_def_symbol(our_symbol)?;
         stack.add_offset(size)?;
 
-        code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
             Register::Rsp,
             size as i32,
             Register::Rsp,
-        )));
+        ))));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -666,16 +666,16 @@ impl AstNode for VarDefInitId {
 
         if let SymbolType::Int(IntValue::Memory(offset_source, offset)) = id_symbol_type {
             let new_register = code.new_register();
-            code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+            code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                 *offset_source,
                 *offset as i32,
                 new_register,
-            )));
-            code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+            ))));
+            code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
                 new_register,
                 def_symbol.offset_source,
-                Address::Number(def_symbol.offset as i32),
-            )));
+                def_symbol.offset as i32,
+            ))));
         };
 
         if let Some(node) = &self.next {
@@ -777,15 +777,15 @@ impl AstNode for VarDefInitLit {
 
         if let SymbolType::Int(IntValue::Literal(num)) = lit_symbol_type {
             let new_register = code.new_register();
-            code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                Address::Number(num),
+            code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                num,
                 new_register,
-            )));
-            code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+            ))));
+            code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
                 new_register,
                 def_symbol.offset_source,
-                Address::Number(def_symbol.offset as i32),
-            )));
+                def_symbol.offset as i32,
+            ))));
         };
 
         if let Some(node) = &self.next {
@@ -1302,18 +1302,18 @@ impl AstNode for VarSet {
             },
             SymbolType::Int(IntValue::Literal(number)) => {
                 setter_register = code.new_register();
-                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                    Address::Number(number),
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                    number,
                     setter_register,
-                )));
+                ))));
             },
             SymbolType::Int(IntValue::Memory(register, offset)) => {
                 setter_register = code.new_register();
-                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                     register,
                     offset as i32,
                     setter_register,
-                )));
+                ))));
             },
             SymbolType::Int(IntValue::Undefined) => {
                 return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
@@ -1328,11 +1328,11 @@ impl AstNode for VarSet {
                 )))
             }
         }
-        code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
             setter_register,
             def_symbol.offset_source,
-            Address::Number(def_symbol.offset as i32),
-        )));
+            def_symbol.offset as i32,
+        ))));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -1426,18 +1426,18 @@ impl AstNode for VecSet {
             },
             SymbolType::Int(IntValue::Literal(number)) => {
                 setter_register = code.new_register();
-                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                    Address::Number(number),
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                    number,
                     setter_register,
-                )));
+                ))));
             },
             SymbolType::Int(IntValue::Memory(register, offset)) => {
                 setter_register = code.new_register();
-                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                     register,
                     offset as i32,
                     setter_register,
-                )));
+                ))));
             },
             SymbolType::Int(IntValue::Undefined) => {
                 return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
@@ -1455,11 +1455,11 @@ impl AstNode for VecSet {
 
         match self.vec_access.evaluate_node(code, stack, lexer)?.ok_or(CompilerError::ParsingErrors(format!("vec_access.evaluate_node() returned no type value for index expression in VecSet.evaluate_node()")))? {
             SymbolType::Int(IntValue::Memory(offset_source, offset)) => {
-                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
                     setter_register,
                     offset_source,
-                    Address::Number(offset as i32),
-                )));
+                    offset as i32,
+                ))));
             },
             bad => return Err(CompilerError::SanityError(format!(
                 "vec_access.evaluate_node() on VecSet returned something different from a memory location: {:?}", bad
@@ -2307,8 +2307,47 @@ impl AstNode for IfElse {
                     "condition has no SymbolType (on IfElse.evaluate_node())"
                 )))?;
         condition_symbol.to_bool(self.node_id, lexer)?;
+
+        let before_true_label = code.new_label();
+        let between_true_and_false_label = code.new_label();
+        let after_if_false_label = code.new_label();
+
+        let jump_if_true_voucher = code.generate_promise();
+        code.push_code(CodeLine::Promise(jump_if_true_voucher));
+
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(before_true_label, Operation::Nop)));
+
+        let promise_payment = match condition_symbol {
+            SymbolType::Bool(BoolValue::Literal(boolean)) => {if boolean {
+                vec![Instruction::Unlabeled(Operation::Nop)]
+            } else {
+                vec![Instruction::Unlabeled(Operation::JumpI(between_true_and_false_label))]
+            }},
+            SymbolType::Int(IntValue::Literal(number)) => {if number != 0 {
+                vec![Instruction::Unlabeled(Operation::Nop)]
+            } else {
+                vec![Instruction::Unlabeled(Operation::JumpI(between_true_and_false_label))]
+            }},
+            SymbolType::Bool(BoolValue::Temp(register)) | SymbolType::Int(IntValue::Temp(register)) => {
+                vec![Instruction::Unlabeled(Operation::Cbr(register, before_true_label, between_true_and_false_label))]
+            },
+            SymbolType::Int(IntValue::Memory(register, offset)) => {
+                let new_register = code.new_register();
+                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register))
+                    ,Instruction::Unlabeled(Operation::Cbr(new_register, before_true_label, between_true_and_false_label))]
+            },
+            _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("condition.evaluate_node() returned unsuported type for IfElse.evaluate(): {:?}", condition_symbol)))
+        };
+        code.pay_promise(jump_if_true_voucher, promise_payment);
+
         self.if_true.evaluate_node(code, stack, lexer)?;
+
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(between_true_and_false_label, Operation::Nop)));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::JumpI(after_if_false_label))));
+
         self.if_false.evaluate_node(code, stack, lexer)?;
+
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(after_if_false_label, Operation::Nop)));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -2778,10 +2817,10 @@ impl Binary {
                     }
                 }
                 (BoolValue::Temp(left_register), BoolValue::Temp(right_register)) => {
-                    code.push_instruction(Instruction::Unlabeled(Operation::Or(
+                    code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Or(
                         left_register,
                         right_register,
-                    )));
+                    ))));
                     Ok(SymbolType::Bool(BoolValue::Temp(left_register)))
                 }
             },
@@ -2801,10 +2840,10 @@ impl Binary {
                     }
                 }
                 (BoolValue::Temp(left_register), BoolValue::Temp(right_register)) => {
-                    code.push_instruction(Instruction::Unlabeled(Operation::And(
+                    code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::And(
                         left_register,
                         right_register,
-                    )));
+                    ))));
                     Ok(SymbolType::Bool(BoolValue::Temp(left_register)))
                 }
             },
@@ -2889,39 +2928,39 @@ impl Binary {
                                 )))
                             }
                             (IntValue::Temp(register), IntValue::Literal(other_value)) | (IntValue::Literal(other_value), IntValue::Temp(register)) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
                                     register,
                                     other_value,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Temp(register), IntValue::Memory(other_register, offset)) | (IntValue::Memory(other_register, offset), IntValue::Temp(register)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     other_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Add(
                                     register,
                                     new_register,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) | (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
                                     new_register,
                                     value,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register)))
                             }
                             (
@@ -2933,33 +2972,33 @@ impl Binary {
                                 IntValue::Memory(mem_right_register, right_offset),
                             ) => {
                                 let left_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_left_register,
                                     left_offset as i32,
                                     left_register,
-                                )));
+                                ))));
                                 let right_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_right_register,
                                     right_offset as i32,
                                     right_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Add(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                             (
                                 IntValue::Temp(left_register),
                                 IntValue::Temp(right_register),
                             ) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::Add(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Add(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                         }
@@ -3024,85 +3063,85 @@ impl Binary {
                                 )))
                             }
                             (IntValue::Temp(register), IntValue::Literal(other_value)) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::SubI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::SubI(
                                     register,
                                     other_value,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Literal(other_value), IntValue::Temp(register)) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                                     register,
                                     -1,
                                     register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
                                     register,
                                     other_value,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register))) // 1 - a = -a + 1
                             }
                             (IntValue::Temp(register), IntValue::Memory(other_register, offset)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     other_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Sub(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Sub(
                                     register,
                                     new_register,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Memory(other_register, offset), IntValue::Temp(register)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     other_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Sub(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Sub(
                                     new_register,
                                     register,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register)))
                             }
                             (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                                     new_register,
                                     -1,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
                                     new_register,
                                     value,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register))) // 1 - a = -a + 1
                             }
                             (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::SubI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::SubI(
                                     new_register,
                                     value,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register)))
                             }
                             (
@@ -3114,33 +3153,33 @@ impl Binary {
                                 IntValue::Memory(mem_right_register, right_offset),
                             ) => {
                                 let left_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_left_register,
                                     left_offset as i32,
                                     left_register,
-                                )));
+                                ))));
                                 let right_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_right_register,
                                     right_offset as i32,
                                     right_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Sub(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Sub(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                             (
                                 IntValue::Temp(left_register),
                                 IntValue::Temp(right_register),
                             ) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::Sub(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Sub(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                         }
@@ -3205,39 +3244,39 @@ impl Binary {
                                 )))
                             }
                             (IntValue::Temp(register), IntValue::Literal(other_value)) | (IntValue::Literal(other_value), IntValue::Temp(register)) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                                     register,
                                     other_value,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Temp(register), IntValue::Memory(other_register, offset)) | (IntValue::Memory(other_register, offset), IntValue::Temp(register)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     other_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Mult(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Mult(
                                     register,
                                     new_register,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) | (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                                     new_register,
                                     value,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register)))
                             }
                             (
@@ -3249,33 +3288,33 @@ impl Binary {
                                 IntValue::Memory(mem_right_register, right_offset),
                             ) => {
                                 let left_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_left_register,
                                     left_offset as i32,
                                     left_register,
-                                )));
+                                ))));
                                 let right_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_right_register,
                                     right_offset as i32,
                                     right_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Mult(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Mult(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                             (
                                 IntValue::Temp(left_register),
                                 IntValue::Temp(right_register),
                             ) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::Mult(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Mult(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                         }
@@ -3347,71 +3386,71 @@ impl Binary {
                                 if other_value == 0 {
                                     return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Division of expression by literal 0")))
                                 }
-                                code.push_instruction(Instruction::Unlabeled(Operation::DivI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::DivI(
                                     register,
                                     other_value,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Literal(other_value), IntValue::Temp(register)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                                    Address::Number(other_value),
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    other_value,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Div(
                                     new_register,
                                     register,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Temp(register), IntValue::Memory(other_register, offset)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     other_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Div(
                                     register,
                                     new_register,
                                     register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(register)))
                             }
                             (IntValue::Memory(other_register, offset), IntValue::Temp(register)) => {
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     other_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Div(
                                     new_register,
                                     register,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register)))
                             }
                             (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) => {
                                 let lit_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                                    Address::Number(value),
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    value,
                                     lit_register,
-                                )));
+                                ))));
                                 let other_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_register,
                                     offset as i32,
                                     other_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Div(
                                     lit_register,
                                     other_register,
                                     lit_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(lit_register)))
                             }
                             (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
@@ -3419,16 +3458,16 @@ impl Binary {
                                     return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Division of variable by literal 0")))
                                 }
                                 let new_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_register,
                                     offset as i32,
                                     new_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::DivI(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::DivI(
                                     new_register,
                                     value,
                                     new_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(new_register)))
                             }
                             (
@@ -3447,33 +3486,33 @@ impl Binary {
                                 IntValue::Memory(mem_right_register, right_offset),
                             ) => {
                                 let left_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_left_register,
                                     left_offset as i32,
                                     left_register,
-                                )));
+                                ))));
                                 let right_register = code.new_register();
-                                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                                     mem_right_register,
                                     right_offset as i32,
                                     right_register,
-                                )));
-                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Div(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                             (
                                 IntValue::Temp(left_register),
                                 IntValue::Temp(right_register),
                             ) => {
-                                code.push_instruction(Instruction::Unlabeled(Operation::Div(
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Div(
                                     left_register,
                                     right_register,
                                     left_register,
-                                )));
+                                ))));
                                 Ok(SymbolType::Int(IntValue::Temp(left_register)))
                             },
                         }
@@ -4008,25 +4047,25 @@ impl Unary {
                     Ok(SymbolType::Int(IntValue::Literal(-number)))
                 }
                 SymbolType::Int(IntValue::Temp(register)) => {
-                    code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                    code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                         register,
                         -1,
                         register,
-                    )));
+                    ))));
                     Ok(SymbolType::Int(IntValue::Temp(register)))
                 }
                 SymbolType::Int(IntValue::Memory(offset_source, offset)) => {
                     let register = code.new_register();
-                    code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                    code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                         offset_source,
                         offset as i32,
                         register,
-                    )));
-                    code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                    ))));
+                    code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                         register,
                         -1,
                         register,
-                    )));
+                    ))));
                     Ok(SymbolType::Int(IntValue::Temp(register)))
                 }
                 symbol @ SymbolType::Float(_) => Ok(symbol),
@@ -4037,11 +4076,11 @@ impl Unary {
                     },
                     BoolValue::Temp(register) => {
                         let register_copy = *register;
-                        code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
                             register_copy,
                             -1,
                             register_copy,
-                        )));
+                        ))));
                         Ok(SymbolType::Int(IntValue::Temp(register_copy)))
                     }
                     BoolValue::Undefined => Ok(SymbolType::Int(IntValue::Undefined)),
@@ -4097,9 +4136,9 @@ impl Unary {
                     },
                     BoolValue::Temp(register) => {
                         let register_copy = *register;
-                        code.push_instruction(Instruction::Unlabeled(Operation::Not(
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Not(
                             register_copy,
-                        )));
+                        ))));
                         Ok(SymbolType::Bool(BoolValue::Temp(register_copy)))
                     }
                     BoolValue::Undefined => Ok(SymbolType::Bool(BoolValue::Undefined)),
@@ -4338,18 +4377,18 @@ impl AstNode for VecAccess {
             },
             SymbolType::Int(IntValue::Literal(number)) => {
                 offset_register = code.new_register();
-                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
-                    Address::Number(number),
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                    number,
                     offset_register,
-                )));
+                ))));
             },
             SymbolType::Int(IntValue::Memory(register, offset)) => {
                 offset_register = code.new_register();
-                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
                     register,
                     offset as i32,
                     offset_register,
-                )));
+                ))));
             },
             SymbolType::Int(IntValue::Undefined) => {
                 return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
@@ -4366,18 +4405,18 @@ impl AstNode for VecAccess {
         } // foo[bar] => bar into register
 
         let type_size = vec_type_value.get_symbol_type_size() as i32;
-        code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::MultI(
             offset_register,
             type_size,
             offset_register,
-        ))); // foo[bar] => (bar * size of type) as register
+        )))); // foo[bar] => (bar * size of type) as register
 
         let offset = previous_def.offset as i32;
-        code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(
             offset_register,
             offset,
             offset_register,
-        ))); // foo[bar] => (bar * size of type + offset) as register
+        )))); // foo[bar] => (bar * size of type + offset) as register
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;

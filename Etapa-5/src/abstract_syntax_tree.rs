@@ -37,7 +37,7 @@ impl AbstractSyntaxTree {
             let mut stack = ScopeStack::new();
             node.evaluate_node(&mut code, &mut stack, lexer)?;
         };
-        code.pay_promises()?;
+        code.collect_promises()?;
         Ok(code)
     }
 }
