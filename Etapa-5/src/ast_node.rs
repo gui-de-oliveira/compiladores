@@ -23,7 +23,7 @@ pub trait AstNode: Debug {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError>;
-    fn get_id(&self) -> Span;
+    fn get_span(&self) -> Span;
     fn get_next(&self) -> &Option<Box<dyn AstNode>>;
 }
 
@@ -48,8 +48,8 @@ impl AstNode for Box<dyn AstNode> {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.as_ref().evaluate_node(code, stack, lexer)
     }
-    fn get_id(&self) -> Span {
-        self.as_ref().get_id()
+    fn get_span(&self) -> Span {
+        self.as_ref().get_span()
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         self.as_ref().get_next()
