@@ -105,7 +105,7 @@ impl AstNode for GlobalVarDef {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -171,7 +171,7 @@ impl AstNode for GlobalVecDef {
         let var_type = match SymbolType::from_str(lexer.span_str(self.var_type))? {
             SymbolType::String(_) => {
                 let start = self.var_type.start();
-                let end = self.vec_size.get_id().end() + 1;
+                let end = self.vec_size.get_span().end() + 1;
                 if end < start {
                     return Err(CompilerError::SanityError(format!(
                         "evaluate_node() found unlawful spans on GlobalVecDef for \"{}\"",
@@ -253,7 +253,7 @@ impl AstNode for GlobalVecDef {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -409,7 +409,7 @@ impl AstNode for FnDef {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -588,7 +588,7 @@ impl AstNode for LocalVarDef {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -657,9 +657,9 @@ impl AstNode for VarDefInitId {
         self.var_value.evaluate_node(code, stack, lexer)?;
 
         let def_symbol =
-            stack.get_previous_def(self.var_def.get_id(), lexer, SymbolClass::default_var())?;
+            stack.get_previous_def(self.var_def.get_span(), lexer, SymbolClass::default_var())?;
         let var_symbol =
-            stack.get_previous_def(self.var_value.get_id(), lexer, SymbolClass::default_var())?;
+            stack.get_previous_def(self.var_value.get_span(), lexer, SymbolClass::default_var())?;
 
         let id_symbol_type = &var_symbol.type_value;
         let _updated_symbol = def_symbol.cast_or_scream(id_symbol_type, self.node_id, lexer, false)?;
@@ -684,7 +684,7 @@ impl AstNode for VarDefInitId {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -767,7 +767,7 @@ impl AstNode for VarDefInitLit {
         };
 
         let def_symbol = {
-            let span = self.var_def.get_id();
+            let span = self.var_def.get_span();
             let def_symbol = stack.get_previous_def(span, lexer, SymbolClass::default_var())?;
             def_symbol.clone()
         };
@@ -794,7 +794,7 @@ impl AstNode for VarDefInitLit {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -874,7 +874,7 @@ impl AstNode for VarLeftShift {
         match symbol.type_value {
             SymbolType::Int(IntValue::Literal(value)) => {
                 if value > 16 {
-                    let shift_amount_span = self.shift_amount.get_id();
+                    let shift_amount_span = self.shift_amount.get_span();
                     let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
                     let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
@@ -899,7 +899,7 @@ impl AstNode for VarLeftShift {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -979,7 +979,7 @@ impl AstNode for VarRightShift {
         match symbol.type_value {
             SymbolType::Int(IntValue::Literal(value)) => {
                 if value > 16 {
-                    let shift_amount_span = self.shift_amount.get_id();
+                    let shift_amount_span = self.shift_amount.get_span();
                     let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
                     let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
@@ -1004,7 +1004,7 @@ impl AstNode for VarRightShift {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1085,7 +1085,7 @@ impl AstNode for VecLeftShift {
         match symbol.type_value {
             SymbolType::Int(IntValue::Literal(value)) => {
                 if value > 16 {
-                    let shift_amount_span = self.shift_amount.get_id();
+                    let shift_amount_span = self.shift_amount.get_span();
                     let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
                     let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
@@ -1110,7 +1110,7 @@ impl AstNode for VecLeftShift {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1191,7 +1191,7 @@ impl AstNode for VecRightShift {
         match symbol.type_value {
             SymbolType::Int(IntValue::Literal(value)) => {
                 if value > 16 {
-                    let shift_amount_span = self.shift_amount.get_id();
+                    let shift_amount_span = self.shift_amount.get_span();
                     let highlight = ScopeStack::form_string_highlight(shift_amount_span, lexer);
                     let ((line, col), (_, _)) = lexer.line_col(shift_amount_span);
 
@@ -1216,7 +1216,7 @@ impl AstNode for VecRightShift {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1290,7 +1290,7 @@ impl AstNode for VarSet {
                 )))?;
 
         let def_symbol =
-            stack.get_previous_def(self.var_name.get_id(), lexer, SymbolClass::default_var())?;
+            stack.get_previous_def(self.var_name.get_span(), lexer, SymbolClass::default_var())?;
 
         let _updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
@@ -1340,7 +1340,7 @@ impl AstNode for VarSet {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1415,12 +1415,49 @@ impl AstNode for VecSet {
                 )))?;
 
         let def_symbol =
-            stack.get_previous_def(self.vec_access.get_id(), lexer, SymbolClass::default_vec())?;
+            stack.get_previous_def(self.vec_access.get_span(), lexer, SymbolClass::default_vec())?;
 
         let _updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
 
-        // TO DO: Add symbol and check type.
+        let setter_register;
+        match new_value_symbol {
+            SymbolType::Int(IntValue::Temp(register)) => {
+                setter_register = register;
+            },
+            SymbolType::Int(IntValue::Literal(number)) => {
+                setter_register = code.new_register();
+                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                    Address::Number(number),
+                    setter_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Memory(register, offset)) => {
+                setter_register = code.new_register();
+                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                    register,
+                    offset as i32,
+                    setter_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Undefined) => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "VarSet called with uninitialized right value.\nLeft value: {:?}\n Right value: {:?}",
+                    def_symbol, new_value_symbol
+                )))
+            }
+            _ => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "VarSet called with unsuported type.\nLeft value: {:?}\n Right value: {:?}",
+                    def_symbol, new_value_symbol
+                )))
+            }
+        }
+        code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+            setter_register,
+            def_symbol.offset_source,
+            Address::Number(def_symbol.offset as i32),
+        )));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -1428,7 +1465,7 @@ impl AstNode for VecSet {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1485,7 +1522,7 @@ impl AstNode for Input {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_name.evaluate_node(code, stack, lexer)?;
 
-        let id = self.var_name.get_id();
+        let id = self.var_name.get_span();
         let var_def = stack.get_previous_def(id, lexer, SymbolClass::default_var())?;
 
         match var_def.type_value {
@@ -1515,7 +1552,7 @@ impl AstNode for Input {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1576,7 +1613,7 @@ impl AstNode for OutputId {
     ) -> Result<Option<SymbolType>, CompilerError> {
         self.var_name.evaluate_node(code, stack, lexer)?;
 
-        let id = self.var_name.get_id();
+        let id = self.var_name.get_span();
         let var_def = stack.get_previous_def(id, lexer, SymbolClass::default_var())?;
 
         match var_def.type_value {
@@ -1606,7 +1643,7 @@ impl AstNode for OutputId {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1698,7 +1735,7 @@ impl AstNode for OutputLit {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1751,7 +1788,7 @@ impl AstNode for Continue {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1804,7 +1841,7 @@ impl AstNode for Break {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -1872,7 +1909,7 @@ impl AstNode for Return {
         )?;
 
         if let &SymbolType::String(_) = return_value_type {
-            let span = self.ret_value.get_id();
+            let span = self.ret_value.get_span();
             let id = lexer.span_str(span).to_string();
             let ((line, col), (_, _)) = lexer.line_col(span);
             let highlight = ScopeStack::form_string_highlight(span, lexer);
@@ -1888,7 +1925,7 @@ impl AstNode for Return {
             .associate_with(return_value_type, self.node_id, lexer)
             .err()
         {
-            let id = self.ret_value.get_id();
+            let id = self.ret_value.get_span();
             let expected_type = current_scope_type.to_str().to_string();
             let received_type = return_value_type.to_str().to_string();
             let highlight = ScopeStack::form_string_highlight(id, lexer);
@@ -1908,7 +1945,7 @@ impl AstNode for Return {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2058,7 +2095,7 @@ impl AstNode for FnCall {
                     }
                     (_, SymbolType::String(_)) => {
                         let arg = &self.args[i];
-                        let span = arg.get_id();
+                        let span = arg.get_span();
                         let id = lexer.span_str(span).to_string();
                         let ((line, col), (_, _)) = lexer.line_col(span);
                         let highlight = ScopeStack::form_string_highlight(span, lexer);
@@ -2098,7 +2135,7 @@ impl AstNode for FnCall {
 
         Ok(Some(type_value))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2181,7 +2218,7 @@ impl AstNode for If {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2272,7 +2309,7 @@ impl AstNode for IfElse {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2367,7 +2404,7 @@ impl AstNode for For {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2450,7 +2487,7 @@ impl AstNode for While {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2514,7 +2551,7 @@ impl AstNode for CommandBlock {
 
         Ok(None)
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -2676,7 +2713,7 @@ impl AstNode for Ternary {
 
         return_symbol
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.left_span
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -3856,7 +3893,7 @@ impl AstNode for Binary {
 
         return_value
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4193,7 +4230,7 @@ impl AstNode for Unary {
 
         Ok(Some(type_value))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4297,7 +4334,7 @@ impl AstNode for VecAccess {
             }
         };
 
-        let vec_name_id_span = self.vec_name.get_id();
+        let vec_name_id_span = self.vec_name.get_span();
         let vec_name_id_str = lexer.span_str(vec_name_id_span);
         let index_id = format!("{}[{}]", vec_name_id_str, indexer_value);
         let previous_def = stack.get_previous_def_string_no_error(&index_id).ok_or(
@@ -4314,8 +4351,8 @@ impl AstNode for VecAccess {
 
         Ok(Some(our_type_value))
     }
-    fn get_id(&self) -> Span {
-        self.vec_name.get_id()
+    fn get_span(&self) -> Span {
+        self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
         &self.next
@@ -4372,7 +4409,7 @@ impl AstNode for VarInvoke {
 
         Ok(Some(type_value))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4430,7 +4467,7 @@ impl AstNode for VecInvoke {
 
         Ok(Some(type_value))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4504,7 +4541,7 @@ impl AstNode for LiteralInt {
 
         Ok(Some(var_type))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4578,7 +4615,7 @@ impl AstNode for LiteralFloat {
 
         Ok(Some(var_type))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4652,7 +4689,7 @@ impl AstNode for LiteralBool {
 
         Ok(Some(var_type))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4734,7 +4771,7 @@ impl AstNode for LiteralChar {
 
         Ok(Some(var_type))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
@@ -4819,7 +4856,7 @@ impl AstNode for LiteralString {
 
         Ok(Some(var_type))
     }
-    fn get_id(&self) -> Span {
+    fn get_span(&self) -> Span {
         self.node_id
     }
     fn get_next(&self) -> &Option<Box<dyn AstNode>> {
