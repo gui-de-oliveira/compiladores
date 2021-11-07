@@ -346,6 +346,11 @@ async function runTests() {
     [30, 3],
     [3]
   );
+  await test(
+    "int main() { int a; int b <= 8; a = 160 / 2; a = a / b; a = a / 2; b = 16 / b; }",
+    [],
+    [5, 2]
+  );
 
   log("ALL TESTS PASSED!", "Green");
 }
