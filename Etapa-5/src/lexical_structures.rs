@@ -3904,7 +3904,7 @@ impl Binary {
                             highlight,
                         })
                     }
-                    SymbolType::Bool(_) | SymbolType::Int(_) => {
+                    SymbolType::Bool(_) => {
                         match (
                             left_value.to_int(self.node_id, lexer)?,
                             right_value.to_int(self.node_id, lexer)?,
@@ -3915,6 +3915,151 @@ impl Binary {
                             (_, _) => Ok(SymbolType::Bool(BoolValue::Undefined)),
                         }
                     }
+                    SymbolType::Int(_) => match (left_value, right_value) {
+                        (SymbolType::Int(left_value), SymbolType::Int(right_value)) => match (left_value, right_value) {
+                            bad @ (IntValue::Undefined, _)
+                            | bad @ (_, IntValue::Undefined) => {
+                                Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                                    "Binary operation NotEqual matched undefined with something else: {:?}",
+                                    bad
+                                )))
+                            }
+                            (IntValue::Temp(left_register), IntValue::Literal(other_value)) => {
+                                let right_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    other_value,
+                                    right_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            }
+                            (IntValue::Literal(other_value), IntValue::Temp(right_register)) => {
+                                let left_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    other_value,
+                                    left_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            }
+                            (IntValue::Temp(left_register), IntValue::Memory(other_register, offset)) => {
+                                let right_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    other_register,
+                                    offset as i32,
+                                    right_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            }
+                            (IntValue::Memory(other_register, offset), IntValue::Temp(right_register)) => {
+                                let left_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    other_register,
+                                    offset as i32,
+                                    left_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            }
+                            (IntValue::Literal(value), IntValue::Memory(mem_register, offset)) => {
+                                let left_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    value,
+                                    left_register,
+                                ))));
+                                let right_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_register,
+                                    offset as i32,
+                                    right_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            }
+                            (IntValue::Memory(mem_register, offset), IntValue::Literal(value)) => {
+                                let left_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_register,
+                                    offset as i32,
+                                    left_register,
+                                ))));
+                                let right_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    value,
+                                    right_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            }
+                            (
+                                IntValue::Literal(left_value),
+                                IntValue::Literal(right_value),
+                            ) => Ok(SymbolType::Bool(BoolValue::Literal(left_value < right_value))),
+                            (
+                                IntValue::Memory(mem_left_register, left_offset),
+                                IntValue::Memory(mem_right_register, right_offset),
+                            ) => {
+                                let left_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_left_register,
+                                    left_offset as i32,
+                                    left_register,
+                                ))));
+                                let right_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    mem_right_register,
+                                    right_offset as i32,
+                                    right_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            },
+                            (
+                                IntValue::Temp(left_register),
+                                IntValue::Temp(right_register),
+                            ) => {
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::CmpLT(
+                                    left_register,
+                                    right_register,
+                                    left_register,
+                                ))));
+                                Ok(SymbolType::Int(IntValue::Temp(left_register)))
+                            },
+                        }
+                        bad => Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                            "Binary operation NotEqual with unsuported types: {:?}",
+                            bad
+                        ))),
+                    },
                     SymbolType::Float(_) => match (
                         left_value.to_float(self.node_id, lexer)?,
                         right_value.to_float(self.node_id, lexer)?,
