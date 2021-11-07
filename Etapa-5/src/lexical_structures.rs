@@ -2214,10 +2214,43 @@ impl AstNode for If {
             self.condition
                 .evaluate_node(code, stack, lexer)?
                 .ok_or(CompilerError::SanityError(format!(
-                    "condition has no SymbolType (on If.evaluate_node())"
+                    "condition has no SymbolType (on IfElse.evaluate_node())"
                 )))?;
         condition_symbol.to_bool(self.node_id, lexer)?;
+
+        let before_true_label = code.new_label();
+        let after_true_label = code.new_label();
+
+        let jump_if_true_voucher = code.generate_promise();
+        code.push_code(CodeLine::Promise(jump_if_true_voucher));
+
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(before_true_label, Operation::Nop)));
+
+        let promise_payment = match condition_symbol {
+            SymbolType::Bool(BoolValue::Literal(boolean)) => {if boolean {
+                vec![Instruction::Unlabeled(Operation::Nop)]
+            } else {
+                vec![Instruction::Unlabeled(Operation::JumpI(after_true_label))]
+            }},
+            SymbolType::Int(IntValue::Literal(number)) => {if number != 0 {
+                vec![Instruction::Unlabeled(Operation::Nop)]
+            } else {
+                vec![Instruction::Unlabeled(Operation::JumpI(after_true_label))]
+            }},
+            SymbolType::Bool(BoolValue::Temp(register)) | SymbolType::Int(IntValue::Temp(register)) => {
+                vec![Instruction::Unlabeled(Operation::Cbr(register, before_true_label, after_true_label))]
+            },
+            SymbolType::Int(IntValue::Memory(register, offset)) => {
+                let new_register = code.new_register();
+                vec![Instruction::Unlabeled(Operation::LoadAI(register, offset as i32, new_register))
+                    ,Instruction::Unlabeled(Operation::Cbr(new_register, before_true_label, after_true_label))]
+            },
+            _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("condition.evaluate_node() returned unsuported type for IfElse.evaluate(): {:?}", condition_symbol)))
+        };
+        code.pay_promise(jump_if_true_voucher, promise_payment);
+
         self.consequence.evaluate_node(code, stack, lexer)?;
+        code.push_code(CodeLine::Deliver(Instruction::Labeled(after_true_label, Operation::Nop)));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
