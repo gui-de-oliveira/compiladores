@@ -376,6 +376,11 @@ async function runTests() {
     [],
     [1, 2, 4]
   );
+  await test(
+    "int main() { int a <= 1; int b <= 2; int c; if (a <= b) { c = 3; } else { c = 4; }; }",
+    [],
+    [1, 2, 3]
+  );
 
   log("ALL TESTS PASSED!", "Green");
 }
