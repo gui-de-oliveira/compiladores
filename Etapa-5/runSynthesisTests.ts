@@ -352,6 +352,16 @@ async function runTests() {
     [5, 2]
   );
   await test(
+    "int main() { int a; if (1 < 2) { a = 1; }; if (1 > 2) { a = 2; }; }",
+    [],
+    [1]
+  );
+  await test(
+    "int main() { int a <= 1; int b <= 2; int c; if (a >= b) { c = 3; }; if ( a < b ) { c = 4; }; }",
+    [],
+    [1, 2, 4]
+  );
+  await test(
     "int main() { int a; if (1 < 2) { a = 1; } else { a = 2; }; }",
     [],
     [1]
