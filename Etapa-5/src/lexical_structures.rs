@@ -1405,7 +1405,6 @@ impl AstNode for VecSet {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        let _vec_type_value = self.vec_access.evaluate_node(code, stack, lexer)?;
 
         let new_value_symbol =
             self.new_value
@@ -1415,7 +1414,7 @@ impl AstNode for VecSet {
                 )))?;
 
         let def_symbol =
-            stack.get_previous_def(self.vec_access.get_span(), lexer, SymbolClass::default_vec())?;
+            stack.get_previous_def(self.vec_access.vec_name.get_span(), lexer, SymbolClass::default_vec())?;
 
         let _updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
@@ -1453,11 +1452,19 @@ impl AstNode for VecSet {
                 )))
             }
         }
-        code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
-            setter_register,
-            def_symbol.offset_source,
-            Address::Number(def_symbol.offset as i32),
-        )));
+
+        match self.vec_access.evaluate_node(code, stack, lexer)?.ok_or(CompilerError::ParsingErrors(format!("vec_access.evaluate_node() returned no type value for index expression in VecSet.evaluate_node()")))? {
+            SymbolType::Int(IntValue::Memory(offset_source, offset)) => {
+                code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                    setter_register,
+                    offset_source,
+                    Address::Number(offset as i32),
+                )));
+            },
+            bad => return Err(CompilerError::SanityError(format!(
+                "vec_access.evaluate_node() on VecSet returned something different from a memory location: {:?}", bad
+            ))),
+        }
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
@@ -4310,46 +4317,73 @@ impl AstNode for VecAccess {
         stack: &mut ScopeStack,
         lexer: &dyn NonStreamingLexer<u32>,
     ) -> Result<Option<SymbolType>, CompilerError> {
-        let _vec_type_value =
+        let vec_type_value =
             self.vec_name
                 .evaluate_node(code, stack, lexer)?
                 .ok_or(CompilerError::SanityError(format!(
                 "VecAccess.evaluate_node() found no TypeValue from self.vec_name.evaluate_node()"
-            )));
+            )))?;
 
-        let indexer_type_value = self.vec_index.evaluate_node(code, stack, lexer)?;
-        let indexer_value = match indexer_type_value {
-            Some(symbol_type) => {
-                match symbol_type.to_int(self.node_id, lexer)? {
-                    IntValue::Literal(number) => number,
-                    _ => {return Err(CompilerError::SanityError(format!(
-                        "VecAccess.evaluate_node() found no indexer_value from indexer_type_value -> to_int()"
-                        )))}
-                }
-            }
-            None => {
-                return Err(CompilerError::SanityError(format!(
-                "VecAccess.evaluate_node() found no TypeValue from self.vec_index.evaluate_node()"
-            )));
-            }
-        };
+        let indexer_type_value = self.vec_index.evaluate_node(code, stack, lexer)?.ok_or(CompilerError::SanityError(format!(
+            "VecAccess.evaluate_node() found no TypeValue from self.vec_index.evaluate_node()"
+        )))?;
 
-        let vec_name_id_span = self.vec_name.get_span();
-        let vec_name_id_str = lexer.span_str(vec_name_id_span);
-        let index_id = format!("{}[{}]", vec_name_id_str, indexer_value);
-        let previous_def = stack.get_previous_def_string_no_error(&index_id).ok_or(
-            CompilerError::SemanticError(format!(
-                "Out-of-range vector index access: {}",
-                &index_id
-            )),
-        )?;
-        let our_type_value = previous_def.type_value.clone();
+        let previous_def =
+            stack.get_previous_def(self.vec_name.get_span(), lexer, SymbolClass::default_vec())?;
+
+        let offset_register;
+        match indexer_type_value {
+            SymbolType::Int(IntValue::Temp(register)) => {
+                offset_register = register;
+            },
+            SymbolType::Int(IntValue::Literal(number)) => {
+                offset_register = code.new_register();
+                code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
+                    Address::Number(number),
+                    offset_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Memory(register, offset)) => {
+                offset_register = code.new_register();
+                code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                    register,
+                    offset as i32,
+                    offset_register,
+                )));
+            },
+            SymbolType::Int(IntValue::Undefined) => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "VecAccess called with uninitialized index.\nVec name: {:?}\n Index: {:?}",
+                    self.vec_name, self.vec_index
+                )))
+            }
+            _ => {
+                return Err(CompilerError::IlocErrorUndefinedBehavior(format!(
+                    "VecAccess called with unsuported type index.\nVec name: {:?}\n Index: {:?}",
+                    self.vec_name, self.vec_index
+                )))
+            }
+        } // foo[bar] => bar into register
+
+        let type_size = vec_type_value.get_symbol_type_size() as i32;
+        code.push_instruction(Instruction::Unlabeled(Operation::MultI(
+            offset_register,
+            type_size,
+            offset_register,
+        ))); // foo[bar] => (bar * size of type) as register
+
+        let offset = previous_def.offset as i32;
+        code.push_instruction(Instruction::Unlabeled(Operation::AddI(
+            offset_register,
+            offset,
+            offset_register,
+        ))); // foo[bar] => (bar * size of type + offset) as register
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
         };
 
-        Ok(Some(our_type_value))
+        Ok(Some(SymbolType::Int(IntValue::Memory(offset_register, 0))))
     }
     fn get_span(&self) -> Span {
         self.node_id

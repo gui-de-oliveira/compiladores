@@ -78,6 +78,7 @@ pub enum Operation {
     LoadAI(Register, i32, Register),
     LoadAO(Register, Register, Register),
     StoreAI(Register, Register, Address),
+    StoreAO(Register, Register, Register),
     Jump(Register),
     JumpI(Address),
     Halt,
@@ -127,6 +128,14 @@ impl Operation {
                 reg_b.to_string(),
                 addr.to_string()?,
             ),
+            Operation::StoreAO(reg_a, reg_b, reg_c) => {
+                format!(
+                    "storeAO {} => {}, {}",
+                    reg_a.to_string(),
+                    reg_b.to_string(),
+                    reg_c.to_string(),
+                )
+            }
             Operation::Jump(reg) => format!("jump -> {}", reg.to_string()),
             Operation::JumpI(addr) => format!("jumpI -> {}", addr.to_string()?),
             Operation::Halt => format!("halt"),
@@ -222,6 +231,7 @@ impl Operation {
             Operation::StoreAI(reg_a, reg_b, addr) => {
                 Operation::StoreAI(*reg_a, *reg_b, addr.pay_promises(code_len, label_map)?)
             }
+            Operation::StoreAO(reg_a, reg_b, reg_c) => Operation::StoreAO(*reg_a, *reg_b, *reg_c),
             Operation::Jump(reg) => Operation::Jump(*reg),
             Operation::JumpI(addr) => Operation::JumpI(addr.pay_promises(code_len, label_map)?),
             Operation::Halt => Operation::Halt,

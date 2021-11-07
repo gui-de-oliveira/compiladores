@@ -64,10 +64,10 @@ type IlocErrors =
   | { type: "NO_MEMORY_VALUES_SECTION_FIND"; ilocOutput: string }
   | { type: "COULDNT_SPLIT_LINES"; failedLines: string[]; ilocOutput: string }
   | {
-    type: "VALUE_IS_NOT_A_NUMBER";
-    failedLines: { memory: string; value: string }[];
-    ilocOutput: string;
-  };
+      type: "VALUE_IS_NOT_A_NUMBER";
+      failedLines: { memory: string; value: string }[];
+      ilocOutput: string;
+    };
 
 async function getIloc(
   compilerOutput: string
@@ -183,7 +183,11 @@ async function getIloc(
 
 let testsCounter = 0;
 
-async function test(input: string, expectedValues: number[]) {
+async function test(
+  input: string,
+  expectedPreValues: number[],
+  expectedPostValues: number[]
+) {
   testsCounter++;
 
   const compileResult = await compile(input);
@@ -259,56 +263,78 @@ async function test(input: string, expectedValues: number[]) {
   };
 
   const DEFAULT_MEMORY_VALUES = 3;
-  assert(expectedValues.length + DEFAULT_MEMORY_VALUES, memoryValues.length);
+  const preValuesLen = expectedPreValues.length;
+  assert(
+    preValuesLen + DEFAULT_MEMORY_VALUES + expectedPostValues.length,
+    memoryValues.length
+  );
 
-  assert(8, memoryValues[0].value);
-  assert(1024, memoryValues[1].value);
-  assert(1024, memoryValues[2].value);
+  assert(8, memoryValues[preValuesLen].value);
+  assert(1024, memoryValues[preValuesLen + 1].value);
+  assert(1024, memoryValues[preValuesLen + 2].value);
 
-  memoryValues.slice(DEFAULT_MEMORY_VALUES).forEach((memoryValue, i) => {
-    assert(expectedValues[i], memoryValue.value);
+  memoryValues.slice(0, preValuesLen).forEach((memoryValue, i) => {
+    assert(expectedPreValues[i], memoryValue.value);
   });
+  memoryValues
+    .slice(preValuesLen + DEFAULT_MEMORY_VALUES)
+    .forEach((memoryValue, i) => {
+      assert(expectedPostValues[i], memoryValue.value);
+    });
 
   log(`TEST ${testsCounter} SUCCEEDED!`, "Green");
 }
 
 async function runTests() {
-  await test("int main() { }", []);
-  await test("int main() { int a <= 10; }", [10]);
-  await test("int main() { int a; a = 10; }", [10]);
-  await test("int main() { int a <= 10; int b <= 20;  }", [10, 20]);
-  await test("int main() { int a; a = 10; int b; b = 20;  }", [10, 20]);
+  await test("int main() { }", [], []);
+  await test("int main() { int a <= 10; }", [], [10]);
+  await test("int main() { int a; a = 10; }", [], [10]);
+  await test("int main() { int a <= 10; int b <= 20;  }", [], [10, 20]);
+  await test("int main() { int a; a = 10; int b; b = 20;  }", [], [10, 20]);
   await test(
     "int main() { int a <= 10; int b <= 20; int c <= 30;  }",
+    [],
     [10, 20, 30]
   );
   await test(
     "int main() { int a; a = 10; int b; b = 20; int c; c = 30;  }",
+    [],
     [10, 20, 30]
   );
   await test(
     "int main() { int a; int b <= 20; int c <= 30; a = b + c;  }",
+    [],
     [50, 20, 30]
   );
   await test(
     "int main() { int a; int b; b = 20; int c; c = 30; a = b + c;  }",
+    [],
     [50, 20, 30]
   );
   await test(
     "int main() { int a; int b <= 20; int c; c = 30; a = b + c;  }",
+    [],
     [50, 20, 30]
   );
   await test(
     "int main() { int a; int b; b = 20; int c <= 30; a = b + c;  }",
+    [],
     [50, 20, 30]
   );
   await test(
     "int main() { int a; int b <= 20; int c <= 30; int d <= 30; a = b + c + d;  }",
+    [],
     [80, 20, 30, 30]
   );
   await test(
     "int main() { int a; int b <= 20; a = b; int c; c = 30; int d; d = a + b + c;  }",
+    [],
     [20, 20, 30, 70]
+  );
+  await test(
+    "int a[2]; int main() { a[0] = 3; int b <= 7; a[1] = b; int c; c = a[0] + a[1];  }",
+    [3, 7],
+    [7, 10]
   );
 
   log("ALL TESTS PASSED!", "Green");
