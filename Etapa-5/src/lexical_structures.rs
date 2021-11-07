@@ -1282,25 +1282,24 @@ impl AstNode for VarSet {
         let _updated_symbol =
             def_symbol.cast_or_scream(&new_value_symbol, self.node_id, lexer, true)?;
 
-        let new_register = code.new_register();
+        let setter_register;
         match new_value_symbol {
             SymbolType::Int(IntValue::Temp(register)) => {
-                code.push_instruction(Instruction::Unlabeled(Operation::Load(
-                    register,
-                    new_register,
-                )));
+                setter_register = register;
             },
             SymbolType::Int(IntValue::Literal(number)) => {
+                setter_register = code.new_register();
                 code.push_instruction(Instruction::Unlabeled(Operation::LoadI(
                     Address::Number(number),
-                    new_register,
+                    setter_register,
                 )));
             },
             SymbolType::Int(IntValue::Memory(register, offset)) => {
+                setter_register = code.new_register();
                 code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
                     register,
                     offset as i32,
-                    new_register,
+                    setter_register,
                 )));
             },
             SymbolType::Int(IntValue::Undefined) => {
@@ -1317,7 +1316,7 @@ impl AstNode for VarSet {
             }
         }
         code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
-            new_register,
+            setter_register,
             def_symbol.offset_source,
             Address::Number(def_symbol.offset as i32),
         )));
