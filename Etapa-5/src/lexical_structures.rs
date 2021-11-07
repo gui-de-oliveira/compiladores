@@ -661,9 +661,22 @@ impl AstNode for VarDefInitId {
         let var_symbol =
             stack.get_previous_def(self.var_value.get_id(), lexer, SymbolClass::default_var())?;
 
-        let symbol_type = &var_symbol.type_value;
-        let updated_symbol = def_symbol.cast_or_scream(symbol_type, self.node_id, lexer, false)?;
-        stack.add_def_symbol(updated_symbol)?;
+        let id_symbol_type = &var_symbol.type_value;
+        let _updated_symbol = def_symbol.cast_or_scream(id_symbol_type, self.node_id, lexer, false)?;
+
+        if let SymbolType::Int(IntValue::Memory(offset_source, offset)) = id_symbol_type {
+            let new_register = code.new_register();
+            code.push_instruction(Instruction::Unlabeled(Operation::LoadAI(
+                *offset_source,
+                *offset as i32,
+                new_register,
+            )));
+            code.push_instruction(Instruction::Unlabeled(Operation::StoreAI(
+                new_register,
+                def_symbol.offset_source,
+                Address::Number(def_symbol.offset as i32),
+            )));
+        };
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
