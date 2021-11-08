@@ -16,6 +16,7 @@ pub enum Register {
     Rfp,
     Rsp,
     Rbss,
+    Rpc,
     R(u32),
 }
 
@@ -25,6 +26,7 @@ impl Register {
             Register::Rfp => "rfp".to_string(),
             Register::Rsp => "rsp".to_string(),
             Register::Rbss => "rbss".to_string(),
+            Register::Rpc => "rpc".to_string(),
             Register::R(num) => format!("r{}", num),
         }
     }
@@ -408,6 +410,10 @@ impl IlocCode {
         let new_label = self.new_label();
         self.label_map.insert(fn_name, new_label);
         new_label
+    }
+
+    pub fn get_fn_label(&self, fn_name: &String) -> Option<&Label> {
+        self.label_map.get(fn_name)
     }
 
     pub fn push_code(&mut self, code: CodeLine) {

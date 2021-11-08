@@ -470,7 +470,7 @@ impl SymbolType {
     pub fn get_symbol_type_size(&self) -> u32 {
         match self {
             SymbolType::Char(_) => 1,
-            SymbolType::Int(_) => 4,
+            SymbolType::Int(_) => INT_SIZE,
             SymbolType::Float(_) => 8,
             SymbolType::Bool(_) => 1,
             SymbolType::String(maybe_string) => match maybe_string {
@@ -493,6 +493,8 @@ impl PartialEq for SymbolType {
         }
     }
 }
+
+pub const INT_SIZE: u32 = 4;
 
 #[derive(Clone, Debug)]
 pub enum SymbolClass {
