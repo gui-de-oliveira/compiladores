@@ -18,10 +18,24 @@ clean:
 	rm -f -r target
 
 zip:
-	tar cvzf etapa5.tgz Makefile Cargo.toml build.rs semanticTests.js src/ README.md
+	tar cvzf etapa5.tgz Makefile Cargo.toml build.rs runSynthesisTests.ts package.json tsconfig.json ilocsim.py src/ README.md
 
 test:
 	make debug
-	tsc --project tsconfig.json
+	npm testBuild
 	node runSynthesisTests.js
 	rm -f -r runSynthesisTests.js
+
+testZip:
+	rm -rf test
+	make zip
+	mkdir test
+	mv etapa5.tgz test/etapa5.tgz
+	cd test; \
+	tar -xvzf etapa5.tgz; \
+	npm install; \
+	make; \
+	npm run buildTest; \
+	node runSynthesisTests.js; \
+	rm -f -r runSynthesisTests.js;
+	rm -rf test;
