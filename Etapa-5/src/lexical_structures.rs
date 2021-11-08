@@ -11,7 +11,7 @@ use super::ast_node::AstNode;
 use super::error::CompilerError;
 use super::instructions::{CodeLine, IlocCode, Instruction, Operation, Register};
 use super::semantic_structures::{ BoolValue,
-    CallSymbol, DefSymbol, IntValue, ScopeStack, SymbolClass, SymbolType,
+    CallSymbol, DefSymbol, IntValue, ScopeStack, SymbolClass, SymbolType, INT_SIZE,
 };
 
 #[derive(Debug)]
@@ -271,6 +271,8 @@ pub struct FnDef {
     next: Option<Box<dyn AstNode>>,
 }
 
+const FN_OFFSET: u32 = 16;
+
 impl FnDef {
     pub fn new(
         is_static: bool,
@@ -348,7 +350,6 @@ impl AstNode for FnDef {
         );
 
         stack.add_scope(Some(return_type));
-        const FN_OFFSET: u32 = 16;
         stack.add_offset(FN_OFFSET)?;
         let mut starting_size = FN_OFFSET;
         for param in self.params.iter() {
@@ -1861,6 +1862,8 @@ impl AstNode for Break {
     }
 }
 
+const RETURN_VAL_OFFSET: i32 = 12;
+
 #[derive(Debug)]
 pub struct Return {
     node_id: Span,
@@ -1920,35 +1923,95 @@ impl AstNode for Return {
             )),
         )?;
 
-        if let &SymbolType::String(_) = return_value_type {
-            let span = self.ret_value.get_span();
-            let id = lexer.span_str(span).to_string();
-            let ((line, col), (_, _)) = lexer.line_col(span);
-            let highlight = ScopeStack::form_string_highlight(span, lexer);
-            return Err(CompilerError::SemanticErrorFunctionString {
-                id,
-                line,
-                col,
-                highlight,
-            });
-        };
+        match return_value_type {
+            SymbolType::String(_) => {
+                let span = self.ret_value.get_span();
+                let id = lexer.span_str(span).to_string();
+                let ((line, col), (_, _)) = lexer.line_col(span);
+                let highlight = ScopeStack::form_string_highlight(span, lexer);
+                return Err(CompilerError::SemanticErrorFunctionString {
+                    id,
+                    line,
+                    col,
+                    highlight,
+                });
+            }
+            SymbolType::Int(return_value) => {
+                match return_value {
+                    IntValue::Undefined => {
+                        return Err(CompilerError::SanityError(format!("Undefined Int as return value in Return function.")))
+                    }
+                    IntValue::Temp(register) => {
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(*register, Register::Rfp, RETURN_VAL_OFFSET))))
+                    }
+                    IntValue::Memory(offset_source, offset) => {
+                        let new_register = code.new_register();
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                            *offset_source,
+                            *offset as i32,
+                            new_register,
+                        ))));
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(new_register, Register::Rfp, RETURN_VAL_OFFSET))))
+                    }
+                    IntValue::Literal(number) => {
+                        let new_register = code.new_register();
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                            *number,
+                            new_register,
+                        ))));
+                        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(new_register, Register::Rfp, RETURN_VAL_OFFSET))))
+                    }
+                }
+                let rsp_reg = code.new_register();
+                let rfp_reg = code.new_register();
+                let jump_reg = code.new_register();
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                    Register::Rfp,
+                    0,
+                    rsp_reg,
+                ))));
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                    Register::Rfp,
+                    4,
+                    rfp_reg,
+                ))));
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                    Register::Rfp,
+                    8,
+                    jump_reg,
+                ))));
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::I2i(
+                    rsp_reg,
+                    Register::Rsp,
+                ))));
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::I2i(
+                    rfp_reg,
+                    Register::Rfp,
+                ))));
+                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::Jump(
+                    jump_reg,
+                ))));
+            }
+            _ => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Unsuported type usage for Return in function: {}", return_value_type.to_str().to_string()))),
+        }
 
-        if let Some(_) = current_scope_type
-            .associate_with(return_value_type, self.node_id, lexer)
-            .err()
-        {
-            let id = self.ret_value.get_span();
-            let expected_type = current_scope_type.to_str().to_string();
-            let received_type = return_value_type.to_str().to_string();
-            let highlight = ScopeStack::form_string_highlight(id, lexer);
-            let ((line, col), (_, _)) = lexer.line_col(id);
-            return Err(CompilerError::SemanticErrorWrrongParReturn {
-                expected_type,
-                received_type,
-                line,
-                col,
-                highlight,
-            });
+        match current_scope_type.associate_with(return_value_type, self.node_id, lexer) {
+            Ok(SymbolType::Int(_)) => (),
+            Ok(_) => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Unsuported type usage for Return in function: {}", return_value_type.to_str().to_string()))),
+            Err(_) => {
+                let id = self.ret_value.get_span();
+                let expected_type = current_scope_type.to_str().to_string();
+                let received_type = return_value_type.to_str().to_string();
+                let highlight = ScopeStack::form_string_highlight(id, lexer);
+                let ((line, col), (_, _)) = lexer.line_col(id);
+                return Err(CompilerError::SemanticErrorWrrongParReturn {
+                    expected_type,
+                    received_type,
+                    line,
+                    col,
+                    highlight,
+                });
+            }
         }
 
         if let Some(node) = &self.next {
@@ -2032,10 +2095,10 @@ impl AstNode for FnCall {
     ) -> Result<Option<SymbolType>, CompilerError> {
         let span = self.node_id;
         let class = SymbolClass::Fn(vec![]);
-        let (parameters, type_value) = {
+        let parameters = {
             let previous_def = stack.get_previous_def(span, lexer, class.clone())?;
             match &previous_def.class {
-                SymbolClass::Fn(params) => (params.clone(), previous_def.type_value.clone()),
+                SymbolClass::Fn(params) => params.clone(),
                 _ => {
                     return Err(CompilerError::SanityError(
                         "FnCall.evaluate_node() received an invalid class from previous def."
@@ -2047,9 +2110,9 @@ impl AstNode for FnCall {
         let args_num = self.args.len();
         let params_num = parameters.len();
 
+        let id = lexer.span_str(self.node_id).to_string();
         if args_num != params_num {
             let previous_def = stack.get_previous_def(span, lexer, class)?;
-            let id = lexer.span_str(self.node_id).to_string();
             let first_line = previous_def.line;
             let first_col = previous_def.col;
             let first_highlight = ScopeStack::form_string_highlight(previous_def.span, lexer);
@@ -2079,10 +2142,12 @@ impl AstNode for FnCall {
             });
         }
 
+        let mut next_param_loc = FN_OFFSET as i32;
         if params_num > 0 {
             let mut param_types = vec![];
             for param in &parameters {
-                param_types.push(param.get_symbol_type(lexer)?);
+                let param_type = param.get_symbol_type(lexer)?;
+                param_types.push(param_type);
             }
             for (i, arg) in self.args.iter().enumerate() {
                 let arg_type =
@@ -2092,7 +2157,7 @@ impl AstNode for FnCall {
                             arg
                         )))?;
                 match (arg_type, &param_types[i]) {
-                    (SymbolType::String(_), _) => {
+                    (SymbolType::String(_), _) | (_, SymbolType::String(_)) => {
                         let param = parameters[i];
                         let span = param.node_id;
                         let id = lexer.span_str(span).to_string();
@@ -2105,22 +2170,48 @@ impl AstNode for FnCall {
                             highlight,
                         });
                     }
-                    (_, SymbolType::String(_)) => {
-                        let arg = &self.args[i];
-                        let span = arg.get_span();
-                        let id = lexer.span_str(span).to_string();
-                        let ((line, col), (_, _)) = lexer.line_col(span);
-                        let highlight = ScopeStack::form_string_highlight(span, lexer);
-                        return Err(CompilerError::SemanticErrorFunctionString {
-                            id,
-                            line,
-                            col,
-                            highlight,
-                        });
-                    }
                     (SymbolType::Char(_), SymbolType::Char(_)) => continue,
                     (SymbolType::Char(_), _) | (_, SymbolType::Char(_)) => (),
-                    (_, _) => continue,
+                    (SymbolType::Int(int_value), SymbolType::Int(_)) => {
+                        match int_value {
+                            bad @ IntValue::Undefined => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Usage of undefined int type as function parameter for \"{}()\":\n{:?}", id, bad))),
+                            IntValue::Temp(register) => {
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
+                                    register,
+                                    Register::Rsp,
+                                    next_param_loc,
+                                ))));
+                            }
+                            IntValue::Memory(offset_source, offset) => {
+                                let new_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(
+                                    offset_source,
+                                    offset as i32,
+                                    new_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
+                                    new_register,
+                                    Register::Rsp,
+                                    next_param_loc,
+                                ))));
+                            }
+                            IntValue::Literal(number) => {
+                                let new_register = code.new_register();
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadI(
+                                    number,
+                                    new_register,
+                                ))));
+                                code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
+                                    new_register,
+                                    Register::Rsp,
+                                    next_param_loc,
+                                ))));
+                            }
+                        };
+                        next_param_loc += INT_SIZE as i32;
+                        continue;
+                    },
+                    (bad, worse) => return Err(CompilerError::IlocErrorUndefinedBehavior(format!("Usage of unsuported types as function parameters for \"{}()\":\n{:?}\n{:?}", id, bad, worse))),
                 }
                 let id = lexer.span_str(self.node_id).to_string();
                 let previous_def = stack.get_previous_def(span, lexer, class)?;
@@ -2140,12 +2231,37 @@ impl AstNode for FnCall {
                 });
             }
         }
+        
+        let current_pos_reg = code.new_register();
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::AddI(Register::Rpc, 5, current_pos_reg))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
+            current_pos_reg,
+            Register::Rsp,
+            0,
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
+            Register::Rsp,
+            Register::Rsp,
+            4,
+        ))));
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::StoreAI(
+            Register::Rfp,
+            Register::Rsp,
+            8,
+        ))));
+        let fn_label = match code.get_fn_label(&id) {
+            Some(label_ref) => label_ref.clone(),
+            None => return Err(CompilerError::SanityError(format!("code.get_fn_label() found nothing on FnCall.evaluate_node() for function \"{}\"", id)))
+        };
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::JumpI(fn_label))));
 
         if let Some(node) = &self.next {
             node.evaluate_node(code, stack, lexer)?;
         };
+        let return_val_reg = code.new_register();
+        code.push_code(CodeLine::Deliver(Instruction::Unlabeled(Operation::LoadAI(Register::Rsp, RETURN_VAL_OFFSET, return_val_reg))));
 
-        Ok(Some(type_value))
+        Ok(Some(SymbolType::Int(IntValue::Temp(return_val_reg))))
     }
     fn get_span(&self) -> Span {
         self.node_id
